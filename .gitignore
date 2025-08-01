@@ -1,3 +1,14 @@
+# Python 가상환경 폴더 (가장 중요)
+venv/
+
+# 모델 데이터 및 캐시 파일
+model/
+
+# Python 설치 정보 폴더
+*.egg-info/
+
+
+
 __pycache__/
 .DS_Store
 docs/_build/
