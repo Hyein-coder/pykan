@@ -2299,7 +2299,7 @@ class MultKAN(nn.Module):
                     a, b, c, d = self.symbolic_fun[l].affine[j, i]
                     sympy_fun = self.symbolic_fun[l].funs_sympy[j][i]
                     try:
-                        yj += c * sympy_fun(a * x[i] + b) + d
+                        yj += c * sympy_fun(a * x[i] + b) + d   # 와 이게 뭐야.. yj 값에다가 계속 y = cf(ax+b)+d 값을 더해나간다
                     except:
                         print('make sure all activations need to be converted to symbolic formulas first!')
                         return
