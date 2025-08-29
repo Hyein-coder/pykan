@@ -1,3 +1,5 @@
+.github/workflows/TaeWoong 폴더 안에 CO2RR 로 시작하는 .ipynb 파일들을 위주로 봐주세요! 
+
 <img width="600" alt="kan_plot" src="https://github.com/KindXiaoming/pykan/assets/23551623/a2d2d225-b4d2-4c1e-823e-bc45c7ea96f9">
 
 # Kolmogorov-Arnold Networks (KANs)
