@@ -1,5 +1,7 @@
 import pandas as pd
 import numpy as np
+import torch
+from sklearn.metrics import mean_squared_error, r2_score
 
 
 def remove_outliers_iqr(df_in, df_out, rr=6):
@@ -23,3 +25,44 @@ def remove_outliers_iqr(df_in, df_out, rr=6):
     df_out_no_outliers = df_out[condition]
 
     return df_in_no_outliers, df_out_no_outliers
+
+
+def evaluate_model_performance(model, dataset, scaler_y, phase="validation", display=False):  # phase = validation 아니면 test 이다
+
+    if phase == "validation":
+        input_tensor = dataset['val_input']
+        label_tensor = dataset['val_label']
+    elif phase == "test":
+        input_tensor = dataset['test_input']
+        label_tensor = dataset['test_label']
+    else:
+        raise ValueError("phase는 'validation' 또는 'test'만 가능합니다")
+
+    # 예측 수행
+    with torch.no_grad():  # 굳이 기울기 계산할 필요 X because 이거는 test 이기에 학습 X --- 시간 더 빠르게 하려고 torch.no_grad()
+        pred_norm = model(input_tensor)  # input_tensor 는 val_inut or test_input / pred_norm은 그에 대한 출력값
+
+    # 역정규화
+    pred_real = scaler_y.inverse_transform(
+        pred_norm.cpu().detach().numpy())  # pred_real 은 0.1~0.9 사이의 입력 val_input or test_input을 받고 출력된 값은 다시 역정규화 한 실제 출력값
+    label_real = scaler_y.inverse_transform(
+        label_tensor.cpu().detach().numpy())  # label_real은 0.1~0.9 사이의 입력 val_label or test_label을 받고 출력한 값 역정규화
+    # inverse_transform 함수는  numpy 를 입력으로 받기 떄문에 pytorch tensor를 cpu로 옮기고 numpy로 변환
+
+    # numpy는 cpu에서만 돌아가니까 tensor를 .cpu로 옮기고 그다음 tensor의 추가정보 (numpy 정보 + 어떻게 계산되었는지 식에 대한 정보)를 detach --- 그 다음에 .numpy()를 통해 numpy로 변환
+
+    # 성능 지표 계산 from 역정규화된 label_real, pred_real 값들 from val input or test input + numpy에서 계산
+    rmse = np.sqrt(mean_squared_error(label_real, pred_real))  # 오차 제곱 평균의 루트
+    r2 = r2_score(label_real, pred_real)  # 1에 가까울수록 좋다
+    mae = np.mean(np.abs(label_real - pred_real))  # 오차 절댓값들의 평균 -- MAE
+
+    if display:
+        print(f"{phase} SET Performance Evaluation")  # phase = validation 또는 test
+        print(f"RMSE: {rmse:.4f}")  # f"{변수:포맷코드}"
+        print(f"R²: {r2:.4f}")
+        print(f"MAE: {mae:.4f}")
+
+        print(f"실제값 평균: {label_real.mean():.4f}")  # label_real의 평균값(실제값)
+        print(f"예측값 평균: {pred_real.mean():.4f}")  # pred_real의 평균값(KAN 모델로 예측한 값)
+
+    return pred_real, label_real, {'rmse': rmse, 'r2': r2, 'mae': mae}

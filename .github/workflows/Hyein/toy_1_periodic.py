@@ -5,16 +5,16 @@ import os
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import MinMaxScaler
 from kan import KAN
-from kan.custom_utils import remove_outliers_iqr
+from kan.custom_utils import remove_outliers_iqr, evaluate_model_performance
 
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 print(f"This script is running on {device}.")
 
 x1_grid = np.linspace(-np.pi, np.pi, 15)
 x2_grid = np.linspace(-1, 1, 15)
-x3_grid = np.linspace(-1, 1, 15)
+x3_grid = np.linspace(-1, 1, 10)
 x1, x2, x3 = np.meshgrid(x1_grid, x2_grid, x3_grid)
-y = 5 * np.exp(-x1) + 3 * x2 - x3
+y = np.exp(-x1) + x2 - x3**2
 # y = 5 * np.exp(np.sin(x1)) + 3 * x2 - x3
 # y = 10 * np.abs(x1) + 5*x2**2
 # y = 10 * np.sin(x1) + 5 * x2**2
@@ -103,6 +103,29 @@ plt.show()
 formula = ex_round(model.symbolic_formula()[0][0], 4)
 print("formula=", formula)
 print(model.node_scores)
+
+#%%
+val_pred, val_actual, val_metrics = evaluate_model_performance(model, dataset, scaler_y, display=True)
+# test_pred, test_actual, test_metrics = evaluate_model_performance(model, dataset, scaler_y, "test")
+
+plt.figure(figsize=(4, 4))  # 도화지 그리기~
+
+plt.scatter(val_actual, val_pred, facecolors='none', edgecolors='r', s=15, label='Model Predictions')
+
+# 제일 작은 값, 제일 큰 값 설정
+min_val = min(val_actual.min(), val_pred.min())
+max_val = max(val_actual.max(), val_pred.max())
+plt.plot([min_val, max_val], [min_val, max_val], 'k--', linewidth=2, label='Perfect Fit (y=x)')  # y = x 선긋기
+
+# 그래프 제목과 축 레이블 설정
+plt.xlabel("Actual" , fontsize=9)   # Actual 다음에 우리가 보고자 하는 output predicting 변수가 뜸
+plt.ylabel("Predicted", fontsize=9) #
+plt.title(f'Test Set: Actual vs. Predicted (R² = {val_metrics["r2"]:.4f})', fontsize=11)
+plt.legend()
+plt.grid(True)  # 격자 on
+plt.axis('equal') # x, y축 스케일을 동일하게 설정
+plt.tight_layout()
+plt.show()
 #%%
 X_norm = scaler_X.transform(X)
 y_norm = scaler_y.transform(y)
