@@ -5,7 +5,7 @@ import os
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import MinMaxScaler
 from kan import KAN
-from kan.custom_utils import remove_outliers_iqr, evaluate_model_performance
+from kan.custom_utils import remove_outliers_iqr, evaluate_model_performance, plot_activation_functions
 
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 print(f"This script is running on {device}.")
@@ -13,15 +13,17 @@ print(f"This script is running on {device}.")
 x1_grid = np.linspace(-np.pi, np.pi, 15)
 x2_grid = np.linspace(-1, 1, 15)
 x3_grid = np.linspace(-1, 1, 10)
-x1, x2, x3 = np.meshgrid(x1_grid, x2_grid, x3_grid)
-y = np.exp(-x1) + x2 - x3**2
+# x1, x2, x3 = np.meshgrid(x1_grid, x2_grid, x3_grid)
+# X = np.stack((x1.flatten(), x2.flatten(), x3.flatten()), axis=1)
+# y = np.exp(-x1) + x2 - x3**2
 # y = 5 * np.exp(np.sin(x1)) + 3 * x2 - x3
+
+x1, x2= np.meshgrid(x1_grid, x2_grid)
+X = np.stack((x1.flatten(), x2.flatten()), axis=1)
 # y = 10 * np.abs(x1) + 5*x2**2
-# y = 10 * np.sin(x1) + 5 * x2**2
+y = 10 * np.sin(x1) + 5 * x2**2
 
-X = np.stack((x1.flatten(), x2.flatten(), x3.flatten()), axis=1)
 y = y.flatten().reshape(-1, 1)
-
 X_temp, X_test, y_temp, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
 X_train, X_val, y_train, y_val = train_test_split(X_temp, y_temp, test_size=0.2, random_state=42)  # 0.2 × 0.8 = 0.16 (전체의 16%)
 
@@ -127,43 +129,14 @@ plt.axis('equal') # x, y축 스케일을 동일하게 설정
 plt.tight_layout()
 plt.show()
 #%%
+from kan.custom_utils import plot_data_per_interval
 X_norm = scaler_X.transform(X)
 y_norm = scaler_y.transform(y)
+name_X = [f'x{idx}' for idx in range(X_norm.shape[1])]
+name_y = ['y']
 
-nx = X_norm.shape[1]
-fig, axs = plt.subplots(nrows=1, ncols=nx, figsize=(15, 3))
-for idx_x in range(nx):
-    ax = axs[idx_x]
-    ax.scatter(X_norm[:, idx_x], y_norm, color='black')
-    # ax.set_title(name_X[idx_x], fontsize=8)
-
-# X_norm: (N, D), y_norm: (N,) 또는 (N, 1)
-x2 = X_norm[:, 0]
-y_vals = y_norm.ravel()  # y가 (N,1)이어도 (N,)으로 평탄화
-
-# 4개 구간 마스크 정의
-mask_knots = [0, 0.3, 0.6, 1.0]
-masks = [ ((x2 > mask_knots[i]) & (x2 <= mask_knots[i+1])) for i in range(len(mask_knots)-1)]
-
-colors = ['tab:blue', 'tab:orange', 'tab:green', 'tab:red']
-labels = [f'{mask_knots[i]} < x2 <= {mask_knots[i+1]}' for i in range(len(mask_knots)-1)]
-
-# plt.figure(figsize=(7, 5))
-for mask, c, lab in zip(masks, colors, labels):
-    if np.any(mask):  # 해당 구간 데이터가 있을 때만 그림
-        for idx_x in range(nx):
-            ax = axs[idx_x]
-            ax.scatter(X_norm[mask, idx_x], y_vals[mask], s=20, color=c, alpha=0.75, edgecolor='none', label=lab)
-            # ax.set_title(name_X[idx_x], fontsize=8)
-axs[-1].legend(loc='upper left', bbox_to_anchor=(1, 1), fontsize=8)
+fig_x1, ax_x1 = plot_data_per_interval(X_norm, y_norm, name_X, name_y, 0, [0, 0.3, 0.6])
 plt.show()
 
-for act_fun in model.act_fun:
-    ni, no = act_fun.coef.shape[:2]
-    coef = act_fun.coef.tolist()
-    fig, axs = plt.subplots(nrows=no, ncols=ni, figsize=(15, 3), squeeze=False)
-    for idx_in, coef_in in enumerate(coef):
-        for idx_out, coef_node in enumerate(coef_in):
-            ax = axs[idx_out, idx_in]
-            ax.scatter(list(range(len(coef_node))), coef_node)
-    plt.show()
+# Plot learned activation functions (splines) per edge after training/pruning
+plot_activation_functions(model, x=dataset, layers=None, show=True)
