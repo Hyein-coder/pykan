@@ -133,8 +133,10 @@ def _run_single_trial(args) -> TrialResult:
         return bool(val)
 
     if _want_prune(params):
-        node_th = params.get('prune_node_th', 1e-2)
-        edge_th = params.get('prune_edge_th', 3e-2)
+        # Unified pruning threshold handling: if 'pruning_th' is provided, use it for both node_th and edge_th
+        pruning_th = params.get('pruning_th', None)
+        node_th = params.get('prune_node_th', pruning_th if pruning_th is not None else 1e-2)
+        edge_th = params.get('prune_edge_th', pruning_th if pruning_th is not None else 3e-2)
         try:
             model = model.prune(node_th=node_th, edge_th=edge_th)
         except Exception as _:
@@ -279,7 +281,8 @@ def sweep_multkan(
 
     Notes:
     - To mimic the notebook behavior, you can include pruning in param_grid by setting
-      'prune': [True] (or 'pruning': [True]), and optionally thresholds 'prune_node_th' and 'prune_edge_th'.
+      'prune': [True] (or 'pruning': [True]). You can provide a unified threshold with 'pruning_th' to apply the same
+      value to both node and edge pruning. Alternatively, you may still specify 'prune_node_th' and/or 'prune_edge_th'.
       If you set 'prune' or 'pruning' to False, the pruning step will be skipped. By default, pruning is disabled (False).
     - If you pass a fitted scaler_y (e.g., sklearn.preprocessing.MinMaxScaler used on y),
       metrics will be computed on the inverse-transformed (original) scale to match the notebook.
@@ -338,7 +341,14 @@ def sweep_multkan(
                 return v in ('1','true','yes','y','t')
             return bool(val)
         if _want_prune_log(combo_params):
-            prune_msg = f", prune=True(node_th={combo_params.get('prune_node_th', 1e-2)}, edge_th={combo_params.get('prune_edge_th', 3e-2)})"
+            # Prefer unified 'pruning_th' for display; fallback to individual thresholds
+            _p_th = combo_params.get('pruning_th', None)
+            _node_th = combo_params.get('prune_node_th', _p_th if _p_th is not None else 1e-2)
+            _edge_th = combo_params.get('prune_edge_th', _p_th if _p_th is not None else 3e-2)
+            if _p_th is not None:
+                prune_msg = f", prune=True(th={_p_th})"
+            else:
+                prune_msg = f", prune=True(node_th={_node_th}, edge_th={_edge_th})"
         print(f"[MultKAN Sweep] Training model {idx}/{total} (seed={seed_val}, params={ {k: combo_params[k] for k in combo_params if k in ['width','grid','k','mult_arity','steps','lamb','lr','update_grid','opt']} }{prune_msg})")
         try:
             res: TrialResult = _run_single_trial(t)

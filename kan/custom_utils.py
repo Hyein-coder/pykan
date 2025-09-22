@@ -311,3 +311,22 @@ def plot_activation_functions(model, x=None, layers=None, show=True, titles=True
             plt.show()
         figs.append(fig)
     return figs
+
+def plot_spline_coefficients(model, show=True):
+    plots = []
+    for layer, act_fun in enumerate(model.act_fun):
+        ni, no = act_fun.coef.shape[:2]
+        coef = act_fun.coef.tolist()
+        # Dynamically size figure and use constrained layout to prevent overlaps
+        fig, axs = plt.subplots(nrows=no, ncols=ni, figsize=(max(2.5*ni, 6), max(2.5*no, 3.5)), squeeze=False, constrained_layout=True)
+        for idx_in, coef_in in enumerate(coef):
+            for idx_out, coef_node in enumerate(coef_in):
+                ax = axs[idx_out, idx_in]
+                ax.scatter(np.linspace(0.1, 0.9, (len(coef_node))), coef_node, label='Coefficients')
+                slope = [x - y for x, y in zip(coef_node[1:], coef_node[:-1])]
+                ax.bar(np.linspace(0.1, 0.9, len(slope)), slope, width=0.02, align='edge', label='Slope')
+        axs[-1, -1].legend(loc='upper left', bbox_to_anchor=(1, 1), fontsize=8, title=f'Layer {layer}')
+        if show:
+            plt.show()
+        plots.append((fig, axs))
+    return plots
