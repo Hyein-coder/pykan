@@ -3,7 +3,7 @@ import numpy as np
 import torch
 from sklearn.metrics import mean_squared_error, r2_score
 import matplotlib.pyplot as plt
-
+import os
 
 def remove_outliers_iqr(df_in, df_out, rr=6):
 
@@ -255,7 +255,7 @@ def plot_data_per_interval(X_norm, y_norm, name_X, name_y, mask_idx, mask_interv
     return fig, axs
 
 
-def plot_activation_functions(model, x=None, layers=None, show=True, titles=True):
+def plot_activation_functions(model, x=None, layers=None, save_tag=None, show=True, titles=True):
     """
     Plot per-edge activation functions (input->output splines) of a trained (and optionally pruned) KAN/MultKAN model.
 
@@ -307,12 +307,15 @@ def plot_activation_functions(model, x=None, layers=None, show=True, titles=True
         # Add a legend-like layer title in the last subplot
         axs[-1, -1].text(0.99, 0.01, f'Layer {l}', transform=axs[-1, -1].transAxes,
                          ha='right', va='bottom', fontsize=9, bbox=dict(facecolor='white', alpha=0.6, edgecolor='none'))
+        if save_tag is not None:
+            save_dir = os.path.join(os.getcwd(), '.github', 'workflows', 'Hyein', 'custom_figures')
+            plt.savefig(os.path.join(save_dir, f'activation_{save_tag}_L{l}.png'))
         if show:
             plt.show()
         figs.append(fig)
     return figs
 
-def plot_spline_coefficients(model, show=True):
+def plot_spline_coefficients(model, save_tag=None, show=True):
     plots = []
     for layer, act_fun in enumerate(model.act_fun):
         ni, no = act_fun.coef.shape[:2]
@@ -326,6 +329,9 @@ def plot_spline_coefficients(model, show=True):
                 slope = [x - y for x, y in zip(coef_node[1:], coef_node[:-1])]
                 ax.bar(np.linspace(0.1, 0.9, len(slope)), slope, width=0.02, align='edge', label='Slope')
         axs[-1, -1].legend(loc='upper left', bbox_to_anchor=(1, 1), fontsize=8, title=f'Layer {layer}')
+        if save_tag is not None:
+            save_dir = os.path.join(os.getcwd(), '.github', 'workflows', 'Hyein', 'custom_figures')
+            plt.savefig(os.path.join(save_dir, f'spline_coef_{save_tag}_L{layer}.png'))
         if show:
             plt.show()
         plots.append((fig, axs))
