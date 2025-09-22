@@ -227,7 +227,7 @@ def evaluate_model_performance(model, dataset, scaler_y, phase="validation", dis
 
 def plot_data_per_interval(X_norm, y_norm, name_X, name_y, mask_idx, mask_interval):
     nx = X_norm.shape[1]
-    fig, axs = plt.subplots(nrows=1, ncols=nx, figsize=(20, 3.5), constrained_layout=True)
+    fig, axs = plt.subplots(nrows=1, ncols=nx, figsize=(20, 3.5), constrained_layout=True, sharey=True)
     for idx_x in range(nx):
         ax = axs[idx_x]
         ax.scatter(X_norm[:, idx_x], y_norm, color='tab:gray')
@@ -303,13 +303,13 @@ def plot_activation_functions(model, x=None, layers=None, save_tag=None, show=Tr
                 rank = np.argsort(inputs)
                 ax.plot(inputs[rank], outputs[rank], marker='o', ms=2, lw=1)
                 if titles:
-                    ax.set_title(f'in {i} → out {j}', fontsize=8)
+                    ax.set_title(f'in {i} → out {j}', fontsize=10)
         # Add a legend-like layer title in the last subplot
         axs[-1, -1].text(0.99, 0.01, f'Layer {l}', transform=axs[-1, -1].transAxes,
                          ha='right', va='bottom', fontsize=9, bbox=dict(facecolor='white', alpha=0.6, edgecolor='none'))
         if save_tag is not None:
             save_dir = os.path.join(os.getcwd(), '.github', 'workflows', 'Hyein', 'custom_figures')
-            plt.savefig(os.path.join(save_dir, f'activation_{save_tag}_L{l}.png'))
+            plt.savefig(os.path.join(save_dir, f'{save_tag}_activation_L{l}.png'))
         if show:
             plt.show()
         figs.append(fig)
@@ -321,17 +321,19 @@ def plot_spline_coefficients(model, save_tag=None, show=True):
         ni, no = act_fun.coef.shape[:2]
         coef = act_fun.coef.tolist()
         # Dynamically size figure and use constrained layout to prevent overlaps
-        fig, axs = plt.subplots(nrows=no, ncols=ni, figsize=(max(2.5*ni, 6), max(2.5*no, 3.5)), squeeze=False, constrained_layout=True)
+        fig, axs = plt.subplots(nrows=no, ncols=ni, figsize=(max(2.5*ni, 6), max(2.5*no, 3.5)),
+                                squeeze=False, constrained_layout=True)
         for idx_in, coef_in in enumerate(coef):
             for idx_out, coef_node in enumerate(coef_in):
                 ax = axs[idx_out, idx_in]
                 ax.scatter(np.linspace(0.1, 0.9, (len(coef_node))), coef_node, label='Coefficients')
                 slope = [x - y for x, y in zip(coef_node[1:], coef_node[:-1])]
                 ax.bar(np.linspace(0.1, 0.9, len(slope)), slope, width=0.02, align='edge', label='Slope')
+                ax.set_title(f'In {idx_in} -- Out {idx_out}', fontsize=10)
         axs[-1, -1].legend(loc='upper left', bbox_to_anchor=(1, 1), fontsize=8, title=f'Layer {layer}')
         if save_tag is not None:
             save_dir = os.path.join(os.getcwd(), '.github', 'workflows', 'Hyein', 'custom_figures')
-            plt.savefig(os.path.join(save_dir, f'spline_coef_{save_tag}_L{layer}.png'))
+            plt.savefig(os.path.join(save_dir, f'{save_tag}_spline_coef_L{layer}.png'))
         if show:
             plt.show()
         plots.append((fig, axs))

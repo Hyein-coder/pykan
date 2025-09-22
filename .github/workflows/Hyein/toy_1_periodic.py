@@ -8,14 +8,14 @@ from kan import KAN
 from kan.custom import MultKAN
 from kan.custom_utils import remove_outliers_iqr, evaluate_model_performance, plot_activation_functions
 import datetime
-save_tag = datetime.datetime.now().strftime('%Y%m%d_%H%M%S')
+save_tag = 'toy' + datetime.datetime.now().strftime('%Y%m%d_%H%M%S')
 save_dir = os.path.join(os.getcwd(), '.github', 'workflows', 'Hyein', 'custom_figures')
 
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 print(f"This script is running on {device}.")
 
-x1_grid = np.linspace(-np.pi, np.pi, 15)
-x2_grid = np.linspace(0, 1, 15)
+x1_grid = np.linspace(-np.pi, np.pi, 30)
+x2_grid = np.linspace(-0.5, 1, 30)
 x3_grid = np.linspace(-1, 1, 10)
 # x1, x2, x3 = np.meshgrid(x1_grid, x2_grid, x3_grid)
 # X = np.stack((x1.flatten(), x2.flatten(), x3.flatten()), axis=1)
@@ -71,10 +71,10 @@ fig, axs = plt.subplots(nrows=1, ncols=nx, figsize=(15, 3))
 for idx_x in range(nx):
     ax = axs[idx_x]
     ax.scatter(X_norm[:, idx_x], y_norm, color='black')
-plt.savefig(os.path.join(save_dir, f"data_{save_tag}.png"))
+plt.savefig(os.path.join(save_dir, f"{save_tag}_data.png"))
 plt.show()
 #%%
-model = MultKAN(width=[nx, 3, 1], mult_arity=0, grid=30, k=3, seed=0, device=device)
+model = MultKAN(width=[nx, 6, 1], mult_arity=0, grid=10, k=3, seed=0, device=device)
 num_params = sum(p.numel() for p in model.parameters() if p.requires_grad)
 print(f"학습가능 파라미터 수: {num_params:,}")
 
@@ -83,7 +83,7 @@ for name, p in model.named_parameters():
         print(f"{name:40s} {p.shape} {p.numel():5d}")
 
 # KAN 학습
-model.fit(dataset, opt="LBFGS", steps=50, lamb=0.001, lamb_entropy=5)
+model.fit(dataset, opt="LBFGS", steps=50, lamb=0.001, lamb_coef=5, lamb_entropy=5)
 model.plot()
 plt.show()
 
@@ -92,10 +92,9 @@ model = model.prune(node_th=1e-2, edge_th=3e-2)  # 더 자르고 싶으면 값�
 model.plot()
 plt.show()
 
-#
 from kan.utils import ex_round
-lib = ['x', 'x^2', 'tanh', 'sin', '1/x', '1/x^2']
-# lib = ['x', 'x^2', 'x^3', 'x^4', 'exp', 'log', 'sqrt', 'tanh', 'sin', '1/x', '1/x^2']
+# lib = ['x', 'x^2', 'tanh', 'sin', '1/x', '1/x^2']
+lib = ['x', 'x^2', 'x^3', 'x^4', 'exp', 'log', 'sqrt', 'tanh', 'sin', '1/x', '1/x^2']
 model.auto_symbolic(lib=lib)
 # model.plot()
 
@@ -127,7 +126,7 @@ plt.legend()
 plt.grid(True)  # 격자 on
 plt.axis('equal') # x, y축 스케일을 동일하게 설정
 plt.tight_layout()
-plt.savefig(os.path.join(save_dir, f"validation_{save_tag}.png"))
+plt.savefig(os.path.join(save_dir, f"{save_tag}_validation.png"))
 plt.show()
 #%%
 from kan.custom_utils import plot_data_per_interval, plot_spline_coefficients
@@ -137,15 +136,17 @@ y_norm = scaler_y.transform(y)
 name_X = [f'x{idx}' for idx in range(X_norm.shape[1])]
 name_y = ['y']
 
-fig_x1, ax_x1 = plot_data_per_interval(X_norm, y_norm, name_X, name_y, 0, [0, 0.3, 0.6])
+fig_x1, ax_x1 = plot_data_per_interval(X_norm, y_norm, name_X, name_y, 1, [0, 0.4])
+plt.savefig(os.path.join(save_dir, f"{save_tag}_data_colored.png"))
 plt.show()
 
 # Plot learned activation functions (splines) per edge after training/pruning
-plot_activation_functions(model, x=dataset, layers=None)
-plot_spline_coefficients(model)
+plot_activation_functions(model, save_tag=save_tag, x=dataset, layers=None)
+plot_spline_coefficients(model, save_tag=save_tag)
 
 scores = model.node_scores[0]
 # print(scores)
 fig, ax = plt.subplots()
 ax.bar(list(range(scores.shape[0])), scores.tolist())
+plt.savefig(os.path.join(save_dir, f"{save_tag}_scores_L0.png"))
 plt.show()

@@ -11,9 +11,9 @@ import json
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 print(f"This script is running on {device}.")
 
-x1_grid = np.linspace(-np.pi, np.pi, 15)
-x2_grid = np.linspace(-1, 1, 15)
-x3_grid = np.linspace(-1, 1, 10)
+x1_grid = np.linspace(-np.pi, np.pi, 30)
+x2_grid = np.linspace(-1, 1, 30)
+# x3_grid = np.linspace(-1, 1, 10)
 # x1, x2, x3 = np.meshgrid(x1_grid, x2_grid, x3_grid)
 # X = np.stack((x1.flatten(), x2.flatten(), x3.flatten()), axis=1)
 # y = np.exp(-x1) + x2 - x3**2
@@ -60,18 +60,20 @@ y_test_norm = scaler_y.transform(y_test)
 out = sweep_multkan(
       X_train_norm, y_train_norm, X_val_norm, y_val_norm, X_test_norm, y_test_norm,
       param_grid={
-          # 'width': [[X_train.shape[1], 12, 1]],
-          'width': [[X_train.shape[1], 3, 1], [X_train.shape[1], 6, 1]],
-          'grid': [30],  # 3, 30
+          'width': [[X_train.shape[1], 6, 1]],
+          'grid': [10],
           'k': [3],
           'mult_arity': [0],
-          'steps': [50],
+          'steps': [50],    #200
           'opt': ['LBFGS'],
           'lr': [1.0],
           'update_grid': [True],
-          'lamb': [0.0, 0.01],
-          'lamb_entropy': [1., 2., 5.],
-          'prune': [False, True]
+          'lamb': [0.001],
+          'lamb_coef': [5, 10, 50, 100],
+          'lamb_entropy': [5.],
+          'prune': [True],
+          'pruning_node_th': [0.01],
+          'pruning_edge_th': [3e-2],
       },
       seeds=[0],      # run each config with multiple seeds
       n_jobs=1,          # number of parallel worker processes

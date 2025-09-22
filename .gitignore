@@ -24,3 +24,20 @@ figures
 molecule
 applications
 experiments
+
+# JetBrains
+.idea/
+!.idea/codeStyles/
+!.idea/inspectionProfiles/
+!.idea/runConfigurations/
+!.idea/misc.xml
+!.idea/modules.xml
+!*.iml
+!.idea/vcs.xml
+
+# 개인/로컬 전용
+.idea/workspace.xml
+.idea/tasks.xml
+.idea/dictionaries/
+.idea/shelf/
+.idea/httpRequests/

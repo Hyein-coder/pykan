@@ -135,8 +135,8 @@ def _run_single_trial(args) -> TrialResult:
     if _want_prune(params):
         # Unified pruning threshold handling: if 'pruning_th' is provided, use it for both node_th and edge_th
         pruning_th = params.get('pruning_th', 1e-2)
-        node_th = params.get('prune_node_th', pruning_th)
-        edge_th = params.get('prune_edge_th', pruning_th)
+        node_th = params.get('pruning_node_th', pruning_th)
+        edge_th = params.get('pruning_edge_th', pruning_th)
         try:
             model = model.prune(node_th=node_th, edge_th=edge_th)
         except Exception as _:
