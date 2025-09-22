@@ -1,0 +1,527 @@
+import itertools
+import json
+import os
+from dataclasses import dataclass, asdict
+from typing import Dict, Any, List, Tuple, Optional
+
+import numpy as np
+import torch
+import pandas as pd
+
+# Custom MultKAN written by Dr. DDP import path within this repository
+from kan.custom import MultKAN
+from sklearn.metrics import mean_squared_error, r2_score
+
+
+def _seed_everything(seed: int):
+    import random
+    random.seed(seed)
+    np.random.seed(seed)
+    torch.manual_seed(seed)
+    if torch.cuda.is_available():
+        torch.cuda.manual_seed_all(seed)
+    # Make cudnn deterministic for reproducibility across processes
+    torch.backends.cudnn.deterministic = True
+    torch.backends.cudnn.benchmark = False
+
+
+@dataclass
+class TrialResult:
+    params: Dict[str, Any]
+    val_loss: float
+    train_loss: float
+    test_loss: Optional[float]
+    r2_train: Optional[float]
+    r2_val: Optional[float]
+    r2_test: Optional[float]
+    seed: int
+    device: str
+
+
+def _to_tensor(x: np.ndarray, device: torch.device) -> torch.Tensor:
+    return torch.tensor(x, dtype=torch.float32, device=device)
+
+
+def _build_dataset(X_train, y_train, X_val, y_val, X_test=None, y_test=None, device: Optional[torch.device] = None):
+    device = device or torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+    dataset = {
+        'train_input': _to_tensor(X_train, device),
+        'train_label': _to_tensor(y_train, device),
+        'val_input': _to_tensor(X_val, device),
+        'val_label': _to_tensor(y_val, device),
+    }
+    if X_test is not None and y_test is not None:
+        dataset['test_input'] = _to_tensor(X_test, device)
+        dataset['test_label'] = _to_tensor(y_test, device)
+    return dataset
+
+
+def _evaluate(model: MultKAN, dataset: Dict[str, torch.Tensor], scaler_y: Optional[Any] = None) -> Tuple[float, float, Optional[float], Optional[float], Optional[float], Optional[float]]:
+    """Evaluate using sklearn.metrics.mean_squared_error and r2_score on CPU numpy arrays.
+
+    If scaler_y is provided (a fitted sklearn-like scaler with inverse_transform),
+    y_true and y_pred are inverse-transformed back to the original scale before computing metrics.
+    """
+    with torch.no_grad():
+        def mse_and_r2(xk: torch.Tensor, yk: torch.Tensor) -> Tuple[float, Optional[float]]:
+            yhat = model(xk)
+            y_true = yk.detach().cpu().numpy()
+            y_pred = yhat.detach().cpu().numpy()
+            # Optionally inverse-transform to original scale
+            if scaler_y is not None:
+                try:
+                    y_true = scaler_y.inverse_transform(y_true)
+                    y_pred = scaler_y.inverse_transform(y_pred)
+                except Exception:
+                    pass
+            # mean squared error (scalar)
+            mse = mean_squared_error(y_true, y_pred)
+            # r2_score may raise warnings/errors for constant targets in some versions; guard defensively
+            try:
+                r2 = r2_score(y_true, y_pred)
+            except Exception:
+                r2 = float('nan')
+            return float(mse), r2
+        train_loss, r2_train = mse_and_r2(dataset['train_input'], dataset['train_label'])
+        val_loss, r2_val = mse_and_r2(dataset['val_input'], dataset['val_label'])
+        test_loss, r2_test = None, None
+        if 'test_input' in dataset and 'test_label' in dataset:
+            test_loss, r2_test = mse_and_r2(dataset['test_input'], dataset['test_label'])
+    return train_loss, val_loss, test_loss, r2_train, r2_val, r2_test
+
+
+def _run_single_trial(args) -> TrialResult:
+    X_train, y_train, X_val, y_val, X_test, y_test, params, seed, device_str, scaler_y = args
+    device = torch.device(device_str)
+    _seed_everything(seed)
+
+    dataset = _build_dataset(X_train, y_train, X_val, y_val, X_test, y_test, device=device)
+
+    # Separate model constructor kwargs from fit kwargs
+    model_kwargs = {k: params[k] for k in ['width', 'grid', 'k', 'mult_arity', 'seed', 'device'] if k in params}
+    # Override device/seed per trial
+    model_kwargs['device'] = device
+    model_kwargs['seed'] = seed
+
+    model = MultKAN(**model_kwargs)
+
+    fit_kwargs = {
+        'opt': params.get('opt', 'LBFGS'),
+        'steps': params.get('steps', 50),
+        'lamb': params.get('lamb', 0.0),
+        'lamb_l1': params.get('lamb_l1', 1.0),
+        'lamb_entropy': params.get('lamb_entropy', 2.0),
+        'lamb_coef': params.get('lamb_coef', 0.0),
+        'lamb_coefdiff': params.get('lamb_coefdiff', 0.0),
+        'update_grid': params.get('update_grid', True),
+        'lr': params.get('lr', 1.0),
+        'batch': params.get('batch', -1),
+        'log': params.get('log', 1),
+    }
+
+    model.fit(dataset, **fit_kwargs)
+
+    # Optional pruning to mimic notebook behavior
+    def _want_prune(p: Dict[str, Any]) -> bool:
+        # accept keys 'prune' or 'pruning'; accept bools or common string representations
+        val = p.get('prune', None)
+        if val is None:
+            val = p.get('pruning', False)
+        if isinstance(val, str):
+            v = val.strip().lower()
+            return v in ('1', 'true', 'yes', 'y', 't')
+        return bool(val)
+
+    if _want_prune(params):
+        node_th = params.get('prune_node_th', 1e-2)
+        edge_th = params.get('prune_edge_th', 3e-2)
+        try:
+            model = model.prune(node_th=node_th, edge_th=edge_th)
+        except Exception as _:
+            pass
+
+    train_loss, val_loss, test_loss, r2_train, r2_val, r2_test = _evaluate(model, dataset, scaler_y=scaler_y)
+
+    return TrialResult(
+        params=params,
+        val_loss=val_loss,
+        train_loss=train_loss,
+        test_loss=test_loss,
+        r2_train=r2_train,
+        r2_val=r2_val,
+        r2_test=r2_test,
+        seed=seed,
+        device=str(device)
+    )
+
+
+def _expand_param_grid(param_grid: Dict[str, List[Any]]) -> List[Dict[str, Any]]:
+    keys = list(param_grid.keys())
+    values = [param_grid[k] if isinstance(param_grid[k], (list, tuple)) else [param_grid[k]] for k in keys]
+    combos = []
+    for vs in itertools.product(*values):
+        combos.append({k: v for k, v in zip(keys, vs)})
+    return combos
+
+
+def _trial_to_row(trial: Any) -> Dict[str, Any]:
+    """Flatten a TrialResult (or dict) to a single row dict suitable for DataFrame."""
+    if hasattr(trial, '__dict__') and isinstance(trial, TrialResult):
+        d = asdict(trial)
+    elif isinstance(trial, dict):
+        d = dict(trial)
+    else:
+        # Fallback: try dataclasses.asdict or direct cast
+        try:
+            d = asdict(trial)
+        except Exception:
+            d = dict(trial)
+    params = d.pop('params', {}) or {}
+    row = {}
+    # Copy top-level scalar fields
+    for k, v in d.items():
+        row[k] = v
+    # Flatten params into columns prefixed by 'param_'
+    for pk, pv in params.items():
+        # Lists/dicts to JSON strings for Excel cell
+        if isinstance(pv, (list, dict, tuple)):
+            row[f'param_{pk}'] = json.dumps(pv)
+        else:
+            row[f'param_{pk}'] = pv
+    return row
+
+
+def _results_to_dataframe(results: List[Any]) -> pd.DataFrame:
+    rows = [_trial_to_row(r) for r in results]
+    df = pd.DataFrame(rows)
+    # Order columns: metrics (losses and R^2), seed/device first, then params
+    metric_cols = [c for c in ['train_loss', 'val_loss', 'test_loss', 'r2_train', 'r2_val', 'r2_test'] if c in df.columns]
+    first_cols = metric_cols + [c for c in ['seed', 'device'] if c in df.columns]
+    param_cols = sorted([c for c in df.columns if c.startswith('param_')])
+    other_cols = [c for c in df.columns if c not in first_cols + param_cols]
+    df = df[first_cols + other_cols + param_cols]
+    return df
+
+
+essential_best_cols = ['train_loss', 'val_loss', 'test_loss', 'r2_train', 'r2_val', 'r2_test', 'seed', 'device']
+
+def _save_excel(excel_path: str, results: List[Any], best: Any, progress: Dict[str, Any], last_result: Any):
+    # Ensure parent directory exists
+    parent_dir = os.path.dirname(excel_path)
+    if parent_dir and not os.path.exists(parent_dir):
+        os.makedirs(parent_dir, exist_ok=True)
+    df_results = _results_to_dataframe(results)
+    # Prepare best/progress/last_result sheets
+    if hasattr(best, '__dict__') and isinstance(best, TrialResult):
+        best_dict = asdict(best)
+    elif isinstance(best, dict):
+        best_dict = dict(best)
+    else:
+        try:
+            best_dict = asdict(best)
+        except Exception:
+            best_dict = dict(best)
+    df_best = pd.DataFrame([_trial_to_row(best_dict)])
+
+    if isinstance(progress, dict):
+        df_progress = pd.DataFrame([progress])
+    else:
+        df_progress = pd.DataFrame([{'completed': progress[0], 'total': progress[1]}])
+
+    if hasattr(last_result, '__dict__') and isinstance(last_result, TrialResult):
+        last_dict = asdict(last_result)
+    elif isinstance(last_result, dict):
+        last_dict = dict(last_result)
+    else:
+        try:
+            last_dict = asdict(last_result)
+        except Exception:
+            last_dict = dict(last_result)
+    df_last = pd.DataFrame([_trial_to_row(last_dict)])
+
+    with pd.ExcelWriter(excel_path) as writer:
+        df_results.to_excel(writer, index=False, sheet_name='results')
+        df_best.to_excel(writer, index=False, sheet_name='best')
+        df_progress.to_excel(writer, index=False, sheet_name='progress')
+        df_last.to_excel(writer, index=False, sheet_name='last_result')
+
+
+def sweep_multkan(
+    X_train: np.ndarray,
+    y_train: np.ndarray,
+    X_val: np.ndarray,
+    y_val: np.ndarray,
+    X_test: Optional[np.ndarray] = None,
+    y_test: Optional[np.ndarray] = None,
+    param_grid: Optional[Dict[str, List[Any]]] = None,
+    seeds: Optional[List[int]] = None,
+    n_jobs: int = os.cpu_count() or 1,
+    use_cuda: bool = True,
+    save_path: Optional[str] = None,
+    scaler_y: Optional[Any] = None,
+) -> Dict[str, Any]:
+    """
+    Run a hyperparameter sweep for MultKAN (sequential execution; no parallel computing).
+
+    Parameters:
+    - X_train, y_train, X_val, y_val, (optional X_test, y_test): numpy arrays
+    - param_grid: dict of parameter lists to combine. Recognized keys include
+        width, grid, k, mult_arity, steps, lamb, lr, etc. Keys not used by the model constructor are
+        passed to fit().
+    - seeds: list of seeds per trial combination; if None, uses [0].
+    - n_jobs: number of worker processes (ignored; kept for backward compatibility).
+    - use_cuda: if True and CUDA available, use cuda:0; otherwise CPU.
+    - save_path: if provided, progress will be saved after each trial. If the path
+      ends with .xlsx or .xls, results are written to an Excel workbook with sheets
+      [results, best, progress, last_result]; otherwise a JSON snapshot is written.
+
+    Returns a dict with keys: results (list of TrialResult dicts), best (best TrialResult dict).
+
+    Notes:
+    - To mimic the notebook behavior, you can include pruning in param_grid by setting
+      'prune': [True] (or 'pruning': [True]), and optionally thresholds 'prune_node_th' and 'prune_edge_th'.
+      If you set 'prune' or 'pruning' to False, the pruning step will be skipped. By default, pruning is disabled (False).
+    - If you pass a fitted scaler_y (e.g., sklearn.preprocessing.MinMaxScaler used on y),
+      metrics will be computed on the inverse-transformed (original) scale to match the notebook.
+    """
+    if param_grid is None:
+        param_grid = {
+            'width': [[X_train.shape[1], 8, 1]],
+            'grid': [3],
+            'k': [3],
+            'mult_arity': [2],
+            'steps': [50],
+            'opt': ['LBFGS'],
+            'lr': [1.0],
+            'lamb': [0.0],
+            'update_grid': [True],
+            'prune': [False],
+        }
+    seeds = seeds or [0]
+
+    combos = _expand_param_grid(param_grid)
+
+    # Choose a single device for all runs
+    if use_cuda and torch.cuda.is_available():
+        device_choice = 'cuda:0'
+    else:
+        device_choice = 'cpu'
+
+    tasks = []
+    for ci, combo in enumerate(combos):
+        for si, seed in enumerate(seeds):
+            dev = device_choice
+            tasks.append((X_train, y_train, X_val, y_val, X_test, y_test, combo, seed, dev, scaler_y))
+
+    results: List[TrialResult] = []
+
+    # Determine a single autosave path for this run (updated after each trial)
+    if save_path is None or not str(save_path).strip():
+        import datetime
+        default_autosave_path = os.path.join(os.getcwd(), f"multkan_sweep_autosave_{datetime.datetime.now().strftime('%Y%m%d_%H%M%S')}.xlsx")
+    else:
+        default_autosave_path = save_path
+
+    # Sequential execution (parallel computing removed)
+    total = len(tasks)
+    for idx, t in enumerate(tasks, start=1):
+        combo_params = t[6]
+        seed_val = t[7]
+        prune_msg = ''
+        # respect either 'prune' or 'pruning' flags (bool or string)
+        def _want_prune_log(p: Dict[str, Any]) -> bool:
+            val = p.get('prune', None)
+            if val is None:
+                val = p.get('pruning', False)
+            if isinstance(val, str):
+                v = val.strip().lower()
+                return v in ('1','true','yes','y','t')
+            return bool(val)
+        if _want_prune_log(combo_params):
+            prune_msg = f", prune=True(node_th={combo_params.get('prune_node_th', 1e-2)}, edge_th={combo_params.get('prune_edge_th', 3e-2)})"
+        print(f"[MultKAN Sweep] Training model {idx}/{total} (seed={seed_val}, params={ {k: combo_params[k] for k in combo_params if k in ['width','grid','k','mult_arity','steps','lamb','lr','update_grid','opt']} }{prune_msg})")
+        try:
+            res: TrialResult = _run_single_trial(t)
+            results.append(res)
+            last_result_for_save: Any = res
+        except Exception as e:
+            import traceback, datetime
+            err_info = {
+                'params': combo_params,
+                'val_loss': None,
+                'train_loss': None,
+                'test_loss': None,
+                'r2_train': None,
+                'r2_val': None,
+                'r2_test': None,
+                'seed': seed_val,
+                'device': t[8],
+                'error': str(e),
+                'traceback': traceback.format_exc(),
+                'failed_at_index': idx,
+                'failed_at_total': total,
+                'timestamp': datetime.datetime.now().isoformat(timespec='seconds')
+            }
+            print(f"[MultKAN Sweep] Error on model {idx}/{total}: {e}")
+            # Record the failure as a result row and continue
+            results.append(err_info)
+            last_result_for_save = err_info
+        # After each trial (success or failure), attempt to save progress mandatorily
+        try:
+            # Use the precomputed autosave path and update the same file each time
+            autosave_path = default_autosave_path
+            # Ensure parent directory exists
+            parent_dir = os.path.dirname(autosave_path)
+            if parent_dir and not os.path.exists(parent_dir):
+                os.makedirs(parent_dir, exist_ok=True)
+            # Compute best-so-far among successful trials using highest r2_val
+            def _get_r2_val(r):
+                try:
+                    return r.r2_val if hasattr(r, 'r2_val') else r.get('r2_val')
+                except Exception:
+                    return None
+            def _is_success(r):
+                rv = _get_r2_val(r)
+                if rv is None:
+                    return False
+                try:
+                    from math import isnan
+                    return not isnan(rv)
+                except Exception:
+                    return True
+            successful = [r for r in results if _is_success(r)]
+            if successful:
+                best_so_far = max(successful, key=lambda r: (getattr(r, 'r2_val', None) if hasattr(r, 'r2_val') else r.get('r2_val')))
+            else:
+                best_so_far = None
+            progress = {'completed': idx, 'total': total}
+            # Prefer Excel; if autosave_path ends with .xlsx or .xls, save Excel; else JSON
+            if autosave_path.lower().endswith(('.xlsx', '.xls')):
+                _save_excel(autosave_path, results, best_so_far[0] if best_so_far == [] else (best_so_far if best_so_far else {}), progress, last_result_for_save)
+            else:
+                # Convert TrialResult objects to dicts where necessary
+                def _asdict_any(r):
+                    try:
+                        return asdict(r)
+                    except Exception:
+                        return dict(r)
+                out_so_far = {
+                    'results': [_asdict_any(r) for r in results],
+                    'best': (_asdict_any(best_so_far) if best_so_far else None),
+                    'progress': progress,
+                    'last_result': _asdict_any(last_result_for_save),
+                }
+                with open(autosave_path, 'w') as f:
+                    json.dump(out_so_far, f, indent=2)
+            print(f"[MultKAN Sweep] Saved progress {idx}/{total} to {autosave_path}")
+        except Exception as e2:
+            print(f"[MultKAN Sweep] Warning: failed to save progress: {e2}")
+
+    # Choose the best by val_loss among successful trials
+    def _asdict_any(r):
+        try:
+            return asdict(r)
+        except Exception:
+            return dict(r)
+    def _r2_val_of(r):
+        try:
+            return r.r2_val
+        except Exception:
+            return r.get('r2_val')
+    def _is_valid_r2(v):
+        if v is None:
+            return False
+        try:
+            from math import isnan
+            return not isnan(v)
+        except Exception:
+            return True
+    successful = [r for r in results if _is_valid_r2(_r2_val_of(r))]
+    if successful:
+        # Pick max by r2_val
+        best = max(successful, key=_r2_val_of)
+        best_out = _asdict_any(best)
+    else:
+        best_out = None
+    out = {
+        'results': [_asdict_any(r) for r in results],
+        'best': best_out,
+    }
+    return out
+
+
+def _make_toy_dataset(n=200, noise=0.0, seed=0):
+    from sklearn.model_selection import train_test_split
+    from sklearn.preprocessing import MinMaxScaler
+    _seed_everything(seed)
+    x1 = np.linspace(-np.pi, np.pi, int(np.cbrt(n)))
+    x2 = np.linspace(-1, 1, int(np.cbrt(n)))
+    x3 = np.linspace(-1, 1, int(np.cbrt(n)))
+    x1, x2, x3 = np.meshgrid(x1, x2, x3)
+    y = 5 * np.exp(-x1) + 3 * x2 - x3 + noise * np.random.randn(*x1.shape)
+    X = np.stack((x1.flatten(), x2.flatten(), x3.flatten()), axis=1)
+    y = y.flatten().reshape(-1, 1)
+
+    X_temp, X_test, y_temp, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+    X_train, X_val, y_train, y_val = train_test_split(X_temp, y_temp, test_size=0.2, random_state=42)
+
+    sx, sy = MinMaxScaler((0.1, 0.9)), MinMaxScaler((0.1, 0.9))
+    X_train = sx.fit_transform(X_train); X_val = sx.transform(X_val); X_test = sx.transform(X_test)
+    y_train = sy.fit_transform(y_train); y_val = sy.transform(y_val); y_test = sy.transform(y_test)
+    return X_train, y_train, X_val, y_val, X_test, y_test
+
+
+def main():
+    import argparse
+    parser = argparse.ArgumentParser(description='Hyperparameter sweep for MultKAN (sequential)')
+    # Keep --n_jobs for backward compatibility but ignore it
+    parser.add_argument('--n_jobs', type=int, default=1, help='Ignored (sequential execution)')
+    parser.add_argument('--no_cuda', action='store_true', help='Disable CUDA even if available')
+    parser.add_argument('--out', type=str, default='./multkan_sweep_results.json')
+    parser.add_argument('--seed', type=int, default=0)
+    args = parser.parse_args()
+
+    X_train, y_train, X_val, y_val, X_test, y_test = _make_toy_dataset(seed=args.seed)
+
+    param_grid = {
+        'width': [[X_train.shape[1], 6, 1], [X_train.shape[1], 10, 1]],
+        'grid': [3, 5],
+        'k': [3],
+        'mult_arity': [2, 3],
+        'steps': [40, 60],
+        'opt': ['LBFGS'],
+        'lr': [1.0],
+        'lamb': [0.0, 0.01],
+        'update_grid': [True],
+    }
+
+    out = sweep_multkan(
+        X_train, y_train, X_val, y_val, X_test, y_test,
+        param_grid=param_grid,
+        seeds=[0, 1],
+        n_jobs=args.n_jobs,
+        use_cuda=not args.no_cuda,
+        save_path=args.out,
+    )
+
+    # Final save (overwrites with the complete results)
+    try:
+        if args.out.lower().endswith(('.xlsx', '.xls')):
+            all_results = out['results']
+            progress = {'completed': len(all_results), 'total': len(all_results)}
+            results_objs = [TrialResult(**r) if isinstance(r, dict) else r for r in all_results]
+            _save_excel(args.out, results_objs, out['best'], progress, all_results[-1])
+        else:
+            with open(args.out, 'w') as f:
+                json.dump(out, f, indent=2)
+    except Exception as e:
+        print(f"[MultKAN Sweep] Warning: failed to write final output to {args.out}: {e}")
+
+    # Pretty print best
+    best = out['best']
+    print('Best configuration:')
+    print(json.dumps(best, indent=2))
+
+
+if __name__ == '__main__':
+    main()
