@@ -73,18 +73,17 @@ y = df_out_final[name_y].values.reshape(-1, 1)
 out = sweep_multkan(
       X_train_norm, y_train_norm, X_val_norm, y_val_norm, X_test_norm, y_test_norm,
       param_grid={
-          # 'width': [[X_train.shape[1], 12, 1]],
-          'width': [[X_train.shape[1], 8, 1], [X_train.shape[1], 16, 1]],
+          'width': [[X_train.shape[1], 8, 1]],
           'grid': [30],
-          'mult_arity': [0],
+          'mult_arity': [2, 3, 4, 5, 6],
           'lr': [1.0],
           'update_grid': [True],
-          'lamb': [1e-3, 0.01, 0.1],
-          'lamb_coef': [1e-3, 0.1],
-          'lamb_coefdiff': [1e-3, 0.1],
-          'lamb_entropy': [0.01, 1., 5.],
+          'lamb': [1e-3],
+          'lamb_coef': [0.1],
+          'lamb_coefdiff': [0.1],
+          'lamb_entropy': [0.01],
           'prune': [True],
-          'pruning_th': [1e-3, 1e-2, 0.1],
+          'pruning_th': [1e-2],
       },
       seeds=[0],      # run each config with multiple seeds
       n_jobs=1,          # number of parallel worker processes

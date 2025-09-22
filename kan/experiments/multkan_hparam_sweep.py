@@ -63,7 +63,7 @@ def _evaluate(model: MultKAN, dataset: Dict[str, torch.Tensor], scaler_y: Option
     y_true and y_pred are inverse-transformed back to the original scale before computing metrics.
     """
     with torch.no_grad():
-        def mse_and_r2(xk: torch.Tensor, yk: torch.Tensor) -> Tuple[float, Optional[float]]:
+        def mae_and_r2(xk: torch.Tensor, yk: torch.Tensor) -> Tuple[float, Optional[float]]:
             yhat = model(xk)
             y_true = yk.detach().cpu().numpy()
             y_pred = yhat.detach().cpu().numpy()
@@ -74,20 +74,20 @@ def _evaluate(model: MultKAN, dataset: Dict[str, torch.Tensor], scaler_y: Option
                     y_pred = scaler_y.inverse_transform(y_pred)
                 except Exception:
                     pass
-            # mean squared error (scalar)
-            mse = mean_squared_error(y_true, y_pred)
+            # mean absolue error (scalar)
+            mae = np.mean(np.abs(y_true - y_pred))
             # r2_score may raise warnings/errors for constant targets in some versions; guard defensively
             try:
                 r2 = r2_score(y_true, y_pred)
             except Exception:
                 r2 = float('nan')
-            return float(mse), r2
-        train_loss, r2_train = mse_and_r2(dataset['train_input'], dataset['train_label'])
-        val_loss, r2_val = mse_and_r2(dataset['val_input'], dataset['val_label'])
-        test_loss, r2_test = None, None
+            return float(mae), r2
+        mae_train, r2_train = mae_and_r2(dataset['train_input'], dataset['train_label'])
+        mae_val, r2_val = mae_and_r2(dataset['val_input'], dataset['val_label'])
+        mae_test, r2_test = None, None
         if 'test_input' in dataset and 'test_label' in dataset:
-            test_loss, r2_test = mse_and_r2(dataset['test_input'], dataset['test_label'])
-    return train_loss, val_loss, test_loss, r2_train, r2_val, r2_test
+            mae_test, r2_test = mae_and_r2(dataset['test_input'], dataset['test_label'])
+    return mae_train, mae_val, mae_test, r2_train, r2_val, r2_test
 
 
 def _run_single_trial(args) -> TrialResult:
@@ -134,21 +134,21 @@ def _run_single_trial(args) -> TrialResult:
 
     if _want_prune(params):
         # Unified pruning threshold handling: if 'pruning_th' is provided, use it for both node_th and edge_th
-        pruning_th = params.get('pruning_th', None)
-        node_th = params.get('prune_node_th', pruning_th if pruning_th is not None else 1e-2)
-        edge_th = params.get('prune_edge_th', pruning_th if pruning_th is not None else 3e-2)
+        pruning_th = params.get('pruning_th', 1e-2)
+        node_th = params.get('prune_node_th', pruning_th)
+        edge_th = params.get('prune_edge_th', pruning_th)
         try:
             model = model.prune(node_th=node_th, edge_th=edge_th)
         except Exception as _:
             pass
 
-    train_loss, val_loss, test_loss, r2_train, r2_val, r2_test = _evaluate(model, dataset, scaler_y=scaler_y)
+    mae_train, mae_val, mae_test, r2_train, r2_val, r2_test = _evaluate(model, dataset, scaler_y=scaler_y)
 
     return TrialResult(
         params=params,
-        val_loss=val_loss,
-        train_loss=train_loss,
-        test_loss=test_loss,
+        val_loss=mae_val,
+        train_loss=mae_train,
+        test_loss=mae_test,
         r2_train=r2_train,
         r2_val=r2_val,
         r2_test=r2_test,
@@ -259,7 +259,7 @@ def sweep_multkan(
     seeds: Optional[List[int]] = None,
     n_jobs: int = os.cpu_count() or 1,
     use_cuda: bool = True,
-    save_path: Optional[str] = None,
+    save_tag: Optional[str] = None,
     scaler_y: Optional[Any] = None,
 ) -> Dict[str, Any]:
     """
@@ -319,11 +319,10 @@ def sweep_multkan(
     results: List[TrialResult] = []
 
     # Determine a single autosave path for this run (updated after each trial)
-    if save_path is None or not str(save_path).strip():
+    if save_tag is None or not str(save_tag).strip():
         import datetime
-        default_autosave_path = os.path.join(os.getcwd(), f"multkan_sweep_autosave_{datetime.datetime.now().strftime('%Y%m%d_%H%M%S')}.xlsx")
-    else:
-        default_autosave_path = save_path
+        save_tag = f"{datetime.datetime.now().strftime('%Y%m%d_%H%M%S')}_auto"
+    default_autosave_path = os.path.join(os.getcwd(), "multkan_sweep_autosave", f"{save_tag}.xlsx")
 
     # Sequential execution (parallel computing removed)
     total = len(tasks)
