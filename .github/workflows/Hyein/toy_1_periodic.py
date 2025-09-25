@@ -9,13 +9,16 @@ from kan.custom import MultKAN
 from kan.custom_utils import remove_outliers_iqr, evaluate_model_performance, plot_activation_functions
 import datetime
 save_tag = 'toy' + datetime.datetime.now().strftime('%Y%m%d_%H%M%S')
+# Running on the console
 save_dir = os.path.join(os.getcwd(), '.github', 'workflows', 'Hyein', 'custom_figures')
+# Running the file
+# save_dir = os.path.join(os.getcwd(), 'custom_figures')
 
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 print(f"This script is running on {device}.")
 
 x1_grid = np.linspace(-np.pi, np.pi, 30)
-x2_grid = np.linspace(-0.5, 1, 30)
+x2_grid = np.linspace(-1, 1, 30)
 x3_grid = np.linspace(-1, 1, 10)
 # x1, x2, x3 = np.meshgrid(x1_grid, x2_grid, x3_grid)
 # X = np.stack((x1.flatten(), x2.flatten(), x3.flatten()), axis=1)
@@ -25,7 +28,7 @@ x3_grid = np.linspace(-1, 1, 10)
 x1, x2= np.meshgrid(x1_grid, x2_grid)
 X = np.stack((x1.flatten(), x2.flatten()), axis=1)
 # y = 10 * np.abs(x1) + 5*x2**2
-y = np.sin(2*x1) + 5 * x2
+y = 5 * np.sin(2*x1) + x2
 
 y = y.flatten().reshape(-1, 1)
 X_temp, X_test, y_temp, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
@@ -74,7 +77,7 @@ for idx_x in range(nx):
 plt.savefig(os.path.join(save_dir, f"{save_tag}_data.png"))
 plt.show()
 #%%
-model = MultKAN(width=[nx, 6, 1], mult_arity=0, grid=10, k=3, seed=0, device=device)
+model = MultKAN(width=[nx, 6, 1], mult_arity=0, grid_range=[0.1, 0.9], grid=10, k=3, seed=0, device=device)
 num_params = sum(p.numel() for p in model.parameters() if p.requires_grad)
 print(f"학습가능 파라미터 수: {num_params:,}")
 
@@ -86,6 +89,7 @@ for name, p in model.named_parameters():
 model.fit(dataset, opt="LBFGS", steps=50, lamb=0.001, lamb_coef=5, lamb_entropy=5)
 model.plot()
 plt.show()
+# val_pred, val_actual, val_metrics = evaluate_model_performance(model, dataset, scaler_y, display=True)
 
 #%
 model = model.prune(node_th=1e-2, edge_th=3e-2)  # 더 자르고 싶으면 값을 높이고, 덜 자르고 변수를 많이 있게 하고 싶으면 값을 낮추기
@@ -93,18 +97,27 @@ model.plot()
 plt.show()
 
 from kan.utils import ex_round
-# lib = ['x', 'x^2', 'tanh', 'sin', '1/x', '1/x^2']
-lib = ['x', 'x^2', 'x^3', 'x^4', 'exp', 'log', 'sqrt', 'tanh', 'sin', '1/x', '1/x^2']
-model.auto_symbolic(lib=lib)
+lib = ['sin', 'cos']
+# lib = ['sin', 'cos', 'x', 'x^2', 'x^3', 'x^4', 'exp', 'log', 'sqrt', 'tanh', '1/x', '1/x^2']
+# model.auto_symbolic(lib=lib)
+# # model.plot()
+#
+# model.fit(dataset, opt="LBFGS", steps=50)
 # model.plot()
+# plt.show()
+# formula = ex_round(model.symbolic_formula()[0][0], 4)
+# print("formula=", formula)
+# print(model.node_scores)
 
-model.fit(dataset, opt="LBFGS", steps=50)
-model.plot()
-plt.show()
-formula = ex_round(model.symbolic_formula()[0][0], 4)
-print("formula=", formula)
-print(model.node_scores)
+#%% Test if calling forward function varies the node scores: True!
+# it doesn't work for symbolified functions because it generates linear function nodes
+test1 = torch.tensor([[0.9, 0.9], [0.8, 0.8], [0.8, 0.9]], dtype=torch.float32, device=device)
+out_test1 = model.forward(test1)
+score_test1 = model.node_scores
 
+test2 = torch.tensor([[0.1, 0.1], [0.1, 0.2], [0.2, 0.2]], dtype=torch.float32, device=device)
+out_test2 = model.forward(test2)
+score_test2 = model.node_scores
 #%%
 val_pred, val_actual, val_metrics = evaluate_model_performance(model, dataset, scaler_y, display=True)
 # test_pred, test_actual, test_metrics = evaluate_model_performance(model, dataset, scaler_y, "test")
