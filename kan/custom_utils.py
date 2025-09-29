@@ -327,7 +327,8 @@ def plot_activation_functions(model, x=None, layers=None, save_tag=None, show=Tr
         axs[-1, -1].text(0.99, 0.01, f'Layer {l}', transform=axs[-1, -1].transAxes,
                          ha='right', va='bottom', fontsize=9, bbox=dict(facecolor='white', alpha=0.6, edgecolor='none'))
         if save_tag is not None:
-            save_dir = os.path.join(os.getcwd(), '.github', 'workflows', 'Hyein', 'custom_figures')
+            save_dir = "D:\pykan\.github\workflows\Hyein\custom_figures"
+            # save_dir = os.path.join(os.getcwd(), '.github', 'workflows', 'Hyein', 'custom_figures')
             plt.savefig(os.path.join(save_dir, f'{save_tag}_activation_L{l}.png'))
         if show:
             plt.show()
@@ -351,7 +352,8 @@ def plot_spline_coefficients(model, save_tag=None, show=True):
                 ax.set_title(f'In {idx_in} -- Out {idx_out}', fontsize=10)
         axs[-1, -1].legend(loc='upper left', bbox_to_anchor=(1, 1), fontsize=8, title=f'Layer {layer}')
         if save_tag is not None:
-            save_dir = os.path.join(os.getcwd(), '.github', 'workflows', 'Hyein', 'custom_figures')
+            save_dir = "D:\pykan\.github\workflows\Hyein\custom_figures"
+            # save_dir = os.path.join(os.getcwd(), '.github', 'workflows', 'Hyein', 'custom_figures')
             plt.savefig(os.path.join(save_dir, f'{save_tag}_spline_coef_L{layer}.png'))
         if show:
             plt.show()

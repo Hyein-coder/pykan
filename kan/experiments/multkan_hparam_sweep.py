@@ -7,6 +7,7 @@ from typing import Dict, Any, List, Tuple, Optional
 import numpy as np
 import torch
 import pandas as pd
+import matplotlib.pyplot as plt
 
 # Custom MultKAN written by Dr. DDP import path within this repository
 from kan.custom import MultKAN
@@ -81,6 +82,12 @@ def _evaluate(model: MultKAN, dataset: Dict[str, torch.Tensor], scaler_y: Option
                 r2 = r2_score(y_true, y_pred)
             except Exception:
                 r2 = float('nan')
+
+            # fig, ax = plt.subplots(1, 1, figsize=(10, 10))
+            # plt.scatter(y_true, y_pred, color='k')
+            # plt.scatter(y_true, y_true, color='red')
+            # plt.show()
+
             return float(mae), r2
         mae_train, r2_train = mae_and_r2(dataset['train_input'], dataset['train_label'])
         mae_val, r2_val = mae_and_r2(dataset['val_input'], dataset['val_label'])
@@ -132,6 +139,15 @@ def _run_single_trial(args) -> TrialResult:
             return v in ('1', 'true', 'yes', 'y', 't')
         return bool(val)
 
+    def _want_symbolic(p: Dict[str, Any]) -> bool:
+        val = p.get('symbolic', False)
+        # if val is None:
+        #     val = p.get('symbolic', False)
+        if isinstance(val, str):
+            v = val.strip().lower()
+            return v in ('1', 'true', 'yes', 'y', 't')
+        return bool(val)
+
     if _want_prune(params):
         # Unified pruning threshold handling: if 'pruning_th' is provided, use it for both node_th and edge_th
         pruning_th = params.get('pruning_th', 1e-2)
@@ -140,6 +156,21 @@ def _run_single_trial(args) -> TrialResult:
         try:
             model = model.prune(node_th=node_th, edge_th=edge_th)
         except Exception as _:
+            pass
+
+    symbolic_penalty = 0
+    if _want_symbolic(params):
+        lib = ['sin', 'cos', 'x', 'x^2', 'x^3', 'x^4', 'exp', 'log', 'sqrt', 'tanh', '1/x', '1/x^2']
+        sym_weight_simple = params.get('sym_weight_simple', 0.8)
+        sym_r2_threshold = params.get('sym_r2_threshold', 0.)
+        try:
+            model.auto_symbolic(lib=lib, weight_simple=sym_weight_simple, r2_threshold=sym_r2_threshold)
+            model.fit(dataset, **fit_kwargs)
+            model.plot()
+            plt.show()
+
+        except Exception as e:
+            print(e)
             pass
 
     mae_train, mae_val, mae_test, r2_train, r2_val, r2_test = _evaluate(model, dataset, scaler_y=scaler_y)
@@ -322,7 +353,9 @@ def sweep_multkan(
     if save_tag is None or not str(save_tag).strip():
         import datetime
         save_tag = f"{datetime.datetime.now().strftime('%Y%m%d_%H%M%S')}_auto"
-    default_autosave_path = os.path.join(os.getcwd(), "multkan_sweep_autosave", f"{save_tag}.xlsx")
+    default_autosave_dir = "D:\pykan\.github\workflows\Hyein\multkan_sweep_autosave"
+    default_autosave_path = os.path.join(default_autosave_dir, f"{save_tag}.xlsx")
+    # default_autosave_path = os.path.join(os.getcwd(), "multkan_sweep_autosave", f"{save_tag}.xlsx")
 
     # Sequential execution (parallel computing removed)
     total = len(tasks)

@@ -69,11 +69,13 @@ out = sweep_multkan(
           'lr': [1.0],
           'update_grid': [True],
           'lamb': [0.001],
-          'lamb_coef': [5, 10, 50, 100],
+          'lamb_coef': [5],
           'lamb_entropy': [5.],
           'prune': [True],
           'pruning_node_th': [0.01],
           'pruning_edge_th': [3e-2],
+          'symbolic': [True],
+          'sym_weight_simple': [0.8],
       },
       seeds=[0],      # run each config with multiple seeds
       n_jobs=1,          # number of parallel worker processes

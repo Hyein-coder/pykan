@@ -2,33 +2,41 @@ import pandas as pd
 import numpy as np
 import torch
 import os
+
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import MinMaxScaler
-from kan import KAN
+
 from kan.custom import MultKAN
+from sklearn.metrics import mean_squared_error, r2_score
 from kan.custom_utils import remove_outliers_iqr, evaluate_model_performance, plot_activation_functions
 import datetime
+from kan.experiments.multkan_hparam_sweep import _seed_everything
+seed = 0
+
 save_tag = 'toy' + datetime.datetime.now().strftime('%Y%m%d_%H%M%S')
 # Running on the console
-save_dir = os.path.join(os.getcwd(), '.github', 'workflows', 'Hyein', 'custom_figures')
+# save_dir = os.path.join(os.getcwd(), '.github', 'workflows', 'Hyein', 'custom_figures')
 # Running the file
-# save_dir = os.path.join(os.getcwd(), 'custom_figures')
+save_dir = "D:\pykan\.github\workflows\Hyein\custom_figures"
 
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 print(f"This script is running on {device}.")
+_seed_everything(seed=0)
 
 x1_grid = np.linspace(-np.pi, np.pi, 30)
 x2_grid = np.linspace(-1, 1, 30)
-x3_grid = np.linspace(-1, 1, 10)
+x1, x2= np.meshgrid(x1_grid, x2_grid)
+X = np.stack((x1.flatten(), x2.flatten()), axis=1)
+# y = 10 * np.abs(x1) + 5*x2**2
+y = 5 * np.sin(2*x1) + x2
+
+
+# x3_grid = np.linspace(-1, 1, 10)
 # x1, x2, x3 = np.meshgrid(x1_grid, x2_grid, x3_grid)
 # X = np.stack((x1.flatten(), x2.flatten(), x3.flatten()), axis=1)
 # y = np.exp(-x1) + x2 - x3**2
 # y = 5 * np.exp(np.sin(x1)) + 3 * x2 - x3
 
-x1, x2= np.meshgrid(x1_grid, x2_grid)
-X = np.stack((x1.flatten(), x2.flatten()), axis=1)
-# y = 10 * np.abs(x1) + 5*x2**2
-y = 5 * np.sin(2*x1) + x2
 
 y = y.flatten().reshape(-1, 1)
 X_temp, X_test, y_temp, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
@@ -63,6 +71,44 @@ dataset = {'train_input': X_train_tensor,'train_label': y_train_tensor,
 for key, value in dataset.items():
     print(f"{key}: {value.shape}")
 
+params_optimal = {
+    'width': [X_train.shape[1], 6, 1],
+    'grid': 10,
+    'k': 3,
+    'mult_arity': 0,
+    'steps': 50,  # 200
+    'opt': 'LBFGS',
+    'lr': 1.0,
+    'update_grid': True,
+    'lamb': 0.001,
+    'lamb_coef': 5,
+    'lamb_entropy': 5.,
+    'prune': True,
+    'pruning_node_th': 0.01,
+    'pruning_edge_th': 3e-2,
+    'symbolic': True,
+    'sym_weight_simple': 0.8,
+    'sym_r2_threshold': 0.,
+}
+params_background = {
+    'opt': 'LBFGS',
+    'steps': 50,
+    'lamb': 0.0,
+    'lamb_l1': 1.0,
+    'lamb_entropy': 2.0,
+    'lamb_coef': 0.0,
+    'lamb_coefdiff': 0.0,
+    'update_grid': True,
+    'lr': 1.0,
+    'batch': -1,
+    'log': 1,
+    'prune_node_th': 1e-2,
+    'prune_edge_th': 3e-2,
+}
+
+for key, value in params_background.items():
+    params_optimal.setdefault(key, value)
+
 #
 import matplotlib.pyplot as plt
 
@@ -77,47 +123,48 @@ for idx_x in range(nx):
 plt.savefig(os.path.join(save_dir, f"{save_tag}_data.png"))
 plt.show()
 #%%
-model = MultKAN(width=[nx, 6, 1], mult_arity=0, grid_range=[0.1, 0.9], grid=10, k=3, seed=0, device=device)
-num_params = sum(p.numel() for p in model.parameters() if p.requires_grad)
-print(f"학습가능 파라미터 수: {num_params:,}")
+model_kwargs = {k: params_optimal[k] for k in ['width', 'grid', 'k', 'mult_arity', 'seed', 'device'] if k in params_optimal}
 
-for name, p in model.named_parameters():
-    if p.requires_grad:
-        print(f"{name:40s} {p.shape} {p.numel():5d}")
+model = MultKAN(**model_kwargs)
+
+fit_kyewords = [
+    'opt', 'steps', 'lamb', 'lamb_l1', 'lamb_entropy', 'lamb_coef', 'lamb_coefdiff', 'update_grid', 'lr', 'batch', 'log',
+]
+fit_kwargs = {key: params_optimal[key] for key in fit_kyewords}
 
 # KAN 학습
-model.fit(dataset, opt="LBFGS", steps=50, lamb=0.001, lamb_coef=5, lamb_entropy=5)
+model.fit(dataset, **fit_kwargs)
 model.plot()
 plt.show()
 # val_pred, val_actual, val_metrics = evaluate_model_performance(model, dataset, scaler_y, display=True)
 
-#%
-model = model.prune(node_th=1e-2, edge_th=3e-2)  # 더 자르고 싶으면 값을 높이고, 덜 자르고 변수를 많이 있게 하고 싶으면 값을 낮추기
-model.plot()
-plt.show()
+if params_optimal['prune']:
+    # Unified pruning threshold handling: if 'pruning_th' is provided, use it for both node_th and edge_th
+    node_th = params_optimal['pruning_node_th']
+    edge_th = params_optimal['pruning_edge_th']
+    model = model.prune(node_th=node_th, edge_th=edge_th)
+    model.plot()
+    plt.show()
 
-from kan.utils import ex_round
-lib = ['sin', 'cos']
-# lib = ['sin', 'cos', 'x', 'x^2', 'x^3', 'x^4', 'exp', 'log', 'sqrt', 'tanh', '1/x', '1/x^2']
-# model.auto_symbolic(lib=lib)
-# # model.plot()
-#
-# model.fit(dataset, opt="LBFGS", steps=50)
-# model.plot()
-# plt.show()
-# formula = ex_round(model.symbolic_formula()[0][0], 4)
-# print("formula=", formula)
-# print(model.node_scores)
+if params_optimal['symbolic']:
+    lib = ['sin', 'cos', 'x', 'x^2', 'x^3', 'x^4', 'exp', 'log', 'sqrt', 'tanh', '1/x', '1/x^2']
+    sym_weight_simple = params_optimal['sym_weight_simple']
+    sym_r2_threshold = params_optimal['sym_r2_threshold']
+    model.auto_symbolic(lib=lib, weight_simple=sym_weight_simple, r2_threshold=sym_r2_threshold)
+    model.fit(dataset, **fit_kwargs)
+    model.plot()
+    plt.show()
+
 
 #%% Test if calling forward function varies the node scores: True!
 # it doesn't work for symbolified functions because it generates linear function nodes
-test1 = torch.tensor([[0.9, 0.9], [0.8, 0.8], [0.8, 0.9]], dtype=torch.float32, device=device)
-out_test1 = model.forward(test1)
-score_test1 = model.node_scores
-
-test2 = torch.tensor([[0.1, 0.1], [0.1, 0.2], [0.2, 0.2]], dtype=torch.float32, device=device)
-out_test2 = model.forward(test2)
-score_test2 = model.node_scores
+# test1 = torch.tensor([[0.9, 0.9], [0.8, 0.8], [0.8, 0.9]], dtype=torch.float32, device=device)
+# out_test1 = model.forward(test1)
+# score_test1 = model.node_scores
+#
+# test2 = torch.tensor([[0.1, 0.1], [0.1, 0.2], [0.2, 0.2]], dtype=torch.float32, device=device)
+# out_test2 = model.forward(test2)
+# score_test2 = model.node_scores
 #%%
 val_pred, val_actual, val_metrics = evaluate_model_performance(model, dataset, scaler_y, display=True)
 # test_pred, test_actual, test_metrics = evaluate_model_performance(model, dataset, scaler_y, "test")
