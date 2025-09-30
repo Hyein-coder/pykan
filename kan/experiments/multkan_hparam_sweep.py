@@ -57,48 +57,52 @@ def _build_dataset(X_train, y_train, X_val, y_val, X_test=None, y_test=None, dev
     return dataset
 
 
-def _evaluate(model: MultKAN, dataset: Dict[str, torch.Tensor], scaler_y: Optional[Any] = None) -> Tuple[float, float, Optional[float], Optional[float], Optional[float], Optional[float]]:
+def mae_and_r2(model: MultKAN, xk: torch.Tensor, yk: torch.Tensor, scaler_y: Optional[Any] = None)\
+        -> Tuple[torch.Tensor, torch.Tensor, float, Optional[float]]:
+    yhat = model(xk)
+    y_true = yk.detach().cpu().numpy()
+    y_pred = yhat.detach().cpu().numpy()
+    # Optionally inverse-transform to the original scale
+    if scaler_y is not None:
+        try:
+            y_true = scaler_y.inverse_transform(y_true)
+            y_pred = scaler_y.inverse_transform(y_pred)
+        except Exception:
+            pass
+    # mean absolute error (scalar)
+    mae = np.mean(np.abs(y_true - y_pred))
+    # r2_score may raise warnings/errors for constant targets in some versions; guard defensively
+    try:
+        r2 = r2_score(y_true, y_pred)
+    except Exception:
+        r2 = float('nan')
+
+    # fig, ax = plt.subplots(1, 1, figsize=(10, 10))
+    # plt.scatter(y_true, y_pred, color='k')
+    # plt.scatter(y_true, y_true, color='red')
+    # plt.show()
+
+    return y_true, y_pred, float(mae), r2
+
+
+def _evaluate(model: MultKAN, dataset: Dict[str, torch.Tensor], scaler_y: Optional[Any] = None) \
+        -> Tuple[float, float, Optional[float], Optional[float], Optional[float], Optional[float]]:
     """Evaluate using sklearn.metrics.mean_squared_error and r2_score on CPU numpy arrays.
 
     If scaler_y is provided (a fitted sklearn-like scaler with inverse_transform),
     y_true and y_pred are inverse-transformed back to the original scale before computing metrics.
     """
     with torch.no_grad():
-        def mae_and_r2(xk: torch.Tensor, yk: torch.Tensor) -> Tuple[float, Optional[float]]:
-            yhat = model(xk)
-            y_true = yk.detach().cpu().numpy()
-            y_pred = yhat.detach().cpu().numpy()
-            # Optionally inverse-transform to original scale
-            if scaler_y is not None:
-                try:
-                    y_true = scaler_y.inverse_transform(y_true)
-                    y_pred = scaler_y.inverse_transform(y_pred)
-                except Exception:
-                    pass
-            # mean absolue error (scalar)
-            mae = np.mean(np.abs(y_true - y_pred))
-            # r2_score may raise warnings/errors for constant targets in some versions; guard defensively
-            try:
-                r2 = r2_score(y_true, y_pred)
-            except Exception:
-                r2 = float('nan')
-
-            # fig, ax = plt.subplots(1, 1, figsize=(10, 10))
-            # plt.scatter(y_true, y_pred, color='k')
-            # plt.scatter(y_true, y_true, color='red')
-            # plt.show()
-
-            return float(mae), r2
-        mae_train, r2_train = mae_and_r2(dataset['train_input'], dataset['train_label'])
-        mae_val, r2_val = mae_and_r2(dataset['val_input'], dataset['val_label'])
+        _, _, mae_train, r2_train = mae_and_r2(model, dataset['train_input'], dataset['train_label'], scaler_y=scaler_y)
+        _, _, mae_val, r2_val = mae_and_r2(model, dataset['val_input'], dataset['val_label'], scaler_y=scaler_y)
         mae_test, r2_test = None, None
         if 'test_input' in dataset and 'test_label' in dataset:
-            mae_test, r2_test = mae_and_r2(dataset['test_input'], dataset['test_label'])
+            _, _, mae_test, r2_test = mae_and_r2(model, dataset['test_input'], dataset['test_label'], scaler_y=scaler_y)
     return mae_train, mae_val, mae_test, r2_train, r2_val, r2_test
 
 
-def _run_single_trial(args) -> TrialResult:
-    X_train, y_train, X_val, y_val, X_test, y_test, params, seed, device_str, scaler_y = args
+def _run_single_trial(args) -> Tuple[TrialResult, MultKAN]:
+    X_train, y_train, X_val, y_val, X_test, y_test, params, device_str, scaler_y, seed = args
     device = torch.device(device_str)
     _seed_everything(seed)
 
@@ -130,10 +134,7 @@ def _run_single_trial(args) -> TrialResult:
 
     # Optional pruning to mimic notebook behavior
     def _want_prune(p: Dict[str, Any]) -> bool:
-        # accept keys 'prune' or 'pruning'; accept bools or common string representations
         val = p.get('prune', None)
-        if val is None:
-            val = p.get('pruning', False)
         if isinstance(val, str):
             v = val.strip().lower()
             return v in ('1', 'true', 'yes', 'y', 't')
@@ -141,8 +142,6 @@ def _run_single_trial(args) -> TrialResult:
 
     def _want_symbolic(p: Dict[str, Any]) -> bool:
         val = p.get('symbolic', False)
-        # if val is None:
-        #     val = p.get('symbolic', False)
         if isinstance(val, str):
             v = val.strip().lower()
             return v in ('1', 'true', 'yes', 'y', 't')
@@ -185,7 +184,7 @@ def _run_single_trial(args) -> TrialResult:
         r2_test=r2_test,
         seed=seed,
         device=str(device)
-    )
+    ), model
 
 
 def _expand_param_grid(param_grid: Dict[str, List[Any]]) -> List[Dict[str, Any]]:
@@ -238,12 +237,13 @@ def _results_to_dataframe(results: List[Any]) -> pd.DataFrame:
 
 essential_best_cols = ['train_loss', 'val_loss', 'test_loss', 'r2_train', 'r2_val', 'r2_test', 'seed', 'device']
 
-def _save_excel(excel_path: str, results: List[Any], best: Any, progress: Dict[str, Any], last_result: Any):
-    # Ensure parent directory exists
-    parent_dir = os.path.dirname(excel_path)
-    if parent_dir and not os.path.exists(parent_dir):
-        os.makedirs(parent_dir, exist_ok=True)
+
+def _save_excel_single(excel_path: str, results: List[Any], best: Any, progress: Dict[str, Any], last_result: Any):
+    if not excel_path.lower().endswith(('.xlsx', '.xls')):
+        excel_path = excel_path + '.xls'
+
     df_results = _results_to_dataframe(results)
+
     # Prepare best/progress/last_result sheets
     if hasattr(best, '__dict__') and isinstance(best, TrialResult):
         best_dict = asdict(best)
@@ -272,11 +272,89 @@ def _save_excel(excel_path: str, results: List[Any], best: Any, progress: Dict[s
             last_dict = dict(last_result)
     df_last = pd.DataFrame([_trial_to_row(last_dict)])
 
-    with pd.ExcelWriter(excel_path) as writer:
+    if os.path.exists(excel_path):
+        writer_options = dict(mode='a', engine='openpyxl', if_sheet_exists='replace')
+    else:
+        writer_options = {}
+    with pd.ExcelWriter(excel_path, **writer_options) as writer:
         df_results.to_excel(writer, index=False, sheet_name='results')
         df_best.to_excel(writer, index=False, sheet_name='best')
         df_progress.to_excel(writer, index=False, sheet_name='progress')
         df_last.to_excel(writer, index=False, sheet_name='last_result')
+
+
+def _aggregate_by_params(results: List[Any]):
+    df_tmp = _results_to_dataframe(results)
+    metric_cols = [c for c in ['train_loss', 'val_loss', 'test_loss', 'r2_train', 'r2_val', 'r2_test'] if
+                   c in df_tmp.columns]
+    param_cols = [c for c in df_tmp.columns if c.startswith('param_')]
+    if param_cols:
+        gdf = df_tmp[param_cols + metric_cols]
+        grouped = gdf.groupby(param_cols, dropna=False)
+        mean_df = grouped.mean(numeric_only=True)
+        std_df = grouped.std(numeric_only=True).fillna(0.0)
+        count_series = grouped.size().rename('n_trials')
+        # Build rows
+        agg_rows = []
+        for idx_vals, mean_row in mean_df.iterrows():
+            if not isinstance(idx_vals, tuple):
+                idx_vals = (idx_vals,)
+            params_dict = {k[len('param_'):]: v for k, v in zip(param_cols, idx_vals)}
+            row = {'params': params_dict, 'n_trials': int(count_series.loc[idx_vals])}
+            for m in metric_cols:
+                row[f'{m}_mean'] = float(mean_row[m]) if pd.notna(mean_row[m]) else None
+                std_val = std_df.loc[idx_vals][m] if m in std_df.columns else None
+                row[f'{m}_std'] = (float(std_val) if (std_val is not None and pd.notna(std_val)) else 0.0)
+            agg_rows.append(row)
+        # Determine best aggregated
+        best_agg = None
+        if agg_rows:
+            valid_r2 = [r for r in agg_rows if r.get('r2_val_mean') is not None and not (
+                    isinstance(r.get('r2_val_mean'), float) and np.isnan(r.get('r2_val_mean')))]
+            if valid_r2:
+                best_agg = max(valid_r2, key=lambda r: r.get('r2_val_mean'))
+            else:
+                valid_val = [r for r in agg_rows if r.get('val_loss_mean') is not None and not (
+                        isinstance(r.get('val_loss_mean'), float) and np.isnan(r.get('val_loss_mean')))]
+                if valid_val:
+                    best_agg = min(valid_val, key=lambda r: r.get('val_loss_mean'))
+
+    else:
+        agg_rows = []
+        best_agg = None
+
+    return agg_rows, best_agg
+
+
+# For Excel, expand params into columns
+def _expand_params(row: Dict[str, Any]) -> Dict[str, Any]:
+    base = {k: v for k, v in row.items() if k != 'params'}
+    for pk, pv in (row.get('params') or {}).items():
+        base[f'param_{pk}'] = pv
+    return base
+
+
+def _save_excel_params_group(excel_path: str, agg_rows: List[Dict[str, Any]], best_agg: Dict[str, Any]):
+    if not excel_path.lower().endswith(('.xlsx', '.xls')):
+        excel_path = excel_path + '.xls'
+
+    df_agg = pd.DataFrame([_expand_params(r) for r in agg_rows]) if agg_rows else pd.DataFrame()
+
+    # Best aggregated row (if any)
+    if best_agg is not None:
+        best_agg_expanded = pd.DataFrame([_expand_params(best_agg)])
+    else:
+        best_agg_expanded = pd.DataFrame()
+
+    if os.path.exists(excel_path):
+        writer_options = dict(mode='a', engine='openpyxl', if_sheet_exists='replace')
+    else:
+        writer_options = {}
+    with pd.ExcelWriter(excel_path, **writer_options) as writer:
+            if not df_agg.empty:
+                df_agg.to_excel(writer, index=False, sheet_name='results_avg_by_params')
+            if not best_agg_expanded.empty:
+                best_agg_expanded.to_excel(writer, index=False, sheet_name='best_avg_by_params')
 
 
 def sweep_multkan(
@@ -343,9 +421,8 @@ def sweep_multkan(
 
     tasks = []
     for ci, combo in enumerate(combos):
-        for si, seed in enumerate(seeds):
-            dev = device_choice
-            tasks.append((X_train, y_train, X_val, y_val, X_test, y_test, combo, seed, dev, scaler_y))
+        dev = device_choice
+        tasks.append((X_train, y_train, X_val, y_val, X_test, y_test, combo, dev, scaler_y))
 
     results: List[TrialResult] = []
 
@@ -353,15 +430,36 @@ def sweep_multkan(
     if save_tag is None or not str(save_tag).strip():
         import datetime
         save_tag = f"{datetime.datetime.now().strftime('%Y%m%d_%H%M%S')}_auto"
-    default_autosave_dir = "D:\pykan\.github\workflows\Hyein\multkan_sweep_autosave"
-    default_autosave_path = os.path.join(default_autosave_dir, f"{save_tag}.xlsx")
+    autosave_dir = "D:\pykan\.github\workflows\Hyein\multkan_sweep_autosave"
+    autosave_path = os.path.join(autosave_dir, f"{save_tag}.xlsx")
     # default_autosave_path = os.path.join(os.getcwd(), "multkan_sweep_autosave", f"{save_tag}.xlsx")
+
+    def _get_r2_val(r):
+        try:
+            return r.r2_val if hasattr(r, 'r2_val') else r.get('r2_val')
+        except Exception:
+            return None
+
+    def _is_success(r):
+        rv = _get_r2_val(r)
+        if rv is None:
+            return False
+        try:
+            from math import isnan
+            return not isnan(rv)
+        except Exception:
+            return True
+
+    def _asdict_any(r):
+        try:
+            return asdict(r)
+        except Exception:
+            return dict(r)
 
     # Sequential execution (parallel computing removed)
     total = len(tasks)
     for idx, t in enumerate(tasks, start=1):
         combo_params = t[6]
-        seed_val = t[7]
         prune_msg = ''
         # respect either 'prune' or 'pruning' flags (bool or string)
         def _want_prune_log(p: Dict[str, Any]) -> bool:
@@ -381,115 +479,94 @@ def sweep_multkan(
                 prune_msg = f", prune=True(th={_p_th})"
             else:
                 prune_msg = f", prune=True(node_th={_node_th}, edge_th={_edge_th})"
-        print(f"[MultKAN Sweep] Training model {idx}/{total} (seed={seed_val}, params={ {k: combo_params[k] for k in combo_params if k in ['width','grid','k','mult_arity','steps','lamb','lr','update_grid','opt']} }{prune_msg})")
-        try:
-            res: TrialResult = _run_single_trial(t)
-            results.append(res)
-            last_result_for_save: Any = res
-        except Exception as e:
-            import traceback, datetime
-            err_info = {
-                'params': combo_params,
-                'val_loss': None,
-                'train_loss': None,
-                'test_loss': None,
-                'r2_train': None,
-                'r2_val': None,
-                'r2_test': None,
-                'seed': seed_val,
-                'device': t[8],
-                'error': str(e),
-                'traceback': traceback.format_exc(),
-                'failed_at_index': idx,
-                'failed_at_total': total,
-                'timestamp': datetime.datetime.now().isoformat(timespec='seconds')
-            }
-            print(f"[MultKAN Sweep] Error on model {idx}/{total}: {e}")
-            # Record the failure as a result row and continue
-            results.append(err_info)
-            last_result_for_save = err_info
-        # After each trial (success or failure), attempt to save progress mandatorily
-        try:
-            # Use the precomputed autosave path and update the same file each time
-            autosave_path = default_autosave_path
-            # Ensure parent directory exists
-            parent_dir = os.path.dirname(autosave_path)
-            if parent_dir and not os.path.exists(parent_dir):
-                os.makedirs(parent_dir, exist_ok=True)
-            # Compute best-so-far among successful trials using highest r2_val
-            def _get_r2_val(r):
-                try:
-                    return r.r2_val if hasattr(r, 'r2_val') else r.get('r2_val')
-                except Exception:
-                    return None
-            def _is_success(r):
-                rv = _get_r2_val(r)
-                if rv is None:
-                    return False
-                try:
-                    from math import isnan
-                    return not isnan(rv)
-                except Exception:
-                    return True
-            successful = [r for r in results if _is_success(r)]
-            if successful:
-                best_so_far = max(successful, key=lambda r: (getattr(r, 'r2_val', None) if hasattr(r, 'r2_val') else r.get('r2_val')))
-            else:
-                best_so_far = None
-            progress = {'completed': idx, 'total': total}
-            # Prefer Excel; if autosave_path ends with .xlsx or .xls, save Excel; else JSON
-            if autosave_path.lower().endswith(('.xlsx', '.xls')):
-                _save_excel(autosave_path, results, best_so_far[0] if best_so_far == [] else (best_so_far if best_so_far else {}), progress, last_result_for_save)
-            else:
-                # Convert TrialResult objects to dicts where necessary
-                def _asdict_any(r):
-                    try:
-                        return asdict(r)
-                    except Exception:
-                        return dict(r)
-                out_so_far = {
-                    'results': [_asdict_any(r) for r in results],
-                    'best': (_asdict_any(best_so_far) if best_so_far else None),
-                    'progress': progress,
-                    'last_result': _asdict_any(last_result_for_save),
+        for seed_idx, seed_val in enumerate(seeds, start=1):
+            print(f"[MultKAN Sweep] Training model {idx}/{total} -- seed # {seed_idx} (params={ {k: combo_params[k] for k in combo_params if k in ['lamb','lr',]} }{prune_msg})")
+            try:
+                res, model = _run_single_trial((*t, seed_val))
+                results.append(res)
+                last_result_for_save: Any = res
+            except Exception as e:
+                import traceback, datetime
+                err_info = {
+                    'params': combo_params,
+                    'val_loss': None,
+                    'train_loss': None,
+                    'test_loss': None,
+                    'r2_train': None,
+                    'r2_val': None,
+                    'r2_test': None,
+                    'seed': seed_val,
+                    'device': t[7],
+                    'error': str(e),
+                    'traceback': traceback.format_exc(),
+                    'failed_at_index': idx,
+                    'failed_at_total': total,
+                    'timestamp': datetime.datetime.now().isoformat(timespec='seconds')
                 }
-                with open(autosave_path, 'w') as f:
-                    json.dump(out_so_far, f, indent=2)
-            print(f"[MultKAN Sweep] Saved progress {idx}/{total} to {autosave_path}")
-        except Exception as e2:
-            print(f"[MultKAN Sweep] Warning: failed to save progress: {e2}")
+                print(f"[MultKAN Sweep] Error on model {idx}/{total} -- seed #{seed_idx}: {e}")
+                # Record the failure as a result row and continue
+                results.append(err_info)
+                last_result_for_save = err_info
+            # After each trial (success or failure), attempt to save progress mandatorily
+            try:
+                parent_dir = os.path.dirname(autosave_path)
+                if parent_dir and not os.path.exists(parent_dir):
+                    os.makedirs(parent_dir, exist_ok=True)
 
-    # Choose the best by val_loss among successful trials
-    def _asdict_any(r):
-        try:
-            return asdict(r)
-        except Exception:
-            return dict(r)
-    def _r2_val_of(r):
-        try:
-            return r.r2_val
-        except Exception:
-            return r.get('r2_val')
-    def _is_valid_r2(v):
-        if v is None:
-            return False
-        try:
-            from math import isnan
-            return not isnan(v)
-        except Exception:
-            return True
-    successful = [r for r in results if _is_valid_r2(_r2_val_of(r))]
-    if successful:
-        # Pick max by r2_val
-        best = max(successful, key=_r2_val_of)
-        best_out = _asdict_any(best)
-    else:
-        best_out = None
+                successful = [r for r in results if _is_success(r)]
+                if successful:
+                    best_so_far = max(successful, key=lambda r: (getattr(r, 'r2_val', None) if hasattr(r, 'r2_val') else r.get('r2_val')))
+                else:
+                    best_so_far = None
+                progress = {'completed': idx, 'total': total}
+                _save_excel_single(
+                    autosave_path, results, best_so_far[0] if best_so_far == [] else (best_so_far if best_so_far else {}),
+                    progress, last_result_for_save)
+            except Exception as e2:
+                print(f"[MultKAN Sweep] Warning: failed to save progress: {e2}")
+        agg_rows, best_agg = _aggregate_by_params(results)
+        _save_excel_params_group(autosave_path, agg_rows, best_agg)
+
+
     out = {
         'results': [_asdict_any(r) for r in results],
-        'best': best_out,
+        'results_avg_by_params': agg_rows,
+        'results_table': _results_to_dataframe(results),
+        'results_avg_table': pd.DataFrame([_expand_params(r) for r in agg_rows]) if agg_rows else pd.DataFrame(),
+        'best': best_agg,
     }
     return out
+
+
+def evaluate_params(
+    X_train: np.ndarray,
+    y_train: np.ndarray,
+    X_val: np.ndarray,
+    y_val: np.ndarray,
+    params: Dict[str, Any],
+    X_test: Optional[np.ndarray] = None,
+    y_test: Optional[np.ndarray] = None,
+    seed: int = None,
+    scaler_y: Optional[Any] = None,
+    device_str: Optional[str] = 'cpu',
+) -> Tuple[TrialResult, MultKAN]:
+
+    if seed is None:
+        seed = 0
+
+    if type(params['width']) is str:
+        params['width'] = eval(params['width'])
+    params['width'] = [item[0] if type(item) is list else item for item in params['width']]
+
+    res, model = _run_single_trial((X_train, y_train, X_val, y_val, X_test, y_test, params, device_str, scaler_y, seed))
+    y_true, y_pred, mae, r2 = mae_and_r2(model, y_val, X_val, scaler_y=scaler_y)
+
+    fig, ax = plt.subplots(1, 1, figsize=(10, 10))
+    plt.scatter(y_true, y_pred, color='k')
+    plt.scatter(y_true, y_true, color='red')
+    plt.show()
+
+    return res, model
 
 
 def _make_toy_dataset(n=200, noise=0.0, seed=0):
@@ -552,7 +629,10 @@ def main():
             all_results = out['results']
             progress = {'completed': len(all_results), 'total': len(all_results)}
             results_objs = [TrialResult(**r) if isinstance(r, dict) else r for r in all_results]
-            _save_excel(args.out, results_objs, out['best'], progress, all_results[-1])
+            _save_excel_single(args.out, results_objs, out['best'], progress, all_results[-1])
+
+            agg_rows_objs, best_agg_objs = _aggregate_by_params(results_objs)
+            _save_excel_params_group(args.out, agg_rows_objs, best_agg_objs)
         else:
             with open(args.out, 'w') as f:
                 json.dump(out, f, indent=2)

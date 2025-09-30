@@ -1,4 +1,4 @@
-from kan.experiments.multkan_hparam_sweep import sweep_multkan
+from kan.experiments.multkan_hparam_sweep import sweep_multkan, evaluate_params
 import numpy as np
 import pandas as pd
 import torch
@@ -75,13 +75,16 @@ out = sweep_multkan(
           'pruning_node_th': [0.01],
           'pruning_edge_th': [3e-2],
           'symbolic': [True],
-          'sym_weight_simple': [0.8],
+          'sym_weight_simple': [0.5],
       },
-      seeds=[0],      # run each config with multiple seeds
+      seeds=[0, 17, 42],      # run each config with multiple seeds
       n_jobs=1,          # number of parallel worker processes
       use_cuda=False,     # set False to force CPU
   )
+print(out['results_avg_table'][['r2_val_mean', "param_lamb", "param_sym_weight_simple"]])
 
 best = out['best']
 print('Best configuration:')
 print(json.dumps(best, indent=2))
+
+res, model = evaluate_params(X_train, y_train, X_val, y_val, best['params'], X_test, y_test, 0, scaler_y, device)
