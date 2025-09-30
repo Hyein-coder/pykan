@@ -13,6 +13,32 @@ import matplotlib.pyplot as plt
 from kan.custom import MultKAN
 from sklearn.metrics import mean_squared_error, r2_score
 
+import colorcet as cc  # pip install colorcet
+from matplotlib import colors, rcParams, cm
+
+fs = 10
+dpi = 200
+config_figure = {'figure.figsize': (3, 2.5), 'figure.titlesize': fs,
+                 'font.size': fs, 'font.family': 'sans-serif', 'font.serif': ['computer modern roman'],
+                 'font.sans-serif': ['Helvetica Neue LT Pro'],  # Avenir LT Std, Helvetica Neue LT Pro, Helvetica LT Std
+                 'font.weight': '300', 'axes.titleweight': '400', 'axes.labelweight': '300',
+                 'axes.xmargin': 0, 'axes.titlesize': fs, 'axes.labelsize': fs, 'axes.labelpad': 2,
+                 'xtick.labelsize': fs-2, 'ytick.labelsize': fs-2, 'xtick.major.pad': 0, 'ytick.major.pad': 0,
+                 'legend.fontsize': fs-2, 'legend.title_fontsize': fs, 'legend.frameon': False,
+                 'legend.labelspacing': 0.5, 'legend.columnspacing': 0.5, 'legend.handletextpad': 0.2,
+                 'lines.linewidth': 1, 'hatch.linewidth': 0.5, 'hatch.color': 'w',
+                 'figure.subplot.left': 0.15, 'figure.subplot.right': 0.93,
+                 'figure.subplot.top': 0.95, 'figure.subplot.bottom': 0.15,
+                 'figure.dpi': dpi, 'savefig.dpi': dpi*5, 'savefig.transparent': False,  # change here True if you want transparent background
+                 'text.usetex': False, 'mathtext.default': 'regular',
+                 'text.latex.preamble': r'\usepackage{amsmath,amssymb,bm,physics,lmodern,cmbright}'}
+rcParams.update(config_figure)
+
+
+import datetime
+save_tag = f"{datetime.datetime.now().strftime('%Y%m%d_%H%M%S')}_auto"
+autosave_dir = "D:\pykan\.github\workflows\Hyein\multkan_sweep_autosave"
+
 
 def _seed_everything(seed: int):
     import random
@@ -368,7 +394,6 @@ def sweep_multkan(
     seeds: Optional[List[int]] = None,
     n_jobs: int = os.cpu_count() or 1,
     use_cuda: bool = True,
-    save_tag: Optional[str] = None,
     scaler_y: Optional[Any] = None,
 ) -> Dict[str, Any]:
     """
@@ -427,10 +452,6 @@ def sweep_multkan(
     results: List[TrialResult] = []
 
     # Determine a single autosave path for this run (updated after each trial)
-    if save_tag is None or not str(save_tag).strip():
-        import datetime
-        save_tag = f"{datetime.datetime.now().strftime('%Y%m%d_%H%M%S')}_auto"
-    autosave_dir = "D:\pykan\.github\workflows\Hyein\multkan_sweep_autosave"
     autosave_path = os.path.join(autosave_dir, f"{save_tag}.xlsx")
     # default_autosave_path = os.path.join(os.getcwd(), "multkan_sweep_autosave", f"{save_tag}.xlsx")
 
@@ -559,11 +580,13 @@ def evaluate_params(
     params['width'] = [item[0] if type(item) is list else item for item in params['width']]
 
     res, model = _run_single_trial((X_train, y_train, X_val, y_val, X_test, y_test, params, device_str, scaler_y, seed))
-    y_true, y_pred, mae, r2 = mae_and_r2(model, y_val, X_val, scaler_y=scaler_y)
+    device = torch.device(device_str)
+    y_true, y_pred, mae, r2 = mae_and_r2(model, _to_tensor(X_val, device), _to_tensor(y_val, device), scaler_y=scaler_y)
 
-    fig, ax = plt.subplots(1, 1, figsize=(10, 10))
+    fig, ax = plt.subplots()
     plt.scatter(y_true, y_pred, color='k')
     plt.scatter(y_true, y_true, color='red')
+    plt.savefig(os.path.join(autosave_dir, f"{save_tag}_eval.png"))
     plt.show()
 
     return res, model

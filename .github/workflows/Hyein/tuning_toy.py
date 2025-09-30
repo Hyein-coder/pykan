@@ -60,7 +60,7 @@ y_test_norm = scaler_y.transform(y_test)
 out = sweep_multkan(
       X_train_norm, y_train_norm, X_val_norm, y_val_norm, X_test_norm, y_test_norm,
       param_grid={
-          'width': [[X_train.shape[1], 6, 1]],
+          'width': [[X_train.shape[1], 4, 1], [X_train.shape[1], 6, 1]],
           'grid': [10],
           'k': [3],
           'mult_arity': [0],
@@ -77,7 +77,7 @@ out = sweep_multkan(
           'symbolic': [True],
           'sym_weight_simple': [0.5],
       },
-      seeds=[0, 17, 42],      # run each config with multiple seeds
+      seeds=[0],      # run each config with multiple seeds
       n_jobs=1,          # number of parallel worker processes
       use_cuda=False,     # set False to force CPU
   )
