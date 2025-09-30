@@ -22,7 +22,7 @@ x2_grid = np.linspace(-1, 1, 30)
 x1, x2= np.meshgrid(x1_grid, x2_grid)
 X = np.stack((x1.flatten(), x2.flatten()), axis=1)
 # y = 10 * np.abs(x1) + 5*x2**2
-y = 10 * np.sin(x1) + 5 * x2**2
+y = 10 * np.sin(x1) + 20 * x2**2
 
 y = y.flatten().reshape(-1, 1)
 
@@ -77,7 +77,7 @@ out = sweep_multkan(
           'symbolic': [True],
           'sym_weight_simple': [0.5],
       },
-      seeds=[0],      # run each config with multiple seeds
+      seeds=[0, 17, 42],      # run each config with multiple seeds
       n_jobs=1,          # number of parallel worker processes
       use_cuda=False,     # set False to force CPU
   )

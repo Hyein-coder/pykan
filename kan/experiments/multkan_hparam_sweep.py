@@ -570,6 +570,7 @@ def evaluate_params(
     seed: int = None,
     scaler_y: Optional[Any] = None,
     device_str: Optional[str] = 'cpu',
+    special_tag: Optional[str] = None,
 ) -> Tuple[TrialResult, MultKAN]:
 
     if seed is None:
@@ -579,6 +580,11 @@ def evaluate_params(
         params['width'] = eval(params['width'])
     params['width'] = [item[0] if type(item) is list else item for item in params['width']]
 
+    if special_tag is None:
+        fig_name = os.path.join(autosave_dir, f"{save_tag}_eval.png")
+    else:
+        fig_name = os.path.join(autosave_dir, f"{save_tag}_{special_tag}_eval.png")
+
     res, model = _run_single_trial((X_train, y_train, X_val, y_val, X_test, y_test, params, device_str, scaler_y, seed))
     device = torch.device(device_str)
     y_true, y_pred, mae, r2 = mae_and_r2(model, _to_tensor(X_val, device), _to_tensor(y_val, device), scaler_y=scaler_y)
@@ -586,7 +592,7 @@ def evaluate_params(
     fig, ax = plt.subplots()
     plt.scatter(y_true, y_pred, color='k')
     plt.scatter(y_true, y_true, color='red')
-    plt.savefig(os.path.join(autosave_dir, f"{save_tag}_eval.png"))
+    plt.savefig(fig_name)
     plt.show()
 
     return res, model
