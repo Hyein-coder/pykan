@@ -316,13 +316,13 @@ def plot_activation_functions(model, x=None, layers=None, save_tag=None, show=Tr
         for i in range(ni):
             for j in range(no):
                 ax = axs[j, i]
-                # Gather pre- and post- activations and sort by input
+                # Gather pre- and post-activations and sort by input
                 inputs = model.spline_preacts[l][:, j, i].cpu().detach().numpy()
                 outputs = model.spline_postacts[l][:, j, i].cpu().detach().numpy()
                 rank = np.argsort(inputs)
                 ax.plot(inputs[rank], outputs[rank], marker='o', ms=2, lw=1)
                 if titles:
-                    ax.set_title(f'in {i} → out {j}', fontsize=10)
+                    ax.set_title(f'in {i} -- out {j}', fontsize=10)
         # Add a legend-like layer title in the last subplot
         axs[-1, -1].text(0.99, 0.01, f'Layer {l}', transform=axs[-1, -1].transAxes,
                          ha='right', va='bottom', fontsize=9, bbox=dict(facecolor='white', alpha=0.6, edgecolor='none'))

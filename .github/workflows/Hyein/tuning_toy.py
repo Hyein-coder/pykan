@@ -87,4 +87,5 @@ best = out['best']
 print('Best configuration:')
 print(json.dumps(best, indent=2))
 
-res, model = evaluate_params(X_train, y_train, X_val, y_val, best['params'], X_test, y_test, 0, scaler_y, device)
+res, model = evaluate_params(X_train, y_train, X_val, y_val, best['params'],
+                             X_test, y_test, 0, scaler_y, device)

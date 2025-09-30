@@ -139,6 +139,7 @@ def _run_single_trial(args) -> Tuple[TrialResult, MultKAN]:
     # Override device/seed per trial
     model_kwargs['device'] = device
     model_kwargs['seed'] = seed
+    model_kwargs['grid_range'] = [0.1, 0.9]
 
     model = MultKAN(**model_kwargs)
 
@@ -181,6 +182,7 @@ def _run_single_trial(args) -> Tuple[TrialResult, MultKAN]:
         try:
             model = model.prune(node_th=node_th, edge_th=edge_th)
         except Exception as _:
+            print(f"[Pruning] {e}")
             pass
 
     symbolic_penalty = 0
@@ -195,7 +197,7 @@ def _run_single_trial(args) -> Tuple[TrialResult, MultKAN]:
             plt.show()
 
         except Exception as e:
-            print(e)
+            print(f"[Symbolification] {e}")
             pass
 
     mae_train, mae_val, mae_test, r2_train, r2_val, r2_test = _evaluate(model, dataset, scaler_y=scaler_y)
