@@ -256,10 +256,10 @@ def plot_data_per_interval(X_norm, y_norm, name_X, name_y, mask_idx, mask_interv
     y_vals = y_norm.ravel()  # y가 (N,1)이어도 (N,)으로 평탄화
 
     # mask_interval = [0, 0.3, 0.6, 1.0]
-    masks = [ ((x_mask > lb) & (x_mask <= ub)) for lb, ub in zip(mask_interval, mask_interval[1:] + [1.0])]
+    masks = [ ((x_mask > lb) & (x_mask <= ub)) for lb, ub in zip(mask_interval[:-1], mask_interval[1:])]
 
     colors = ['tab:blue', 'tab:orange', 'tab:green', 'tab:red']
-    labels = [f'{lb} < x{mask_idx} <= {ub}' for lb, ub in zip(mask_interval, mask_interval[1:] + [1.0])]
+    labels = [f'{lb} < x{mask_idx} <= {ub}' for lb, ub in zip(mask_interval[:-1], mask_interval[1:])]
 
     for mask, c, lab in zip(masks, colors, labels):
         if np.any(mask):  # 해당 구간 데이터가 있을 때만 그림
@@ -359,3 +359,62 @@ def plot_spline_coefficients(model, save_tag=None, show=True):
             plt.show()
         plots.append((fig, axs))
     return plots
+
+def plot_activation_and_spline_coefficients(model, x=None, layers=None, save_tag=None, show=True, titles=True):
+    # Ensure activations are cached
+    if isinstance(x, dict):
+        x_use = x.get('train_input', None)
+    else:
+        x_use = x
+    try:
+        model.get_act(x_use)
+    except Exception as e:
+        # Try again using cached data if available
+        if getattr(model, 'cache_data', None) is not None and x_use is None:
+            model.get_act(model.cache_data)
+        else:
+            raise e
+
+    figs = []
+    depth = len(model.act_fun)
+    layers_to_plot = list(range(depth)) if layers is None else layers
+
+    for l in layers_to_plot:
+        act = model.act_fun[l]
+        ni, no = act.coef.shape[:2]
+        coef = act.coef.tolist()
+
+        # Dynamic figure size and constrained layout to avoid overlaps
+        fig, axs = plt.subplots(nrows=no, ncols=ni, squeeze=False,
+                                figsize=(max(2.5*ni, 6), max(2.5*no, 3.5)),
+                                constrained_layout=True)
+        second_axs = np.zeros_like(axs)
+        for i in range(ni):
+            for j in range(no):
+                ax = axs[j, i]
+                # Gather pre- and post-activations and sort by input
+                inputs = model.spline_preacts[l][:, j, i].cpu().detach().numpy()
+                outputs = model.spline_postacts[l][:, j, i].cpu().detach().numpy()
+                coef_node = coef[i][j]
+
+                rank = np.argsort(inputs)
+                ax.plot(inputs[rank], outputs[rank], marker='o', ms=2, lw=1, label='Activations')
+
+                ax2 = ax.twinx()
+                second_axs[j, i] = ax2
+                ax2.scatter(np.linspace(0.1, 0.9, (len(coef_node))), coef_node,
+                           s=20, color='white', edgecolor='k', label='Coefficients')
+                slope = [x - y for x, y in zip(coef_node[1:], coef_node[:-1])]
+                ax2.bar(np.linspace(0.1, 0.9, len(slope)), slope, width=0.02, align='edge', color='r', label='Slope')
+                if titles:
+                    ax.set_title(f'in {i} -- out {j}', fontsize=10)
+        second_axs[-1, -1].legend(loc='upper right', bbox_to_anchor=(0.99, 1), fontsize=8,
+                                  title=f'---Layer {l}---', title_fontsize=8)
+
+        if save_tag is not None:
+            save_dir = "D:\pykan\.github\workflows\Hyein\custom_figures"
+            # save_dir = os.path.join(os.getcwd(), '.github', 'workflows', 'Hyein', 'custom_figures')
+            plt.savefig(os.path.join(save_dir, f'{save_tag}_act_coef_L{l}.png'))
+        if show:
+            plt.show()
+        figs.append(fig)

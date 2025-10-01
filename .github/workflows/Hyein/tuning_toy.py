@@ -22,7 +22,7 @@ x2_grid = np.linspace(-1, 1, 30)
 x1, x2= np.meshgrid(x1_grid, x2_grid)
 X = np.stack((x1.flatten(), x2.flatten()), axis=1)
 # y = 10 * np.abs(x1) + 5*x2**2
-y = 10 * np.sin(x1) + 20 * x2**2
+y = 10 * np.sin(x1) + 40 * x2
 
 y = y.flatten().reshape(-1, 1)
 
@@ -87,5 +87,6 @@ best = out['best']
 print('Best configuration:')
 print(json.dumps(best, indent=2))
 
-res, model = evaluate_params(X_train, y_train, X_val, y_val, best['params'],
-                             X_test, y_test, 0, scaler_y, device)
+res, _, _, _ = evaluate_params(
+    X_train, y_train, X_val, y_val, best['params'], X_test, y_test, 0, scaler_y, device.type
+)

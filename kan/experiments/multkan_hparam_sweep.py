@@ -127,7 +127,7 @@ def _evaluate(model: MultKAN, dataset: Dict[str, torch.Tensor], scaler_y: Option
     return mae_train, mae_val, mae_test, r2_train, r2_val, r2_test
 
 
-def _run_single_trial(args) -> Tuple[TrialResult, MultKAN]:
+def _run_single_trial(args) -> Tuple[TrialResult, MultKAN, Dict[str, Any], Dict[str, Any]]:
     X_train, y_train, X_val, y_val, X_test, y_test, params, device_str, scaler_y, seed = args
     device = torch.device(device_str)
     _seed_everything(seed)
@@ -212,7 +212,7 @@ def _run_single_trial(args) -> Tuple[TrialResult, MultKAN]:
         r2_test=r2_test,
         seed=seed,
         device=str(device)
-    ), model
+    ), model, fit_kwargs, dataset
 
 
 def _expand_param_grid(param_grid: Dict[str, List[Any]]) -> List[Dict[str, Any]]:
@@ -505,7 +505,7 @@ def sweep_multkan(
         for seed_idx, seed_val in enumerate(seeds, start=1):
             print(f"[MultKAN Sweep] Training model {idx}/{total} -- seed # {seed_idx} (params={ {k: combo_params[k] for k in combo_params if k in ['lamb','lr',]} }{prune_msg})")
             try:
-                res, model = _run_single_trial((*t, seed_val))
+                res, model, _, _ = _run_single_trial((*t, seed_val))
                 results.append(res)
                 last_result_for_save: Any = res
             except Exception as e:
@@ -573,7 +573,8 @@ def evaluate_params(
     scaler_y: Optional[Any] = None,
     device_str: Optional[str] = 'cpu',
     special_tag: Optional[str] = None,
-) -> Tuple[TrialResult, MultKAN]:
+    special_dir: Optional[str] = None,
+) -> Tuple[TrialResult, MultKAN, Dict[str, Any], Dict[str, Any]]:
 
     if seed is None:
         seed = 0
@@ -582,12 +583,13 @@ def evaluate_params(
         params['width'] = eval(params['width'])
     params['width'] = [item[0] if type(item) is list else item for item in params['width']]
 
+    if special_dir is None:
+        special_dir = autosave_dir
     if special_tag is None:
-        fig_name = os.path.join(autosave_dir, f"{save_tag}_eval.png")
-    else:
-        fig_name = os.path.join(autosave_dir, f"{save_tag}_{special_tag}_eval.png")
+        special_tag = save_tag
+    fig_name = os.path.join(special_dir, f"{special_tag}_eval.png")
 
-    res, model = _run_single_trial((X_train, y_train, X_val, y_val, X_test, y_test, params, device_str, scaler_y, seed))
+    res, model, fit_kwargs, dataset = _run_single_trial((X_train, y_train, X_val, y_val, X_test, y_test, params, device_str, scaler_y, seed))
     device = torch.device(device_str)
     y_true, y_pred, mae, r2 = mae_and_r2(model, _to_tensor(X_val, device), _to_tensor(y_val, device), scaler_y=scaler_y)
 
@@ -597,7 +599,7 @@ def evaluate_params(
     plt.savefig(fig_name)
     plt.show()
 
-    return res, model
+    return res, model, fit_kwargs, dataset
 
 
 def _make_toy_dataset(n=200, noise=0.0, seed=0):
