@@ -9,13 +9,19 @@ import datetime
 save_dir = "D:\pykan\.github\workflows\Hyein\custom_figures"
 time_stamp = datetime.datetime.now().strftime('%Y%m%d_%H%M')
 
+# file_name = [
+#     r"D:\pykan\.github\workflows\Hyein\multkan_sweep_autosave\20250930_150005_auto_10sin(x1)+5x2^2.xlsx",
+#     r"D:\pykan\.github\workflows\Hyein\multkan_sweep_autosave\20250930_150232_auto_10sin(x1)+10x2^2.xlsx",
+#     r"D:\pykan\.github\workflows\Hyein\multkan_sweep_autosave\20250930_150542_auto_10sin(x1)+20x2^2.xlsx",
+#     r"D:\pykan\.github\workflows\Hyein\multkan_sweep_autosave\20251001_092047_auto_10sin(x1)+40x2^2.xlsx",
+# ]
+# x_square_coeff = [5, 10, 20, 40]
 file_name = [
-    r"D:\pykan\.github\workflows\Hyein\multkan_sweep_autosave\20250930_150005_auto_10sin(x1)+5x2^2.xlsx",
-    r"D:\pykan\.github\workflows\Hyein\multkan_sweep_autosave\20250930_150232_auto_10sin(x1)+10x2^2.xlsx",
-    r"D:\pykan\.github\workflows\Hyein\multkan_sweep_autosave\20250930_150542_auto_10sin(x1)+20x2^2.xlsx",
-    r"D:\pykan\.github\workflows\Hyein\multkan_sweep_autosave\20251001_092047_auto_10sin(x1)+40x2^2.xlsx",
+    r"D:\pykan\.github\workflows\Hyein\multkan_sweep_autosave\20251001_102135_auto_10sin(x1)+5x2.xlsx",
+    r"D:\pykan\.github\workflows\Hyein\multkan_sweep_autosave\20251001_103807_auto_10sin(x1)+10x2.xlsx",
+    r"D:\pykan\.github\workflows\Hyein\multkan_sweep_autosave\20251001_104111_auto_10sin(x1)+20x2.xlsx",
 ]
-x_square_coeff = [5, 10, 20, 40]
+x_coeff = [5, 10, 20]
 
 file_data = []
 for f in file_name:
@@ -29,7 +35,9 @@ from sklearn.preprocessing import MinMaxScaler
 from kan.experiments.multkan_hparam_sweep import evaluate_params
 import numpy as np
 
-for xsc, d_opt in zip(x_square_coeff, file_data):
+for xc, d_opt in zip(x_coeff, file_data):
+    save_tag = f'periodic_{time_stamp}_{xc}x2^2'
+
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     print(f"This script is running on {device}.")
 
@@ -46,7 +54,8 @@ for xsc, d_opt in zip(x_square_coeff, file_data):
     params = {k: v for k, v in d_opt.items() if "param_" in k}
     params = {key.replace('param_', ''): value for key, value in params.items()}
 
-    y = 10 * np.sin(x1) + xsc * x2**2
+    # y = 10 * np.sin(x1) + xsc * x2**2
+    y = 10 * np.sin(x1) + xc * x2
 
     y = y.flatten().reshape(-1, 1)
 
@@ -67,7 +76,7 @@ for xsc, d_opt in zip(x_square_coeff, file_data):
     res, model, fit_kwargs, dataset = evaluate_params(
         X_train_norm, y_train_norm, X_val_norm, y_val_norm, params, X_test_norm, y_test_norm,
         0, scaler_y, device.type,
-        special_tag=f'periodic_{time_stamp}_{xsc}x2^2',
+        special_tag=save_tag,
         special_dir=save_dir,
     )
 
@@ -79,8 +88,6 @@ for xsc, d_opt in zip(x_square_coeff, file_data):
     model.fit(dataset, **fit_kwargs)
     model.plot()
     plt.show()
-
-    save_tag = f'periodic_{time_stamp}_{xsc}x2^2'
 
     X_norm = scaler_X.transform(X)
     y_norm = scaler_y.transform(y)
