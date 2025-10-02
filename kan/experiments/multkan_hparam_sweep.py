@@ -13,7 +13,7 @@ import matplotlib.pyplot as plt
 from kan.custom import MultKAN
 from sklearn.metrics import mean_squared_error, r2_score
 
-import colorcet as cc  # pip install colorcet
+# import colorcet as cc  # pip install colorcet
 from matplotlib import colors, rcParams, cm
 
 fs = 10
@@ -37,7 +37,7 @@ rcParams.update(config_figure)
 
 import datetime
 save_tag = f"{datetime.datetime.now().strftime('%Y%m%d_%H%M%S')}_auto"
-autosave_dir = "D:\pykan\.github\workflows\Hyein\multkan_sweep_autosave"
+autosave_dir = os.path.join(os.getcwd(), 'github', 'workflows', 'Hyein', 'multkan_sweep_autosave')
 
 
 def _seed_everything(seed: int):
