@@ -64,6 +64,13 @@ class TrialResult:
     seed: int
     device: str
 
+class PruningError(Exception):
+    """모델 Pruning 과정에서 에러가 발생했을 때 사용합니다."""
+    pass
+
+class SymbolificationError(Exception):
+    """모델 Symbolic 변환 과정에서 에러가 발생했을 때 사용합니다."""
+    pass
 
 def _to_tensor(x: np.ndarray, device: torch.device) -> torch.Tensor:
     return torch.tensor(x, dtype=torch.float32, device=device)
@@ -127,7 +134,7 @@ def _evaluate(model: MultKAN, dataset: Dict[str, torch.Tensor], scaler_y: Option
     return mae_train, mae_val, mae_test, r2_train, r2_val, r2_test
 
 
-def _run_single_trial(args) -> Tuple[TrialResult, MultKAN, Dict[str, Any], Dict[str, Any]]:
+def _run_single_trial(args, sym_verbose=False) -> Tuple[TrialResult, MultKAN, Dict[str, Any], Dict[str, Any]]:
     X_train, y_train, X_val, y_val, X_test, y_test, params, device_str, scaler_y, seed = args
     device = torch.device(device_str)
     _seed_everything(seed)
@@ -181,24 +188,21 @@ def _run_single_trial(args) -> Tuple[TrialResult, MultKAN, Dict[str, Any], Dict[
         edge_th = params.get('pruning_edge_th', pruning_th)
         try:
             model = model.prune(node_th=node_th, edge_th=edge_th)
-        except Exception as _:
-            print(f"[Pruning] {e}")
-            pass
+        except Exception as e:
+            raise PruningError(f"Failed to prune model with node_th={node_th}, edge_th={edge_th}") from e
 
-    symbolic_penalty = 0
     if _want_symbolic(params):
         lib = ['sin', 'cos', 'x', 'x^2', 'x^3', 'x^4', 'exp', 'log', 'sqrt', 'tanh', '1/x', '1/x^2']
         sym_weight_simple = params.get('sym_weight_simple', 0.8)
         sym_r2_threshold = params.get('sym_r2_threshold', 0.)
         try:
-            model.auto_symbolic(lib=lib, weight_simple=sym_weight_simple, r2_threshold=sym_r2_threshold)
+            model.auto_symbolic(lib=lib, weight_simple=sym_weight_simple, r2_threshold=sym_r2_threshold, verbose=sym_verbose)
             model.fit(dataset, **fit_kwargs)
             model.plot()
             plt.show()
 
         except Exception as e:
-            print(f"[Symbolification] {e}")
-            pass
+            raise SymbolificationError(f"Failed during symbolification or subsequent fitting/plotting") from e
 
     mae_train, mae_val, mae_test, r2_train, r2_val, r2_test = _evaluate(model, dataset, scaler_y=scaler_y)
 
@@ -512,12 +516,12 @@ def sweep_multkan(
                 import traceback, datetime
                 err_info = {
                     'params': combo_params,
-                    'val_loss': None,
-                    'train_loss': None,
-                    'test_loss': None,
-                    'r2_train': None,
-                    'r2_val': None,
-                    'r2_test': None,
+                    'val_loss': 999,
+                    'train_loss': 999,
+                    'test_loss': 999,
+                    'r2_train': -99,
+                    'r2_val': -99,
+                    'r2_test': -99,
                     'seed': seed_val,
                     'device': t[7],
                     'error': str(e),
@@ -589,7 +593,10 @@ def evaluate_params(
         special_tag = save_tag
     fig_name = os.path.join(special_dir, f"{special_tag}_eval.png")
 
-    res, model, fit_kwargs, dataset = _run_single_trial((X_train, y_train, X_val, y_val, X_test, y_test, params, device_str, scaler_y, seed))
+    res, model, fit_kwargs, dataset = _run_single_trial(
+        (X_train, y_train, X_val, y_val, X_test, y_test, params, device_str, scaler_y, seed),
+        sym_verbose=True
+    )
     device = torch.device(device_str)
     y_true, y_pred, mae, r2 = mae_and_r2(model, _to_tensor(X_val, device), _to_tensor(y_val, device), scaler_y=scaler_y)
 
