@@ -11,7 +11,7 @@ import json
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 print(f"This script is running on {device}.")
 
-x1_grid = np.linspace(-np.pi, np.pi, 30)
+x1_grid = np.linspace(-np.pi * 2, np.pi * 2, 60)
 x2_grid = np.linspace(-1, 1, 30)
 # x3_grid = np.linspace(-1, 1, 10)
 # x1, x2, x3 = np.meshgrid(x1_grid, x2_grid, x3_grid)
@@ -22,7 +22,7 @@ x2_grid = np.linspace(-1, 1, 30)
 x1, x2= np.meshgrid(x1_grid, x2_grid)
 X = np.stack((x1.flatten(), x2.flatten()), axis=1)
 # y = 10 * np.abs(x1) + 5*x2**2
-y = 10 * np.sin(x1) + 40 * x2
+y = 10 * np.sin(x1) + 5 * x2
 
 y = y.flatten().reshape(-1, 1)
 
@@ -60,15 +60,15 @@ y_test_norm = scaler_y.transform(y_test)
 out = sweep_multkan(
       X_train_norm, y_train_norm, X_val_norm, y_val_norm, X_test_norm, y_test_norm,
       param_grid={
-          'width': [[X_train.shape[1], 4, 1], [X_train.shape[1], 6, 1]],
+          'width': [[X_train.shape[1], 6, 1]],
           'grid': [10],
           'k': [3],
           'mult_arity': [0],
           'steps': [50],    #200
           'opt': ['LBFGS'],
-          'lr': [1.0],
+          'lr': [0.1],  #[0.1, 0.5, 1., 10., 20.],
           'update_grid': [True],
-          'lamb': [0.001],
+          'lamb': [1e-4],  #[1e-4, 0.001, 0.01, 0.1],   # [1e-4, 5e-4, 0.001, 5e-3],
           'lamb_coef': [5],
           'lamb_entropy': [5.],
           'prune': [True],
