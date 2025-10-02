@@ -57,6 +57,7 @@ for key, value in dataset.items():
 
 params = {
     'width': [X_train.shape[1], 6, 1],
+    'grid_range': [0.1, 0.9],
     'grid': 10,
     'k': 3,
     'mult_arity': 0,
@@ -93,7 +94,7 @@ for idx_x in range(nx):
 # plt.savefig(os.path.join(save_dir, f"{save_tag}_data.png"))
 plt.show()
 #%%
-model_kwargs = {k: params[k] for k in ['width', 'grid', 'k', 'mult_arity', 'seed', 'device'] if k in params}
+model_kwargs = {k: params[k] for k in ['width', 'grid', 'grid_range', 'k', 'mult_arity', 'seed', 'device'] if k in params}
 
 model = MultKAN(**model_kwargs)
 
@@ -116,25 +117,29 @@ if params['prune']:
     model.plot()
     plt.show()
 
-if params['symbolic']:
-    lib = ['sin', 'cos', 'x', 'x^2', 'x^3', 'x^4', 'exp', 'log', 'sqrt', 'tanh', '1/x', '1/x^2']
-    sym_weight_simple = params['sym_weight_simple']
-    sym_r2_threshold = params['sym_r2_threshold']
-    model.auto_symbolic(lib=lib, weight_simple=sym_weight_simple, r2_threshold=sym_r2_threshold)
-    model.fit(dataset, **fit_kwargs)
-    model.plot()
-    plt.show()
+# if params['symbolic']:
+#     lib = ['sin', 'cos', 'x', 'x^2', 'x^3', 'x^4', 'exp', 'log', 'sqrt', 'tanh', '1/x', '1/x^2']
+#     sym_weight_simple = params['sym_weight_simple']
+#     sym_r2_threshold = params['sym_r2_threshold']
+#     model.auto_symbolic(lib=lib, weight_simple=sym_weight_simple, r2_threshold=sym_r2_threshold)
+#     model.fit(dataset, **fit_kwargs)
+#     model.plot()
+#     plt.show()
 
 
 #%% Test if calling forward function varies the node scores: True!
 # it doesn't work for symbolified functions because it generates linear function nodes
-# test1 = torch.tensor([[0.9, 0.9], [0.8, 0.8], [0.8, 0.9]], dtype=torch.float32, device=device)
-# out_test1 = model.forward(test1)
-# score_test1 = model.node_scores
-#
-# test2 = torch.tensor([[0.1, 0.1], [0.1, 0.2], [0.2, 0.2]], dtype=torch.float32, device=device)
-# out_test2 = model.forward(test2)
-# score_test2 = model.node_scores
+test1 = torch.tensor([[0.9, 0.9], [0.8, 0.8], [0.8, 0.9]], dtype=torch.float32, device=device)
+out_test1 = model.forward(test1)
+score_test1 = model.node_scores[0].detach().cpu().numpy()
+print("score_test1:========================")
+print(score_test1)
+
+test2 = torch.tensor([[0.1, 0.1], [0.1, 0.2], [0.2, 0.2]], dtype=torch.float32, device=device)
+out_test2 = model.forward(test2)
+score_test2 = model.node_scores[0].detach().cpu().numpy()
+print("score_test2:========================")
+print(score_test2)
 #%%
 val_pred, val_actual, val_metrics = evaluate_model_performance(model, dataset, scaler_y, display=True)
 # test_pred, test_actual, test_metrics = evaluate_model_performance(model, dataset, scaler_y, "test")
@@ -174,8 +179,9 @@ plt.show()
 plot_activation_functions(model, save_tag=save_tag, x=dataset, layers=None)
 plot_spline_coefficients(model, save_tag=save_tag)
 
-scores = model.node_scores[0]
-# print(scores)
+model.forward(torch.tensor(X_norm, dtype=torch.float32, device=device))
+scores = model.node_scores[0].detach().cpu().numpy()
+print(scores)
 fig, ax = plt.subplots()
 ax.bar(list(range(scores.shape[0])), scores.tolist())
 plt.savefig(os.path.join(save_dir, f"{save_tag}_scores_L0.png"))

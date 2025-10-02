@@ -244,19 +244,21 @@ def evaluate_model_performance(model, dataset, scaler_y, phase="validation", dis
 
     return pred_real, label_real, {'rmse': rmse, 'r2': r2, 'mae': mae}
 
-def plot_data_per_interval(X_norm, y_norm, name_X, name_y, mask_idx, mask_interval):
-    nx = X_norm.shape[1]
+def get_masks(X, mask_idx, mask_interval):
+    x_mask = X[:, mask_idx]
+    masks = [ ((x_mask > lb) & (x_mask <= ub)) for lb, ub in zip(mask_interval[:-1], mask_interval[1:])]
+    return masks
+
+def plot_data_per_interval(X, y, name_X, name_y, mask_idx, mask_interval):
+    nx = X.shape[1]
     fig, axs = plt.subplots(nrows=1, ncols=nx, figsize=(20, 3.5), constrained_layout=True, sharey=True)
     for idx_x in range(nx):
         ax = axs[idx_x]
-        ax.scatter(X_norm[:, idx_x], y_norm, color='tab:gray')
+        ax.scatter(X[:, idx_x], y, color='tab:gray')
         ax.set_title(name_X[idx_x], fontsize=8)
 
-    x_mask = X_norm[:, mask_idx]
-    y_vals = y_norm.ravel()  # y가 (N,1)이어도 (N,)으로 평탄화
-
-    # mask_interval = [0, 0.3, 0.6, 1.0]
-    masks = [ ((x_mask > lb) & (x_mask <= ub)) for lb, ub in zip(mask_interval[:-1], mask_interval[1:])]
+    masks = get_masks(X, mask_idx, mask_interval)
+    y_vals = y.ravel()  # y가 (N,1)이어도 (N,)으로 평탄화
 
     colors = ['tab:blue', 'tab:orange', 'tab:green', 'tab:red']
     labels = [f'{lb} < x{mask_idx} <= {ub}' for lb, ub in zip(mask_interval[:-1], mask_interval[1:])]
@@ -265,7 +267,7 @@ def plot_data_per_interval(X_norm, y_norm, name_X, name_y, mask_idx, mask_interv
         if np.any(mask):  # 해당 구간 데이터가 있을 때만 그림
             for idx_x in range(nx):
                 ax = axs[idx_x]
-                ax.scatter(X_norm[mask, idx_x], y_vals[mask], s=20, color=c, alpha=0.75, edgecolor='none', label=lab)
+                ax.scatter(X[mask, idx_x], y_vals[mask], s=20, color=c, alpha=0.75, edgecolor='none', label=lab)
                 ax.set_title(name_X[idx_x], fontsize=8)
     axs[0].set_ylabel(name_y, fontsize=8)
     axs[-1].legend(loc='upper left', bbox_to_anchor=(1, 1), fontsize=8)
