@@ -46,7 +46,7 @@ from kan.utils import ex_round
 sym_res = []
 models = []
 for xc, d_opt in zip(x_coeff, file_data):
-    save_tag = make_save_tag(xc)
+    save_tag = make_save_tag(xc) + "_sparse"
     print("=====" + save_tag + "=====")
 
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
