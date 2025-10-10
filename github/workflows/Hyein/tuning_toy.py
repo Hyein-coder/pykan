@@ -60,15 +60,15 @@ y_test_norm = scaler_y.transform(y_test)
 out = sweep_multkan(
       X_train_norm, y_train_norm, X_val_norm, y_val_norm, X_test_norm, y_test_norm,
       param_grid={
-          'width': [[X_train.shape[1], 6, 1]],  #[X_train.shape[1], 4, 1],
+          'width': [[X_train.shape[1], 1, 1], [X_train.shape[1], 4, 1], [X_train.shape[1], 6, 1]],
           'grid': [10],
           'k': [3],
           'mult_arity': [0],
           'steps': [50],
           'opt': ['LBFGS'],
-          'lr': [0.01, 0.1],    # , 1., 10.
+          'lr': [1e-4, 1e-3, 0.01, 0.1],
           'update_grid': [True],
-          'lamb': [0.01],   # [1e-4, 0.001, 0.01, 0.1],
+          'lamb': [1e-4, 0.001, 0.01, 0.1],
           'lamb_coef': [5],
           'lamb_entropy': [5.],
           'prune': [True],

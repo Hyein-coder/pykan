@@ -21,12 +21,13 @@ time_stamp = datetime.datetime.now().strftime('%Y%m%d_%H%M')
 # ground_truth = lambda xsc, x1, x2: 10 * np.sin(x1) + xsc * x2**2
 
 file_name = [
-    "20251001_102135_auto_10sin(x1)+5x2.xlsx",
-    # r"D:\pykan\github\workflows\Hyein\multkan_sweep_autosave\20251001_103807_auto_10sin(x1)+10x2.xlsx",
-    # r"D:\pykan\github\workflows\Hyein\multkan_sweep_autosave\20251001_104111_auto_10sin(x1)+20x2.xlsx",
+    "20251002_211432_auto_10sin(x1)+5x2.xlsx",
+    "20251001_103807_auto_10sin(x1)+10x2.xlsx",
+    "20251001_104111_auto_10sin(x1)+20x2.xlsx",
 ]
-x_coeff = [5]
+x_coeff = [5, 10, 20]
 ground_truth = lambda xc, x1, x2: 10 * np.sin(x1) + xc * x2
+make_save_tag = lambda xc: f'periodic_{time_stamp}_{xc}x2'
 
 file_data = []
 for f in file_name:
@@ -43,12 +44,13 @@ from kan.utils import ex_round
 
 sym_res = []
 for xc, d_opt in zip(x_coeff, file_data):
-    save_tag = f'periodic_{time_stamp}_{xc}x2^2'
+    save_tag = make_save_tag(xc)
+    print("=====" + save_tag + "=====")
 
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     print(f"This script is running on {device}.")
 
-    x1_grid = np.linspace(-np.pi * 2, np.pi * 2, 60)
+    x1_grid = np.linspace(-np.pi, np.pi, 30)
     x2_grid = np.linspace(-1, 1, 30)
 
     x1, x2= np.meshgrid(x1_grid, x2_grid)
@@ -145,6 +147,7 @@ for xc, d_opt in zip(x_coeff, file_data):
     plt.tight_layout()
     plt.savefig(os.path.join(save_dir, f"{save_tag}_scores_L0_interval.png"))
     plt.show()
+    print(scores_interval)
 
 with open(os.path.join(save_dir, f"{save_tag}_sym_res.txt"), 'w') as f:
     for sym in sym_res:

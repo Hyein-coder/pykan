@@ -134,7 +134,7 @@ def _evaluate(model: MultKAN, dataset: Dict[str, torch.Tensor], scaler_y: Option
     return mae_train, mae_val, mae_test, r2_train, r2_val, r2_test
 
 
-def _run_single_trial(args, sym_verbose=False) -> Tuple[TrialResult, MultKAN, Dict[str, Any], Dict[str, Any]]:
+def _run_single_trial(args, verbose=False) -> Tuple[TrialResult, MultKAN, Dict[str, Any], Dict[str, Any]]:
     X_train, y_train, X_val, y_val, X_test, y_test, params, device_str, scaler_y, seed = args
     device = torch.device(device_str)
     _seed_everything(seed)
@@ -196,10 +196,12 @@ def _run_single_trial(args, sym_verbose=False) -> Tuple[TrialResult, MultKAN, Di
         sym_weight_simple = params.get('sym_weight_simple', 0.8)
         sym_r2_threshold = params.get('sym_r2_threshold', 0.)
         try:
-            model.auto_symbolic(lib=lib, weight_simple=sym_weight_simple, r2_threshold=sym_r2_threshold, verbose=sym_verbose)
+            model.auto_symbolic(lib=lib, weight_simple=sym_weight_simple, r2_threshold=sym_r2_threshold, verbose=verbose)
             model.fit(dataset, **fit_kwargs)
-            model.plot()
-            plt.show()
+
+            if verbose:
+                model.plot()
+                plt.show()
 
         except Exception as e:
             raise SymbolificationError(f"Failed during symbolification or subsequent fitting/plotting") from e
@@ -594,9 +596,7 @@ def evaluate_params(
     fig_name = os.path.join(special_dir, f"{special_tag}_eval.png")
 
     res, model, fit_kwargs, dataset = _run_single_trial(
-        (X_train, y_train, X_val, y_val, X_test, y_test, params, device_str, scaler_y, seed),
-        sym_verbose=True
-    )
+        (X_train, y_train, X_val, y_val, X_test, y_test, params, device_str, scaler_y, seed), verbose=True)
     device = torch.device(device_str)
     y_true, y_pred, mae, r2 = mae_and_r2(model, _to_tensor(X_val, device), _to_tensor(y_val, device), scaler_y=scaler_y)
 
