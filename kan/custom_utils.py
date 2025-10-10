@@ -391,20 +391,23 @@ def plot_activation_and_spline_coefficients(model, x=None, layers=None, save_tag
                 inputs = model.spline_preacts[l][:, j, i].cpu().detach().numpy()
                 outputs = model.spline_postacts[l][:, j, i].cpu().detach().numpy()
                 coef_node = coef[i][j]
+                num_knot = act.grid.shape[1]
+                spline_radius = int((num_knot - len(coef_node)) / 2)
+                bar_width = min(act.grid[i, 1:] - act.grid[i, :-1]) / 2
 
                 rank = np.argsort(inputs)
                 ax.plot(inputs[rank], outputs[rank], marker='o', ms=2, lw=1, label='Activations')
 
                 ax2 = ax.twinx()
                 second_axs[j, i] = ax2
-                ax2.scatter(np.linspace(0.1, 0.9, (len(coef_node))), coef_node,
+                ax2.scatter(act.grid[i, spline_radius:-spline_radius], coef_node,
                            s=20, color='white', edgecolor='k', label='Coefficients')
                 slope = [x - y for x, y in zip(coef_node[1:], coef_node[:-1])]
-                ax2.bar(np.linspace(0.1, 0.9, len(slope)), slope, width=0.02, align='edge', color='r', label='Slope')
+                ax2.bar(act.grid[i, spline_radius:-(spline_radius + 1)], slope,
+                        width=bar_width, align='edge', color='r', label='Slope')
                 if titles:
                     ax.set_title(f'in {i} -- out {j}', fontsize=10)
-        second_axs[-1, -1].legend(loc='upper right', bbox_to_anchor=(0.99, 1), fontsize=8,
-                                  title=f'---Layer {l}---', title_fontsize=8)
+        second_axs[-1, -1].legend(loc='best', fontsize=8, title=f'---Layer {l}---', title_fontsize=8)
 
         if save_tag is not None:
             plt.savefig(os.path.join(save_dir, f'{save_tag}_act_coef_L{l}.png'))
