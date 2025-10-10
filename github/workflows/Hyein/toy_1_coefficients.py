@@ -22,11 +22,10 @@ time_stamp = datetime.datetime.now().strftime('%Y%m%d_%H%M')
 
 file_name = [
     "20251002_211432_auto_10sin(x1)+5x2.xlsx",
-    # "20251010_101903_auto.xlsx",
-    # "20251001_103807_auto_10sin(x1)+10x2.xlsx",
-    # "20251001_104111_auto_10sin(x1)+20x2.xlsx",
+    "20251001_103807_auto_10sin(x1)+10x2.xlsx",
+    "20251001_104111_auto_10sin(x1)+20x2.xlsx",
 ]
-x_coeff = [5]
+x_coeff = [5, 10, 20]
 ground_truth = lambda xc, x1, x2: 10 * np.sin(x1) + xc * x2
 make_save_tag = lambda xc: f'periodic_{time_stamp}_{xc}x2'
 
@@ -46,7 +45,7 @@ from kan.utils import ex_round
 sym_res = []
 models = []
 for xc, d_opt in zip(x_coeff, file_data):
-    save_tag = make_save_tag(xc) + "_sparse"
+    save_tag = make_save_tag(xc)
     print("=====" + save_tag + "=====")
 
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
@@ -130,18 +129,22 @@ for xc, d_opt in zip(x_coeff, file_data):
 
     masks = get_masks(X, mask_idx, mask_interval)
     scores_interval = []
+    acts_interval = []
     for mask in masks:
         if np.any(mask):
             x_masked = X[mask, :]   # 이게 아니라 fabricated, 임의의 input을 주게 되면 어떨까?
             x_norm_masked = scaler_X.transform(x_masked)
             x_tensor_masked = torch.tensor(x_norm_masked, dtype=torch.float32, device=device)
             model.forward(x_tensor_masked)
-            scores_interval.append(model.node_scores[0].detach().cpu().numpy().copy())
+            acts_interval.append(model.acts)
+            scores_interval.append(model.feature_score.detach().cpu().numpy().copy())
         else:
             scores_interval.append(np.zeros(scores_tot.shape))
 
     width = 0.25
     fig, ax = plt.subplots()
+    xticks = np.arange(len(masks))
+    xticklabels = [f'{lb:.2f} < x{mask_idx} <= {ub:.2f}' for lb, ub in zip(mask_interval[:-1], mask_interval[1:])]
     max_score = max([max(s) for s in scores_interval])
     for idx in range(scores_tot.shape[0]):
         bars = ax.bar(xticks + idx * width, [s[idx] for s in scores_interval], width, label=f"x{idx}")
@@ -149,8 +152,6 @@ for xc, d_opt in zip(x_coeff, file_data):
     ax.margins(x=0.1)
     ax.set_ylim(0, max_score * 1.1)
 
-    xticks = np.arange(len(masks))
-    xticklabels = [f'{lb:.2f} < x{mask_idx} <= {ub:.2f}' for lb, ub in zip(mask_interval[:-1], mask_interval[1:])]
     ax.set_xticks(xticks)
     ax.set_xticklabels(xticklabels, rotation=10, ha='center', fontsize=8)
     ax.legend(loc='upper left', bbox_to_anchor=(1, 1), fontsize=8)
