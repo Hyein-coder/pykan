@@ -140,15 +140,21 @@ for xc, d_opt in zip(x_coeff, file_data):
         else:
             scores_interval.append(np.zeros(scores_tot.shape))
 
-    xticks = np.arange(len(masks))
-    xticklabels = [f'{lb:.2f} < x{mask_idx} <= {ub:.2f}' for lb, ub in zip(mask_interval[:-1], mask_interval[1:])]
     width = 0.25
     fig, ax = plt.subplots()
+    max_score = max([max(s) for s in scores_interval])
     for idx in range(scores_tot.shape[0]):
-        ax.bar(xticks + idx * width, [s[idx] for s in scores_interval], width, label=f"x{idx}")
+        bars = ax.bar(xticks + idx * width, [s[idx] for s in scores_interval], width, label=f"x{idx}")
+        ax.bar_label(bars, fmt='%.2f', fontsize=7, padding=3)
+    ax.margins(x=0.1)
+    ax.set_ylim(0, max_score * 1.1)
+
+    xticks = np.arange(len(masks))
+    xticklabels = [f'{lb:.2f} < x{mask_idx} <= {ub:.2f}' for lb, ub in zip(mask_interval[:-1], mask_interval[1:])]
     ax.set_xticks(xticks)
     ax.set_xticklabels(xticklabels, rotation=10, ha='center', fontsize=8)
     ax.legend(loc='upper left', bbox_to_anchor=(1, 1), fontsize=8)
+
     plt.tight_layout()
     plt.savefig(os.path.join(save_dir, f"{save_tag}_scores_L0_interval.png"))
     plt.show()
