@@ -146,7 +146,7 @@ def _run_single_trial(args, verbose=False) -> Tuple[TrialResult, MultKAN, Dict[s
     # Override device/seed per trial
     model_kwargs['device'] = device
     model_kwargs['seed'] = seed
-    model_kwargs['grid_range'] = [0.1, 0.9]
+    model_kwargs['grid_range'] = params.get('grid_range', [0.1, 0.9])
 
     model = MultKAN(**model_kwargs)
 
@@ -587,6 +587,8 @@ def evaluate_params(
 
     if type(params['width']) is str:
         params['width'] = eval(params['width'])
+    if type(params['grid_range']) is str:
+        params['grid_range'] = eval(params['grid_range'])
     params['width'] = [item[0] if type(item) is list else item for item in params['width']]
 
     if special_dir is None:

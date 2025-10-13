@@ -73,13 +73,13 @@ y = df_out_final[name_y].values.reshape(-1, 1)
 out = sweep_multkan(
       X_train_norm, y_train_norm, X_val_norm, y_val_norm, X_test_norm, y_test_norm,
       param_grid={
-          'width': [[X_train.shape[1], 8, 1]],
+          'width': [[X_train.shape[1], 2, 2, 1]],
           'grid': [30],
           'grid_range': [[0, 1]],
-          'mult_arity': [2, 3, 4, 5, 6],
-          'lr': [1.0],
+          # 'mult_arity': [2, 3, 4, 5, 6],
+          'lr': [1e-2, 0.1, 1.0],
           'update_grid': [True],
-          'lamb': [1e-3],
+          'lamb': [1e-4, 0.001, 0.01],
           'lamb_coef': [0.1],
           'lamb_coefdiff': [0.1],
           'lamb_entropy': [0.01],
@@ -95,3 +95,35 @@ out = sweep_multkan(
 best = out['best']
 print('Best configuration:')
 print(json.dumps(best, indent=2))
+
+"""
+Best configuration:
+{
+  "params": {
+    "grid": 3,
+    "grid_range": "[0, 1]",
+    "lamb": 0.001,
+    "lamb_coef": 0.1,
+    "lamb_coefdiff": 0.1,
+    "lamb_entropy": 0.01,
+    "lr": 0.1,
+    "prune": true,
+    "pruning_th": 0.01,
+    "update_grid": true,
+    "width": "[[8, 0], [2, 0], [2, 0], [1, 0]]"
+  },
+  "n_trials": 1,
+  "train_loss_mean": 0.015810180455446243,
+  "train_loss_std": 0.0,
+  "val_loss_mean": 0.015691880136728287,
+  "val_loss_std": 0.0,
+  "test_loss_mean": 0.01623193919658661,
+  "test_loss_std": 0.0,
+  "r2_train_mean": 0.9909133933332487,
+  "r2_train_std": 0.0,
+  "r2_val_mean": 0.9909010320759294,
+  "r2_val_std": 0.0,
+  "r2_test_mean": 0.991537045170788,
+  "r2_test_std": 0.0
+}
+"""
