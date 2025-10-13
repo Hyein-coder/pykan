@@ -24,8 +24,9 @@ file_name = [
     "20251002_211432_auto_10sin(x1)+5x2.xlsx",
     "20251001_103807_auto_10sin(x1)+10x2.xlsx",
     "20251001_104111_auto_10sin(x1)+20x2.xlsx",
+    "20251013_103245_auto_10sin(x1)+2x2.xlsx",
 ]
-x_coeff = [5, 10, 20]
+x_coeff = [5, 10, 20, 2]
 ground_truth = lambda xc, x1, x2: 10 * np.sin(x1) + xc * x2
 make_save_tag = lambda xc: f'periodic_{time_stamp}_{xc}x2'
 
@@ -51,11 +52,11 @@ for xc, d_opt in zip(x_coeff, file_data):
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     print(f"This script is running on {device}.")
 
-    x1_grid = np.linspace(-np.pi, np.pi, 50)
+    x1_grid = np.linspace(-np.pi, np.pi, 30)
     # x1_grid = np.concatenate((np.linspace(-np.pi, np.pi, 30),
     #                           np.linspace(-np.pi, -np.pi * 2 / 3, 10),
     #                           np.linspace(np.pi, np.pi * 2 / 3, 10)))
-    x2_grid = np.linspace(-1, 1, 50)
+    x2_grid = np.linspace(-1, 1, 30)
 
     x1, x2= np.meshgrid(x1_grid, x2_grid)
     X = np.stack((x1.flatten(), x2.flatten()), axis=1)
@@ -72,8 +73,8 @@ for xc, d_opt in zip(x_coeff, file_data):
     fig = plt.figure(figsize=(10, 8))
     ax = fig.add_subplot(111, projection='3d')
     surface = ax.plot_surface(x1, x2, y, cmap='viridis', edgecolor='none')
-    ax.set_xlabel('x1')
-    ax.set_ylabel('x2')
+    ax.set_xlabel('x0')
+    ax.set_ylabel('x1')
     ax.set_zlabel('y')
     fig.colorbar(surface, shrink=0.5, aspect=5)
     plt.savefig(os.path.join(save_dir, f"{save_tag}_ground_truth.png"))
@@ -94,7 +95,7 @@ for xc, d_opt in zip(x_coeff, file_data):
     y_test_norm = scaler_y.transform(y_test)
 
     params['symbolic'] = False
-    params['grid'] = 30
+    # params['grid'] = 30
 
     res, model, fit_kwargs, dataset = evaluate_params(
         X_train_norm, y_train_norm, X_val_norm, y_val_norm, params, X_test_norm, y_test_norm,
@@ -119,10 +120,12 @@ for xc, d_opt in zip(x_coeff, file_data):
     name_X = [f'x{idx}' for idx in range(X_norm.shape[1])]
     name_y = ['y']
 
-    mask_idx = 1
-    mask_interval = [-1 + 0.5 * i for i in range(5)]
-    # mask_idx = 0
+    # mask_idx = 1
+    # mask_interval = [-1 + 0.5 * i for i in range(5)]
+    mask_idx = 0
     # mask_interval = [-np.pi, -np.pi/2, 0, np.pi/2, np.pi]
+    mask_scaled_interval = [0, 0.2, 0.6, 1]
+    mask_interval = [scaler_X.inverse_transform(np.array([[x0, 0.5]]))[0,0] for x0 in mask_scaled_interval]
 
     fig_x1, ax_x1 = plot_data_per_interval(X, y, name_X, name_y, mask_idx, mask_interval)
     plt.savefig(os.path.join(save_dir, f"{save_tag}_data_colored.png"))

@@ -75,6 +75,7 @@ out = sweep_multkan(
       param_grid={
           'width': [[X_train.shape[1], 8, 1]],
           'grid': [30],
+          'grid_range': [[0, 1]],
           'mult_arity': [2, 3, 4, 5, 6],
           'lr': [1.0],
           'update_grid': [True],
