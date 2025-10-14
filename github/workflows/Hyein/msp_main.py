@@ -9,25 +9,36 @@ import pandas as pd
 from kan.experiments.multkan_hparam_sweep import evaluate_params
 from kan.custom_utils import plot_data_per_interval, plot_activation_and_spline_coefficients, get_masks
 import matplotlib.pyplot as plt
+import datetime
+
+file_name = "20251013_180016_auto_MSP_2.xlsx"
+root_dir = os.path.join(os.getcwd(), 'github\workflows\Hyein')
+df = pd.read_excel(os.path.join(root_dir, "multkan_sweep_autosave", file_name), sheet_name='best_avg_by_params')
 
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 print(f"This script is running on {device}.")
-save_tag = "CO2RR_MSP"
+save_tag = "CO2RR_MSP_" + f"{datetime.datetime.now().strftime('%Y%m%d_%H%M%S')}"
+save_dir = os.path.join(os.getcwd(), 'github\workflows\Hyein\custom_figures')
 
-params = {
-    "grid": 3,
-    "grid_range": "[0, 1]",
-    "lamb": 0.001,
-    "lamb_coef": 0.1,
-    "lamb_coefdiff": 0.1,
-    "lamb_entropy": 0.01,
-    "lr": 0.1,
-    "prune": True,
-    "pruning_th": 0.01,
-    "update_grid": True,
-    "width": "[[8, 0], [2, 0], [2, 0], [1, 0]]",
-}
-params['grid'] = 30
+d_opt = df.iloc[0]
+d_opt = d_opt.to_dict()
+params = {k: v for k, v in d_opt.items() if "param_" in k}
+params = {key.replace('param_', ''): value for key, value in params.items()}
+
+# params = {
+#     "grid": 3,
+#     "grid_range": "[0, 1]",
+#     "lamb": 0.001,
+#     "lamb_coef": 0.1,
+#     "lamb_coefdiff": 0.1,
+#     "lamb_entropy": 0.01,
+#     "lr": 0.1,
+#     "prune": True,
+#     "pruning_th": 0.01,
+#     "update_grid": True,
+#     "width": "[[8, 0], [2, 0], [2, 0], [1, 0]]",
+# }
+# params['grid'] = 30
 
 dir_current = os.getcwd()
 filepath = os.path.join(dir_current, "github\workflows\TaeWoong", "25.01.14_CO2RR_GSA.xlsx")
@@ -81,26 +92,34 @@ res, model, fit_kwargs, dataset = evaluate_params(
     X_train_norm, y_train_norm, X_val_norm, y_val_norm, params, X_test_norm, y_test_norm,
     0, scaler_y, device.type,
     special_tag=save_tag,
-    special_dir='D:/pykan/github/workflows/Hyein/custom_figures'
+    special_dir=save_dir
 )
-
 model.plot()
 plt.show()
-
 #%%
 from kan.utils import ex_round
-
-lib = ['sin', 'cos', 'x', 'x^2', 'x^3', 'x^4', 'exp', 'log', 'sqrt', 'tanh', '1/x', '1/x^2']
-sym_weight_simple = params.get('sym_weight_simple', 0.8)
-sym_r2_threshold = params.get('sym_r2_threshold', 0.)
-
-model.auto_symbolic(lib=lib, weight_simple=sym_weight_simple, r2_threshold=sym_r2_threshold)
-model.fit(dataset, **fit_kwargs)
-model.plot()
-plt.show()
+# params['symbolic'] = True
+# res_sym, model_sym, fit_kwargs_sym, dataset_sym = evaluate_params(
+#     X_train_norm, y_train_norm, X_val_norm, y_val_norm, params, X_test_norm, y_test_norm,
+#     0, scaler_y, device.type,
+#     special_tag=save_tag+"_symbolic",
+#     special_dir='D:/pykan/github/workflows/Hyein/custom_figures'
+# )
+#
+# model_sym.plot()
+# plt.show()
 sym_fun = ex_round(model.symbolic_formula()[0][0], 4)
+with open(os.path.join(save_dir, f"{save_tag}_sym_res.txt"), "w") as f:
+    f.write(f"{sym_fun}\n")
 
+#%%
 X_norm = scaler_X.transform(X)
 y_norm = scaler_y.transform(y)
 
 plot_activation_and_spline_coefficients(model, save_tag=save_tag, x=dataset, layers=None)
+
+scores_tot = model.node_scores[0].detach().cpu().numpy()
+fig, ax = plt.subplots()
+ax.bar(list(range(scores_tot.shape[0])), scores_tot.tolist())
+plt.savefig(os.path.join(save_dir, f"{save_tag}_scores_L0.png"))
+plt.show()
