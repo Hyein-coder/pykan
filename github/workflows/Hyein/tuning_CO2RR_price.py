@@ -72,12 +72,12 @@ y = df_out_final[name_y].values.reshape(-1, 1)
 out = sweep_multkan(
       X_train_norm, y_train_norm, X_val_norm, y_val_norm, X_test_norm, y_test_norm,
       param_grid={
-          'width': [[X_train.shape[1], 2, 2, 1], [X_train.shape[1], 4, 4, 1], [X_train.shape[1], 2, 2, 2, 1]],
+          'width': [[X_train.shape[1], 2, 2, 2, 1]],
           'grid': [10],
           'grid_range': [[0, 1]],
-          'lr': [0.01, 0.1],
+          'lr': [0.1],
           'update_grid': [True],
-          'lamb': [1e-4],
+          'lamb': [1e-5, 1e-4, 1e-3, 1e-2],
           'lamb_coef': [0.1],
           'lamb_coefdiff': [0.1],
           'lamb_entropy': [0.01],

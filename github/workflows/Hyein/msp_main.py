@@ -11,13 +11,13 @@ from kan.custom_utils import plot_data_per_interval, plot_activation_and_spline_
 import matplotlib.pyplot as plt
 import datetime
 
-file_name = "20251013_180016_auto_MSP_2.xlsx"
+file_name = "20251014_150723_auto_MSP"
 root_dir = os.path.join(os.getcwd(), 'github\workflows\Hyein')
-df = pd.read_excel(os.path.join(root_dir, "multkan_sweep_autosave", file_name), sheet_name='best_avg_by_params')
+df = pd.read_excel(os.path.join(root_dir, "multkan_sweep_autosave", file_name + ".xlsx"), sheet_name='best_avg_by_params')
 
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 print(f"This script is running on {device}.")
-save_tag = "CO2RR_MSP_" + f"{datetime.datetime.now().strftime('%Y%m%d_%H%M%S')}"
+save_tag = "CO2RR_MSP_" + file_name
 save_dir = os.path.join(os.getcwd(), 'github\workflows\Hyein\custom_figures')
 
 d_opt = df.iloc[0]
@@ -111,7 +111,17 @@ from kan.utils import ex_round
 sym_fun = ex_round(model.symbolic_formula()[0][0], 4)
 with open(os.path.join(save_dir, f"{save_tag}_sym_res.txt"), "w") as f:
     f.write(f"{sym_fun}\n")
-
+#%%
+params['grid'] = 30
+params['sym_weight_simple'] = 0.8
+res_refine, model_refine, fit_kwargs_refine, dataset_refine = evaluate_params(
+    X_train_norm, y_train_norm, X_val_norm, y_val_norm, params, X_test_norm, y_test_norm,
+    0, scaler_y, device.type,
+    special_tag=save_tag + "_refine",
+    special_dir=save_dir
+)
+model_refine.plot()
+plt.show()
 #%%
 X_norm = scaler_X.transform(X)
 y_norm = scaler_y.transform(y)
@@ -123,3 +133,5 @@ fig, ax = plt.subplots()
 ax.bar(list(range(scores_tot.shape[0])), scores_tot.tolist())
 plt.savefig(os.path.join(save_dir, f"{save_tag}_scores_L0.png"))
 plt.show()
+
+#%% Draw attribution scores across multi-layer
