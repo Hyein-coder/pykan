@@ -587,7 +587,7 @@ def evaluate_params(
 
     if type(params['width']) is str:
         params['width'] = eval(params['width'])
-    if type(params['grid_range']) is str:
+    if type(params.get('grid_range')) is str:
         params['grid_range'] = eval(params['grid_range'])
     params['width'] = [item[0] if type(item) is list else item for item in params['width']]
 
