@@ -21,11 +21,18 @@ time_stamp = datetime.datetime.now().strftime('%Y%m%d_%H%M')
 # ground_truth = lambda xsc, x1, x2: 10 * np.sin(x1) + xsc * x2**2
 
 file_name = [
-    "20251015_170416_auto_10sin4x1+5x2",
+    "20251020_141648_auto_10sin4x1+5x2",
 ]
 x_coeff = [4]
 ground_truth = lambda xc, x1, x2: 10 * np.sin(xc* x1) + 5 * x2
 make_save_tag = lambda xc, f: 'fastperiodic_' + f + f'_sin{xc}x0'
+
+# file_name = [
+#     "20251020_141648_auto_10sin4x1+5x2",
+# ]
+# x_coeff = [4]
+# ground_truth = lambda xc, x1, x2: 10 * np.sin(xc* x1) + 5 * x2
+# make_save_tag = lambda xc, f: 'fastperiodic_' + f + f'_sin{xc}x0'
 
 # file_name = [
 #     "20251002_211432_auto_10sin(x1)+5x2.xlsx",
@@ -145,9 +152,10 @@ for xc, d_opt, fn in zip(x_coeff, file_data, file_name):
     mask_interval = [scaler_X.inverse_transform(np.array([[x0, 0.5]]))[0,0] for x0 in mask_scaled_interval]
 
     fig_x1, ax_x1 = plot_data_per_interval(X, y, name_X, name_y, mask_idx, mask_interval)
+    plt.savefig(os.path.join(save_dir, f"{save_tag}_data_colored.png"))
     for idx_x in range(X.shape[1]):
         ax_x1[idx_x].scatter(X[:, idx_x], y_pred, color='k', s=.9, label='Prediction')
-    plt.savefig(os.path.join(save_dir, f"{save_tag}_data_colored.png"))
+    plt.savefig(os.path.join(save_dir, f"{save_tag}_data_and_prediction.png"))
     plt.show()
 
     # Validation data analysis

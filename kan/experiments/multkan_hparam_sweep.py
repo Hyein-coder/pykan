@@ -403,6 +403,7 @@ def sweep_multkan(
     n_jobs: int = os.cpu_count() or 1,
     use_cuda: bool = True,
     scaler_y: Optional[Any] = None,
+    eqn: str = '',
 ) -> Dict[str, Any]:
     """
     Run a hyperparameter sweep for MultKAN (sequential execution; no parallel computing).
@@ -460,7 +461,7 @@ def sweep_multkan(
     results: List[TrialResult] = []
 
     # Determine a single autosave path for this run (updated after each trial)
-    autosave_path = os.path.join(autosave_dir, f"{save_tag}.xlsx")
+    autosave_path = os.path.join(autosave_dir, f"{save_tag}_{eqn}.xlsx")
     # default_autosave_path = os.path.join(os.getcwd(), "multkan_sweep_autosave", f"{save_tag}.xlsx")
 
     def _get_r2_val(r):

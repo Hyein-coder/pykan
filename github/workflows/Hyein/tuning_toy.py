@@ -26,6 +26,7 @@ x1, x2= np.meshgrid(x1_grid, x2_grid)
 X = np.stack((x1.flatten(), x2.flatten()), axis=1)
 # y = 10 * np.abs(x1) + 5*x2**2
 y = 10 * np.sin(4*x1) + 5 * x2
+eqn = "10sin(4x1) + 5x2"
 
 y = y.flatten().reshape(-1, 1)
 
@@ -63,18 +64,18 @@ y_test_norm = scaler_y.transform(y_test)
 out = sweep_multkan(
       X_train_norm, y_train_norm, X_val_norm, y_val_norm, X_test_norm, y_test_norm,
       param_grid={
-          'width': [[X_train.shape[1], 2, 1], [X_train.shape[1], 2, 2, 1]],
+          'width': [[X_train.shape[1], 8, 1]],
           'grid': [10],
           # 'grid_eps': [0.02, 0.5, 1],
           'k': [3],
           'mult_arity': [0],
           'steps': [50],
           'opt': ['LBFGS'],
-          'lr': [1e-4, 1e-2, 1],
+          'lr': [5],
           'update_grid': [True],
-          'lamb': [1e-4],
-          'lamb_coef': [5],
-          'lamb_entropy': [5.],
+          'lamb': [1e-2],
+          'lamb_coef': [1],
+          'lamb_entropy': [1],
           'prune': [True],
           'pruning_node_th': [0.01],
           'pruning_edge_th': [3e-2],
@@ -84,6 +85,7 @@ out = sweep_multkan(
       seeds=[0, 17, 42],      # run each config with multiple seeds
       n_jobs=1,          # number of parallel worker processes
       use_cuda=False,     # set False to force CPU
+      eqn=eqn,
   )
 print(out['results_avg_table'][['r2_val_mean', "param_lamb", "param_sym_weight_simple"]])
 
