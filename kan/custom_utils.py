@@ -249,6 +249,7 @@ def get_masks(X, mask_idx, mask_interval):
 def plot_data_per_interval(X, y, name_X, name_y, mask_idx, mask_interval):
     nx = X.shape[1]
     fig, axs = plt.subplots(nrows=1, ncols=nx, figsize=(20, 3.5), constrained_layout=True, sharey=True)
+    axs = np.atleast_1d(axs)
     for idx_x in range(nx):
         ax = axs[idx_x]
         ax.scatter(X[:, idx_x], y, color='tab:gray')
