@@ -5,6 +5,7 @@ from kan.custom_utils import (plot_data_per_interval, plot_spline_coefficients, 
 import matplotlib.pyplot as plt
 import os
 import datetime
+import json
 
 root_dir = os.path.join(os.getcwd(), 'github', 'workflows', 'Hyein')
 save_dir = os.path.join(root_dir, "custom_figures")
@@ -21,11 +22,11 @@ time_stamp = datetime.datetime.now().strftime('%Y%m%d_%H%M')
 # ground_truth = lambda xsc, x1, x2: 10 * np.sin(x1) + xsc * x2**2
 
 file_name = [
-    "20251020_141648_auto_10sin4x1+5x2",
+    "20251020_173312_auto_sin(2x0)+5x1",
 ]
-x_coeff = [4]
-ground_truth = lambda xc, x1, x2: 10 * np.sin(xc* x1) + 5 * x2
-make_save_tag = lambda xc, f: 'fastperiodic_' + f + f'_sin{xc}x0'
+x_coeff = [None]
+ground_truth = lambda xc, x0, x1: np.sin(2*x0) + 5*x1
+make_save_tag = lambda xc, f: 'fastperiodic_' + f
 
 # file_name = [
 #     "20251020_141648_auto_10sin4x1+5x2",
@@ -75,13 +76,12 @@ for xc, d_opt, fn in zip(x_coeff, file_data, file_name):
     x1, x2= np.meshgrid(x1_grid, x2_grid)
     X = np.stack((x1.flatten(), x2.flatten()), axis=1)
 
-    d_opt = d_opt.iloc[0]
-    d_opt = d_opt.to_dict()
-    params = {k: v for k, v in d_opt.items() if "param_" in k}
+    d_opt_flat = d_opt.iloc[0]
+    d_opt_flat = d_opt_flat.to_dict()
+    params = {k: v for k, v in d_opt_flat.items() if "param_" in k}
     params = {key.replace('param_', ''): value for key, value in params.items()}
 
     y_mesh = ground_truth(xc, x1, x2)
-
     y = y_mesh.flatten().reshape(-1, 1)
 
     X_temp, X_test, y_temp, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
@@ -97,14 +97,19 @@ for xc, d_opt, fn in zip(x_coeff, file_data, file_name):
     y_test_norm = scaler_y.transform(y_test)
 
     params['symbolic'] = False
-    # params['grid'] = 30
+    # params['steps'] = 200
 
-    res, model, fit_kwargs, dataset = evaluate_params(
+    res, model, fit_kwargs, dataset, save_info = evaluate_params(
         X_train_norm, y_train_norm, X_val_norm, y_val_norm, params, X_test_norm, y_test_norm,
         0, scaler_y, device.type,
         special_tag=save_tag,
         special_dir=save_dir,
     )
+    model.plot()
+    plt.show()
+    print(res)
+    with open(os.path.join(save_dir, f"{save_tag}_result.json"), 'w') as f:
+        json.dump(vars(res), f, indent=4)
 
     fig = plt.figure(figsize=(10, 8))
     ax = fig.add_subplot(111, projection='3d')
@@ -115,18 +120,19 @@ for xc, d_opt, fn in zip(x_coeff, file_data, file_name):
     fig.colorbar(surface, shrink=0.5, aspect=5)
     plt.savefig(os.path.join(save_dir, f"{save_tag}_ground_truth.png"))
     plt.show()
-
+#%%
     lib = ['sin', 'cos', 'x', 'x^2', 'x^3', 'x^4', 'exp', 'log', 'sqrt', 'tanh', '1/x', '1/x^2']
     sym_weight_simple = params.get('sym_weight_simple', 0.8)
     sym_r2_threshold = params.get('sym_r2_threshold', 0.)
 
-    model.auto_symbolic(lib=lib, weight_simple=sym_weight_simple, r2_threshold=sym_r2_threshold)
+    model.auto_symbolic(lib=lib, weight_simple=sym_weight_simple, r2_threshold=sym_r2_threshold, a_range=(-50, 50))
     model.fit(dataset, **fit_kwargs)
     model.plot()
     plt.show()
+
     sym_fun = ex_round(model.symbolic_formula()[0][0], 4)
     sym_res.append(sym_fun)
-
+#%%
     plot_activation_and_spline_coefficients(model, save_tag=save_tag, x=dataset, layers=None)
 
     # Compute attribution score
@@ -146,10 +152,10 @@ for xc, d_opt, fn in zip(x_coeff, file_data, file_name):
 
     # mask_idx = 1
     # mask_interval = [-1 + 0.5 * i for i in range(5)]
-    mask_idx = 0
+    mask_idx = 1
     # mask_interval = [-np.pi, -np.pi/2, 0, np.pi/2, np.pi]
-    mask_scaled_interval = [0, 0.2, 0.6, 1]
-    mask_interval = [scaler_X.inverse_transform(np.array([[x0, 0.5]]))[0,0] for x0 in mask_scaled_interval]
+    mask_scaled_interval = [0, 0.4, 0.6, 1]
+    mask_interval = [scaler_X.inverse_transform(np.array([[x0, x0]]))[0,mask_idx] for x0 in mask_scaled_interval]
 
     fig_x1, ax_x1 = plot_data_per_interval(X, y, name_X, name_y, mask_idx, mask_interval)
     plt.savefig(os.path.join(save_dir, f"{save_tag}_data_colored.png"))

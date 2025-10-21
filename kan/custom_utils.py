@@ -356,7 +356,7 @@ def plot_spline_coefficients(model, save_tag=None, show=True):
         plots.append((fig, axs))
     return plots
 
-def plot_activation_and_spline_coefficients(model, x=None, layers=None, save_tag=None, show=True, titles=True):
+def plot_activation_and_spline_coefficients(model, x=None, layers=None, abs_dir=None, save_tag=None, show=True, titles=True):
     # Ensure activations are cached
     if isinstance(x, dict):
         x_use = x.get('train_input', None)
@@ -410,8 +410,10 @@ def plot_activation_and_spline_coefficients(model, x=None, layers=None, save_tag
                     ax.set_title(f'in {i} -- out {j}', fontsize=10)
         second_axs[-1, -1].legend(loc='best', fontsize=8, title=f'---Layer {l}---', title_fontsize=8)
 
+        if abs_dir is None:
+            abs_dir = save_dir
         if save_tag is not None:
-            plt.savefig(os.path.join(save_dir, f'{save_tag}_act_coef_L{l}.png'))
+            plt.savefig(os.path.join(abs_dir, f'{save_tag}_act_coef_L{l}.png'))
         if show:
             plt.show()
         figs.append(fig)
