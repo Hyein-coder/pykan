@@ -581,7 +581,7 @@ def evaluate_params(
     device_str: Optional[str] = 'cpu',
     special_tag: Optional[str] = None,
     special_dir: Optional[str] = None,
-) -> Tuple[TrialResult, MultKAN, Dict[str, Any], Dict[str, Any]]:
+) -> Tuple[TrialResult, MultKAN, Dict[str, Any], Dict[str, Any], Dict[str, str]]:
 
     if seed is None:
         seed = 0
@@ -609,7 +609,9 @@ def evaluate_params(
     plt.savefig(fig_name)
     plt.show()
 
-    return res, model, fit_kwargs, dataset
+    save_info = {"dir": special_dir, "tag": special_tag}
+
+    return res, model, fit_kwargs, dataset, save_info
 
 
 def _make_toy_dataset(n=200, noise=0.0, seed=0):
