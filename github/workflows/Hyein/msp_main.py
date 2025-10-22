@@ -1,3 +1,7 @@
+"""
+MSP main
+: the results are slightly twisted compared to the previous version plots.
+"""
 import torch
 import os
 from sklearn.model_selection import train_test_split
@@ -7,9 +11,8 @@ from kan.custom_utils import remove_outliers_iqr
 import pandas as pd
 
 from kan.experiments.multkan_hparam_sweep import evaluate_params
-from kan.custom_utils import plot_data_per_interval, plot_activation_and_spline_coefficients, get_masks
+from kan.custom_utils import plot_activation_and_spline_coefficients
 import matplotlib.pyplot as plt
-import datetime
 
 file_name = "20251014_150723_auto_MSP"
 root_dir = os.path.join(os.getcwd(), 'github\workflows\Hyein')
@@ -19,26 +22,12 @@ device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 print(f"This script is running on {device}.")
 save_tag = "CO2RR_MSP_" + file_name
 save_dir = os.path.join(os.getcwd(), 'github\workflows\Hyein\custom_figures')
+save_heading = os.path.join(save_dir, save_tag)
 
 d_opt = df.iloc[0]
 d_opt = d_opt.to_dict()
 params = {k: v for k, v in d_opt.items() if "param_" in k}
 params = {key.replace('param_', ''): value for key, value in params.items()}
-
-# params = {
-#     "grid": 3,
-#     "grid_range": "[0, 1]",
-#     "lamb": 0.001,
-#     "lamb_coef": 0.1,
-#     "lamb_coefdiff": 0.1,
-#     "lamb_entropy": 0.01,
-#     "lr": 0.1,
-#     "prune": True,
-#     "pruning_th": 0.01,
-#     "update_grid": True,
-#     "width": "[[8, 0], [2, 0], [2, 0], [1, 0]]",
-# }
-# params['grid'] = 30
 
 dir_current = os.getcwd()
 filepath = os.path.join(dir_current, "github\workflows\TaeWoong", "25.01.14_CO2RR_GSA.xlsx")
@@ -88,7 +77,7 @@ X_test_norm = scaler_X.transform(X_test)
 y_val_norm = scaler_y.transform(y_val)
 y_test_norm = scaler_y.transform(y_test)
 
-res, model, fit_kwargs, dataset = evaluate_params(
+res, model, fit_kwargs, dataset, _ = evaluate_params(
     X_train_norm, y_train_norm, X_val_norm, y_val_norm, params, X_test_norm, y_test_norm,
     0, scaler_y, device.type,
     special_tag=save_tag,
@@ -98,23 +87,13 @@ model.plot()
 plt.show()
 #%%
 from kan.utils import ex_round
-# params['symbolic'] = True
-# res_sym, model_sym, fit_kwargs_sym, dataset_sym = evaluate_params(
-#     X_train_norm, y_train_norm, X_val_norm, y_val_norm, params, X_test_norm, y_test_norm,
-#     0, scaler_y, device.type,
-#     special_tag=save_tag+"_symbolic",
-#     special_dir='D:/pykan/github/workflows/Hyein/custom_figures'
-# )
-#
-# model_sym.plot()
-# plt.show()
 sym_fun = ex_round(model.symbolic_formula()[0][0], 4)
 with open(os.path.join(save_dir, f"{save_tag}_sym_res.txt"), "w") as f:
     f.write(f"{sym_fun}\n")
 #%%
 params['grid'] = 30
 params['sym_weight_simple'] = 0.8
-res_refine, model_refine, fit_kwargs_refine, dataset_refine = evaluate_params(
+res_refine, model_refine, fit_kwargs_refine, dataset_refine, _ = evaluate_params(
     X_train_norm, y_train_norm, X_val_norm, y_val_norm, params, X_test_norm, y_test_norm,
     0, scaler_y, device.type,
     special_tag=save_tag + "_refine",
@@ -126,7 +105,7 @@ plt.show()
 X_norm = scaler_X.transform(X)
 y_norm = scaler_y.transform(y)
 
-plot_activation_and_spline_coefficients(model, save_tag=save_tag, x=dataset, layers=None)
+plot_activation_and_spline_coefficients(model, save_heading=save_heading, x=dataset, layers=None)
 
 scores_tot = model.node_scores[0].detach().cpu().numpy()
 fig, ax = plt.subplots()

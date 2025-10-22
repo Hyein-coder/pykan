@@ -165,19 +165,19 @@ plt.savefig(os.path.join(save_dir, f"{save_tag}_validation.png"))
 plt.show()
 #%%
 from kan.custom_utils import plot_data_per_interval, plot_spline_coefficients
-
+save_heading = os.path.join(save_dir, save_tag)
 X_norm = scaler_X.transform(X)
 y_norm = scaler_y.transform(y)
 name_X = [f'x{idx}' for idx in range(X_norm.shape[1])]
 name_y = ['y']
 
 fig_x1, ax_x1 = plot_data_per_interval(X_norm, y_norm, name_X, name_y, 1, [0, 0.4])
-plt.savefig(os.path.join(save_dir, f"{save_tag}_data_colored.png"))
+plt.savefig(f"{save_heading}_data_colored.png")
 plt.show()
 
 # Plot learned activation functions (splines) per edge after training/pruning
-plot_activation_functions(model, save_tag=save_tag, x=dataset, layers=None)
-plot_spline_coefficients(model, save_tag=save_tag)
+plot_activation_functions(model, save_heading=save_heading, x=dataset, layers=None)
+plot_spline_coefficients(model, save_heading=save_heading)
 
 model.forward(torch.tensor(X_norm, dtype=torch.float32, device=device))
 scores = model.node_scores[0].detach().cpu().numpy()

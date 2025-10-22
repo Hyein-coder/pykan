@@ -1,7 +1,6 @@
 #%%
 import pandas as pd
-from kan.custom_utils import (plot_data_per_interval, plot_spline_coefficients, plot_activation_functions,
-                              plot_activation_and_spline_coefficients, get_masks)
+from kan.custom_utils import (plot_data_per_interval, plot_activation_and_spline_coefficients, get_masks)
 import matplotlib.pyplot as plt
 import os
 import datetime
@@ -35,6 +34,8 @@ sym_res = []
 models = []
 for xc, d_opt, fn in zip(x_coeff, file_data, file_name):
     save_tag = make_save_tag(xc, fn)
+    save_heading = os.path.join(save_dir, save_tag)
+
     print("=====" + save_tag + "=====")
 
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
@@ -66,7 +67,7 @@ for xc, d_opt, fn in zip(x_coeff, file_data, file_name):
     params['symbolic'] = False
     # params['grid'] = 30
 
-    res, model, fit_kwargs, dataset = evaluate_params(
+    res, model, fit_kwargs, dataset, _ = evaluate_params(
         X_train_norm, y_train_norm, X_val_norm, y_val_norm, params, X_test_norm, y_test_norm,
         0, scaler_y, device.type,
         special_tag=save_tag,
@@ -92,7 +93,7 @@ for xc, d_opt, fn in zip(x_coeff, file_data, file_name):
     sym_fun = ex_round(model.symbolic_formula()[0][0], 4)
     sym_res.append(sym_fun)
 
-    plot_activation_and_spline_coefficients(model, save_tag=save_tag, x=dataset, layers=None)
+    plot_activation_and_spline_coefficients(model, save_heading=save_heading, x=dataset, layers=None)
 
     # Compute attribution score
     scores_tot = model.node_scores[0].detach().cpu().numpy()

@@ -19,24 +19,26 @@ x1, x2= np.meshgrid(x1_grid, x2_grid)
 #%%
 import os
 save_dir = os.path.join(os.getcwd(), "github\workflows\Hyein\example_toys")
-eqn = "sin(4x1) x1"
-y = np.sin(4*x1_grid) * x1_grid
+y = np.exp(-3*x1) + x2
+eqn = "e^(-3x0)+1"
 
 fig = plt.figure(figsize=(10, 8))
 
-ax = fig.add_subplot(111)
-ax.plot(x1_grid, y)
+# Single variable
+# ax = fig.add_subplot(111)
+# ax.plot(x1_grid, y)
+# ax.set_xlabel('x0')
+# ax.set_ylabel('y')
+# plt.savefig(os.path.join(save_dir, f"{eqn}.png"))
+# plt.show()
+
+# Double variable
+ax = fig.add_subplot(111, projection='3d')
+surface = ax.plot_surface(x1, x2, y, cmap='viridis', edgecolor='none')
 ax.set_xlabel('x0')
-ax.set_ylabel('y')
+ax.set_ylabel('x1')
+ax.set_zlabel('y')
+fig.colorbar(surface, shrink=0.5, aspect=5)
 plt.savefig(os.path.join(save_dir, f"{eqn}.png"))
 plt.show()
 
-# ax = fig.add_subplot(111, projection='3d')
-# surface = ax.plot_surface(x1, x2, y, cmap='viridis', edgecolor='none')
-# ax.set_xlabel('x0')
-# ax.set_ylabel('x1')
-# ax.set_zlabel('y')
-# fig.colorbar(surface, shrink=0.5, aspect=5)
-# plt.savefig(os.path.join(save_dir, f"{eqn}.png"))
-# plt.show()
-#

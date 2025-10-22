@@ -1,6 +1,6 @@
 #%%
 import pandas as pd
-from kan.custom_utils import (plot_data_per_interval, plot_spline_coefficients, plot_activation_functions,
+from kan.custom_utils import (plot_data_per_interval,
                               plot_activation_and_spline_coefficients, get_masks)
 import matplotlib.pyplot as plt
 import os
@@ -8,9 +8,9 @@ import datetime
 import json
 
 root_dir = os.path.join(os.getcwd(), 'github', 'workflows', 'Hyein')
-save_dir = os.path.join(root_dir, "custom_figures")
-# save_dir = "D:\pykan\github\workflows\Hyein\custom_figures"
 time_stamp = datetime.datetime.now().strftime('%Y%m%d_%H%M')
+save_dir = os.path.join(root_dir, "custom_figures", f"periodic_{time_stamp}")
+os.makedirs(save_dir, exist_ok=True)
 
 # file_name = [
 #     r"D:\pykan\github\workflows\Hyein\multkan_sweep_autosave\20250930_150005_auto_10sin(x1)+5x2^2.xlsx",
@@ -22,28 +22,14 @@ time_stamp = datetime.datetime.now().strftime('%Y%m%d_%H%M')
 # ground_truth = lambda xsc, x1, x2: 10 * np.sin(x1) + xsc * x2**2
 
 file_name = [
-    "20251020_173312_auto_sin(2x0)+5x1",
+    "20251002_211432_auto_10sin(x1)+5x2",
+    "20251001_103807_auto_10sin(x1)+10x2",
+    "20251001_104111_auto_10sin(x1)+20x2",
+    "20251013_103245_auto_10sin(x1)+2x2",
 ]
-x_coeff = [None]
-ground_truth = lambda xc, x0, x1: np.sin(2*x0) + 5*x1
-make_save_tag = lambda xc, f: 'fastperiodic_' + f
-
-# file_name = [
-#     "20251020_141648_auto_10sin4x1+5x2",
-# ]
-# x_coeff = [4]
-# ground_truth = lambda xc, x1, x2: 10 * np.sin(xc* x1) + 5 * x2
-# make_save_tag = lambda xc, f: 'fastperiodic_' + f + f'_sin{xc}x0'
-
-# file_name = [
-#     "20251002_211432_auto_10sin(x1)+5x2.xlsx",
-#     "20251001_103807_auto_10sin(x1)+10x2.xlsx",
-#     "20251001_104111_auto_10sin(x1)+20x2.xlsx",
-#     "20251013_103245_auto_10sin(x1)+2x2.xlsx",
-# ]
-# x_coeff = [5, 10, 20, 2]
-# ground_truth = lambda xc, x1, x2: 10 * np.sin(x1) + xc * x2
-# make_save_tag = lambda xc: f'periodic_{time_stamp}_{xc}x2'
+x_coeff = [5, 10, 20, 2]
+ground_truth = lambda xc, x1, x2: 10 * np.sin(x1) + xc * x2
+make_save_tag = lambda xc, fn: f'periodic+{xc}x2_{fn}'
 
 file_data = []
 for f in file_name:
@@ -133,7 +119,8 @@ for xc, d_opt, fn in zip(x_coeff, file_data, file_name):
     sym_fun = ex_round(model.symbolic_formula()[0][0], 4)
     sym_res.append(sym_fun)
 #%%
-    plot_activation_and_spline_coefficients(model, save_tag=save_tag, x=dataset, layers=None)
+    save_heading = os.path.join(save_dir, f"{save_tag}")
+    plot_activation_and_spline_coefficients(model, save_heading=save_heading, x=dataset, layers=None)
 
     # Compute attribution score
     scores_tot = model.node_scores[0].detach().cpu().numpy()
@@ -167,7 +154,8 @@ for xc, d_opt, fn in zip(x_coeff, file_data, file_name):
     # Validation data analysis
     y_pred_norm_val = model(_to_tensor(X_val_norm, device))
     y_pred_val = scaler_y.inverse_transform(y_pred_norm_val.detach().cpu().numpy())
-    fig_val, ax_val = plt.subplots(nrows=1, ncols=X.shape[1], figsize=(15, 3), constrained_layout=True, sharey=True)
+    fig_val, ax_val = plt.subplots(nrows=1, ncols=X.shape[1], figsize=(15, 3),
+                                   constrained_layout=True, sharey='all')
     for idx_x in range(X.shape[1]):
         ax = ax_val[idx_x]
         ax.scatter(X_val[:, idx_x], y_val, color='tab:gray')
@@ -212,6 +200,6 @@ for xc, d_opt, fn in zip(x_coeff, file_data, file_name):
 
     models.append(model)
 
-with open(os.path.join(save_dir, f"{save_tag}_sym_res.txt"), 'w') as f:
+with open(os.path.join(save_dir, f"periodic_{time_stamp}_sym_res.txt"), 'w') as f:
     for sym in sym_res:
         f.write(f"{sym}\n")
