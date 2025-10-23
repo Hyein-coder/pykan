@@ -7,11 +7,14 @@ from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import MinMaxScaler
 from kan.custom_utils import remove_outliers_iqr
 import json
+import datetime
 
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 print(f"This script is running on {device}.")
 
 dir_current = os.getcwd()
+save_heading = os.path.join(dir_current, "github", "workflows", "Hyein", "multkan_sweep_autosave",
+                            "CO2RR_MSP_" + datetime.datetime.now().strftime('%Y%m%d_%H%M'))
 filepath = os.path.join(dir_current, "github\workflows\TaeWoong", "25.01.14_CO2RR_GSA.xlsx")
 
 xls = pd.ExcelFile(filepath)
@@ -90,6 +93,7 @@ out = sweep_multkan(
       n_jobs=1,          # number of parallel worker processes
       use_cuda=False,     # set False to force CPU,
       scaler_y=scaler_y,
+      save_heading=save_heading,
   )
 
 best = out['best']
@@ -97,5 +101,6 @@ print('Best configuration:')
 print(json.dumps(best, indent=2))
 #%%
 res, _, _, _ = evaluate_params(
-    X_train_norm, y_train_norm, X_val_norm, y_val_norm, best['params'], X_test_norm, y_test_norm, 0, scaler_y, device.type
+    X_train_norm, y_train_norm, X_val_norm, y_val_norm, best['params'], X_test_norm, y_test_norm, 0, scaler_y, device.type,
+    save_heading=save_heading
 )

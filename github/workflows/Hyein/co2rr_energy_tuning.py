@@ -7,6 +7,7 @@ from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import MinMaxScaler
 from kan.custom_utils import remove_outliers_iqr
 import json
+import datetime
 
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 print(f"This script is running on {device}.")
@@ -16,6 +17,8 @@ print(f"This script is running on {device}.")
 # filepath = os.path.join(dir_parent, "TaeWoong", "25.01.14_CO2RR_GSA.xlsx")
 
 dir_current = os.getcwd()
+save_heading = os.path.join(dir_current, "github", "workflows", "Hyein", "multkan_sweep_autosave",
+                            "CO2RR_ENERGY_" + datetime.datetime.now().strftime('%Y%m%d_%H%M'))
 filepath = os.path.join(dir_current, "github", "workflows", "TaeWoong", "25.01.14_CO2RR_GSA.xlsx")
 
 xls = pd.ExcelFile(filepath)
@@ -69,7 +72,6 @@ out = sweep_multkan(
       param_grid={
           'width': [[X_train.shape[1], 1, 1], [X_train.shape[1], 4, 1], [X_train.shape[1], 12, 1]],
           'grid': [10],
-          # 'grid_eps': [0.02, 0.5, 1],
           'k': [3],
           'mult_arity': [0],
           'steps': [50],
@@ -88,6 +90,7 @@ out = sweep_multkan(
       seeds=[0, 17, 41],      # run each config with multiple seeds
       n_jobs=1,          # number of parallel worker processes
       use_cuda=False,     # set False to force CPU
+      save_heading=save_heading,
   )
 print(out['results_avg_table'][['r2_val_mean', "param_lamb", "param_sym_weight_simple"]])
 
@@ -96,5 +99,6 @@ print('Best configuration:')
 print(json.dumps(best, indent=2))
 
 res, _, _, _ = evaluate_params(
-    X_train, y_train, X_val, y_val, best['params'], X_test, y_test, 0, scaler_y, device.type
+    X_train, y_train, X_val, y_val, best['params'], X_test, y_test, 0, scaler_y, device.type,
+    save_heading=save_heading
 )
