@@ -7,27 +7,21 @@ from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import MinMaxScaler
 from kan.custom_utils import remove_outliers_iqr
 import json
+import datetime
 
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 print(f"This script is running on {device}.")
 
-# x1_grid = np.concatenate((np.linspace(-np.pi, np.pi, 30),
-#                           np.linspace(-np.pi, -np.pi*2/3, 10),
-#                           np.linspace(np.pi, np.pi*2/3, 10)))
-x1_grid = np.linspace(-1, 1, 50)
+x1_grid = np.linspace(-np.pi, np.pi, 60)
 x2_grid = np.linspace(-1, 1, 30)
-# x3_grid = np.linspace(-1, 1, 10)
-# x1, x2, x3 = np.meshgrid(x1_grid, x2_grid, x3_grid)
-# X = np.stack((x1.flatten(), x2.flatten(), x3.flatten()), axis=1)
-# y = np.exp(-x1) + x2 - x3**2
-# y = 5 * np.exp(np.sin(x1)) + 3 * x2 - x3
 
 x1, x2= np.meshgrid(x1_grid, x2_grid)
 X = np.stack((x1.flatten(), x2.flatten()), axis=1)
 # y = 10 * np.abs(x1) + 5*x2**2
-y = np.exp(-2*x1) + x2
-eqn = "e^(-2x0)+x1"
-
+y = np.sin(2*x1) + x2
+eqn = "sin(2x0)+5x1"
+save_heading = os.path.join(os.getcwd(), "github","workflows", "Hyein", "multkan_sweep_autosave",
+                            f"fastperiodic_{eqn}_{datetime.datetime.now().strftime('%Y%m%d_%H%M')}")
 y = y.flatten().reshape(-1, 1)
 
 #%%
@@ -65,36 +59,34 @@ out = sweep_multkan(
       X_train_norm, y_train_norm, X_val_norm, y_val_norm, X_test_norm, y_test_norm,
       param_grid={
           'width': [[X_train.shape[1], 2, 1]],
-          'grid': [10],
-          # 'grid_eps': [0.02, 0.5, 1],
-          # 'stop_grid_update_step': [20, 30, 100],
+          'grid': [30],
           'k': [3],
           'mult_arity': [0],
           'steps': [50],
           'opt': ['LBFGS'],
-          'lr': [1e-2],
-          'update_grid': [True],
-          'lamb': [1e-4],
-          'lamb_coef': [0.01, 1, 2, 10],
-          'lamb_entropy': [0.01, 1, 2, 10],
+          'lr': [1e-1, 1, 5, 10],
+          'update_grid': [True, False],
+          'lamb': [1e-4, 1e-3, 1e-2, 1e-1],
+          'lamb_coef': [1],
+          'lamb_entropy': [1],
           'prune': [True],
           'pruning_node_th': [0.01],
           'pruning_edge_th': [3e-2],
           'symbolic': [True],
-          'sym_weight_simple': [0.9],
+          'sym_weight_simple': [0.1, 0.5], #, 0.9, 0.99],
+          'sym_a_range': [(-20, 20)],
       },
-      seeds=[0, 17, 42, 87, 29],      # run each config with multiple seeds
+      seeds=[0, 17, 42],      # run each config with multiple seeds
       n_jobs=1,          # number of parallel worker processes
       use_cuda=False,     # set False to force CPU
-      eqn=eqn,
+      save_heading=save_heading,
   )
-print(out['results_avg_table'][['r2_val_mean', "param_lamb", "param_sym_weight_simple"]])
-
 best = out['best']
 print('Best configuration:')
 print(json.dumps(best, indent=2))
 
-res, model, _, _, save_info = evaluate_params(
-    X_train, y_train, X_val, y_val, best['params'], X_test, y_test, 0, scaler_y, device.type
+res, model, _, _ = evaluate_params(
+    X_train, y_train, X_val, y_val, best['params'], X_test, y_test, 0, scaler_y, device.type,
+    save_heading=save_heading
 )
-torch.save(model.state_dict(), os.path.join(save_info["dir"], f"{save_info['tag']}_model.pt"))
+torch.save(model.state_dict(), f"{save_heading}_model.pt")
