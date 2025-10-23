@@ -15,6 +15,7 @@ time_stamp = datetime.datetime.now().strftime('%Y%m%d_%H%M')
 fn = "20251020_173312_auto_sin(2x0)+5x1"
 ground_truth = lambda x0, x1: np.sin(2*x0) + 5*x1
 save_tag = 'fastperiodic_' + fn
+save_heading = os.path.join(save_dir, save_tag)
 
 df = pd.read_excel(os.path.join(root_dir, 'multkan_sweep_autosave', fn + ".xlsx"), sheet_name='best_avg_by_params')
 d_opt = df
@@ -58,11 +59,10 @@ y_test_norm = scaler_y.transform(y_test)
 
 params['symbolic'] = False
 
-res, model, fit_kwargs, dataset, save_info = evaluate_params(
+res, model, fit_kwargs, dataset = evaluate_params(
     X_train_norm, y_train_norm, X_val_norm, y_val_norm, params, X_test_norm, y_test_norm,
     0, scaler_y, device.type,
-    special_tag=save_tag,
-    special_dir=save_dir,
+    save_heading=save_heading
 )
 model.plot()
 plt.show()
@@ -99,7 +99,7 @@ fig.colorbar(surface, shrink=0.5, aspect=5)
 plt.savefig(os.path.join(save_dir, f"{save_tag}_ground_truth.png"))
 plt.show()
 
-plot_activation_and_spline_coefficients(model, save_tag=save_tag, x=dataset, layers=None)
+plot_activation_and_spline_coefficients(model, save_heading=save_heading, x=dataset, layers=None)
 
 # Compute attribution score
 scores_tot = model.node_scores[0].detach().cpu().numpy()
@@ -141,7 +141,7 @@ plt.show()
 #     ax.set_title(name_X[idx_x], fontsize=8)
 # plt.show()
 #%%
-torch.save(model.state_dict(), os.path.join(save_info["dir"], f"{save_info['tag']}_model.pt"))
+torch.save(model.state_dict(), f"{save_heading}_model.pt")
 
 #%% Plot attribution scores for each interval
 masks = get_masks(X, mask_idx, mask_interval)
