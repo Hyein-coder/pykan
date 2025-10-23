@@ -7,7 +7,7 @@ import os
 from matplotlib import rcParams
 
 fs = 10
-dpi = 200
+dpi = 75
 config_figure = {'figure.figsize': (3, 2.5), 'figure.titlesize': fs,
                  'font.size': fs, 'font.family': 'sans-serif', 'font.serif': ['computer modern roman'],
                  # 'font.sans-serif': ['Helvetica Neue LT Pro'],  # Avenir LT Std, Helvetica Neue LT Pro, Helvetica LT Std
@@ -19,7 +19,7 @@ config_figure = {'figure.figsize': (3, 2.5), 'figure.titlesize': fs,
                  'lines.linewidth': 1, 'hatch.linewidth': 0.5, 'hatch.color': 'w',
                  'figure.subplot.left': 0.15, 'figure.subplot.right': 0.93,
                  'figure.subplot.top': 0.95, 'figure.subplot.bottom': 0.15,
-                 'figure.dpi': dpi, 'savefig.dpi': dpi*5, 'savefig.transparent': False,  # change here True if you want transparent background
+                 'figure.dpi': dpi, 'savefig.dpi': dpi*10, 'savefig.transparent': False,  # change here True if you want transparent background
                  'text.usetex': False, 'mathtext.default': 'regular',
                  'text.latex.preamble': r'\usepackage{amsmath,amssymb,bm,physics,lmodern,cmbright}'}
 rcParams.update(config_figure)
@@ -90,6 +90,7 @@ def evaluate_model_performance(model, dataset, scaler_y, phase="validation", dis
 def plot_data_per_interval(X_norm, y_norm, name_X, name_y, mask_idx, mask_interval):
     nx = X_norm.shape[1]
     fig, axs = plt.subplots(nrows=1, ncols=nx, figsize=(20, 3.5), constrained_layout=True)
+    axs = np.atleast_1d(axs)
     for idx_x in range(nx):
         ax = axs[idx_x]
         ax.scatter(X_norm[:, idx_x], y_norm, color='tab:gray')

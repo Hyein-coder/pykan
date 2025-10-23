@@ -12,6 +12,8 @@ import matplotlib.pyplot as plt
 # Custom MultKAN written by Dr. DDP import path within this repository
 from kan.custom import MultKAN
 from sklearn.metrics import mean_squared_error, r2_score
+import datetime
+auto_save_path = f"multkan_hparam_sweep_{datetime.datetime.now().strftime('%Y%m%d_%H%M%S')}"
 
 # import colorcet as cc  # pip install colorcet
 from matplotlib import colors, rcParams, cm
@@ -33,12 +35,6 @@ config_figure = {'figure.figsize': (3, 2.5), 'figure.titlesize': fs,
                  'text.usetex': False, 'mathtext.default': 'regular',
                  'text.latex.preamble': r'\usepackage{amsmath,amssymb,bm,physics,lmodern,cmbright}'}
 rcParams.update(config_figure)
-
-
-import datetime
-save_tag = f"{datetime.datetime.now().strftime('%Y%m%d_%H%M%S')}_auto"
-autosave_dir = os.path.join(os.getcwd(), 'github', 'workflows', 'Hyein', 'multkan_sweep_autosave')
-
 
 def _seed_everything(seed: int):
     import random
@@ -63,6 +59,8 @@ class TrialResult:
     r2_test: Optional[float]
     seed: int
     device: str
+    spline_train_loss: Optional[float] = None
+    spline_test_loss: Optional[float] = None
 
 class PruningError(Exception):
     """모델 Pruning 과정에서 에러가 발생했을 때 사용합니다."""
@@ -164,7 +162,7 @@ def _run_single_trial(args, verbose=False) -> Tuple[TrialResult, MultKAN, Dict[s
         'log': params.get('log', 1),
     }
 
-    model.fit(dataset, **fit_kwargs)
+    res_spline = model.fit(dataset, **fit_kwargs)
 
     # Optional pruning to mimic notebook behavior
     def _want_prune(p: Dict[str, Any]) -> bool:
@@ -195,8 +193,10 @@ def _run_single_trial(args, verbose=False) -> Tuple[TrialResult, MultKAN, Dict[s
         lib = ['sin', 'cos', 'x', 'x^2', 'x^3', 'x^4', 'exp', 'log', 'sqrt', 'tanh', '1/x', '1/x^2']
         sym_weight_simple = params.get('sym_weight_simple', 0.8)
         sym_r2_threshold = params.get('sym_r2_threshold', 0.)
+        sym_a_range = params.get('sym_a_range', (-10, 10))
         try:
-            model.auto_symbolic(lib=lib, weight_simple=sym_weight_simple, r2_threshold=sym_r2_threshold, verbose=verbose)
+            model.auto_symbolic(lib=lib, weight_simple=sym_weight_simple, r2_threshold=sym_r2_threshold,
+                                verbose=verbose, a_range=sym_a_range)
             model.fit(dataset, **fit_kwargs)
 
             if verbose:
@@ -217,7 +217,9 @@ def _run_single_trial(args, verbose=False) -> Tuple[TrialResult, MultKAN, Dict[s
         r2_val=r2_val,
         r2_test=r2_test,
         seed=seed,
-        device=str(device)
+        device=str(device),
+        spline_train_loss=float(res_spline['train_loss'][0]),
+        spline_test_loss=float(res_spline['test_loss'][0]),
     ), model, fit_kwargs, dataset
 
 
@@ -261,7 +263,8 @@ def _results_to_dataframe(results: List[Any]) -> pd.DataFrame:
     rows = [_trial_to_row(r) for r in results]
     df = pd.DataFrame(rows)
     # Order columns: metrics (losses and R^2), seed/device first, then params
-    metric_cols = [c for c in ['train_loss', 'val_loss', 'test_loss', 'r2_train', 'r2_val', 'r2_test'] if c in df.columns]
+    metric_cols = [c for c in ['r2_train', 'r2_val', 'r2_test', 'train_loss', 'val_loss', 'test_loss',
+                               'spline_train_loss', 'spline_test_loss'] if c in df.columns]
     first_cols = metric_cols + [c for c in ['seed', 'device'] if c in df.columns]
     param_cols = sorted([c for c in df.columns if c.startswith('param_')])
     other_cols = [c for c in df.columns if c not in first_cols + param_cols]
@@ -319,8 +322,9 @@ def _save_excel_single(excel_path: str, results: List[Any], best: Any, progress:
 
 def _aggregate_by_params(results: List[Any]):
     df_tmp = _results_to_dataframe(results)
-    metric_cols = [c for c in ['train_loss', 'val_loss', 'test_loss', 'r2_train', 'r2_val', 'r2_test'] if
-                   c in df_tmp.columns]
+    metric_cols = [c for c in ['r2_train', 'r2_val', 'r2_test', 'train_loss', 'val_loss', 'test_loss',
+                               'spline_train_loss', 'spline_test_loss']
+                   if c in df_tmp.columns]
     param_cols = [c for c in df_tmp.columns if c.startswith('param_')]
     if param_cols:
         gdf = df_tmp[param_cols + metric_cols]
@@ -403,7 +407,7 @@ def sweep_multkan(
     n_jobs: int = os.cpu_count() or 1,
     use_cuda: bool = True,
     scaler_y: Optional[Any] = None,
-    eqn: str = '',
+    save_heading: str = None,
 ) -> Dict[str, Any]:
     """
     Run a hyperparameter sweep for MultKAN (sequential execution; no parallel computing).
@@ -461,8 +465,9 @@ def sweep_multkan(
     results: List[TrialResult] = []
 
     # Determine a single autosave path for this run (updated after each trial)
-    autosave_path = os.path.join(autosave_dir, f"{save_tag}_{eqn}.xlsx")
-    # default_autosave_path = os.path.join(os.getcwd(), "multkan_sweep_autosave", f"{save_tag}.xlsx")
+    if save_heading is None:
+        save_heading = auto_save_path
+    save_data_path = f"{save_heading}.xlsx"
 
     def _get_r2_val(r):
         try:
@@ -539,10 +544,6 @@ def sweep_multkan(
                 last_result_for_save = err_info
             # After each trial (success or failure), attempt to save progress mandatorily
             try:
-                parent_dir = os.path.dirname(autosave_path)
-                if parent_dir and not os.path.exists(parent_dir):
-                    os.makedirs(parent_dir, exist_ok=True)
-
                 successful = [r for r in results if _is_success(r)]
                 if successful:
                     best_so_far = max(successful, key=lambda r: (getattr(r, 'r2_val', None) if hasattr(r, 'r2_val') else r.get('r2_val')))
@@ -550,12 +551,12 @@ def sweep_multkan(
                     best_so_far = None
                 progress = {'completed': idx, 'total': total}
                 _save_excel_single(
-                    autosave_path, results, best_so_far[0] if best_so_far == [] else (best_so_far if best_so_far else {}),
+                    save_data_path, results, best_so_far[0] if best_so_far == [] else (best_so_far if best_so_far else {}),
                     progress, last_result_for_save)
             except Exception as e2:
                 print(f"[MultKAN Sweep] Warning: failed to save progress: {e2}")
         agg_rows, best_agg = _aggregate_by_params(results)
-        _save_excel_params_group(autosave_path, agg_rows, best_agg)
+        _save_excel_params_group(save_data_path, agg_rows, best_agg)
 
 
     out = {
@@ -579,9 +580,8 @@ def evaluate_params(
     seed: int = None,
     scaler_y: Optional[Any] = None,
     device_str: Optional[str] = 'cpu',
-    special_tag: Optional[str] = None,
-    special_dir: Optional[str] = None,
-) -> Tuple[TrialResult, MultKAN, Dict[str, Any], Dict[str, Any], Dict[str, str]]:
+    save_heading: str = None,
+) -> Tuple[TrialResult, MultKAN, Dict[str, Any], Dict[str, Any]]:
 
     if seed is None:
         seed = 0
@@ -590,13 +590,13 @@ def evaluate_params(
         params['width'] = eval(params['width'])
     if type(params.get('grid_range')) is str:
         params['grid_range'] = eval(params['grid_range'])
+    if type(params.get('sym_a_range')) is str:
+        params['sym_a_range'] = eval(params['sym_a_range'])
     params['width'] = [item[0] if type(item) is list else item for item in params['width']]
 
-    if special_dir is None:
-        special_dir = autosave_dir
-    if special_tag is None:
-        special_tag = save_tag
-    fig_name = os.path.join(special_dir, f"{special_tag}_eval.png")
+    if save_heading is None:
+        save_heading = auto_save_path
+    fig_name = f"{save_heading}_eval.png"
 
     res, model, fit_kwargs, dataset = _run_single_trial(
         (X_train, y_train, X_val, y_val, X_test, y_test, params, device_str, scaler_y, seed), verbose=True)
@@ -609,9 +609,7 @@ def evaluate_params(
     plt.savefig(fig_name)
     plt.show()
 
-    save_info = {"dir": special_dir, "tag": special_tag}
-
-    return res, model, fit_kwargs, dataset, save_info
+    return res, model, fit_kwargs, dataset
 
 
 def _make_toy_dataset(n=200, noise=0.0, seed=0):
@@ -665,7 +663,6 @@ def main():
         seeds=[0, 1],
         n_jobs=args.n_jobs,
         use_cuda=not args.no_cuda,
-        save_path=args.out,
     )
 
     # Final save (overwrites with the complete results)
