@@ -163,6 +163,9 @@ def _run_single_trial(args, verbose=False) -> Tuple[TrialResult, MultKAN, Dict[s
     }
 
     res_spline = model.fit(dataset, **fit_kwargs)
+    if verbose:
+        model.plot()
+        plt.show()
 
     # Optional pruning to mimic notebook behavior
     def _want_prune(p: Dict[str, Any]) -> bool:
@@ -194,9 +197,10 @@ def _run_single_trial(args, verbose=False) -> Tuple[TrialResult, MultKAN, Dict[s
         sym_weight_simple = params.get('sym_weight_simple', 0.8)
         sym_r2_threshold = params.get('sym_r2_threshold', 0.)
         sym_a_range = params.get('sym_a_range', (-10, 10))
+        sym_b_range = params.get('sym_b_range', (-10, 10))
         try:
             model.auto_symbolic(lib=lib, weight_simple=sym_weight_simple, r2_threshold=sym_r2_threshold,
-                                verbose=verbose, a_range=sym_a_range)
+                                verbose=verbose, a_range=sym_a_range, b_range=sym_b_range)
             model.fit(dataset, **fit_kwargs)
 
             if verbose:
@@ -592,6 +596,8 @@ def evaluate_params(
         params['grid_range'] = eval(params['grid_range'])
     if type(params.get('sym_a_range')) is str:
         params['sym_a_range'] = eval(params['sym_a_range'])
+    if type(params.get('sym_b_range')) is str:
+        params['sym_b_range'] = eval(params['sym_b_range'])
     params['width'] = [item[0] if type(item) is list else item for item in params['width']]
 
     if save_heading is None:
