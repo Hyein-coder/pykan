@@ -64,7 +64,7 @@ out = sweep_multkan(
           'lamb_entropy': [0.05],
           'prune': [True],
           'pruning_node_th': [0.01],
-          'pruning_edge_th': [3e-3, 3e-2, 3e-1],
+          'pruning_edge_th': [3e-2],
           'symbolic': [True],
           'sym_weight_simple': [0.1, 0.5, 0.9],
           'sym_a_range': [(-20, 20), (-10, 10)],
