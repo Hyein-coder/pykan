@@ -67,11 +67,10 @@ for xc, d_opt, fn in zip(x_coeff, file_data, file_name):
     params['symbolic'] = False
     # params['grid'] = 30
 
-    res, model, fit_kwargs, dataset, _ = evaluate_params(
+    res, model, fit_kwargs, dataset = evaluate_params(
         X_train_norm, y_train_norm, X_val_norm, y_val_norm, params, X_test_norm, y_test_norm,
         0, scaler_y, device.type,
-        special_tag=save_tag,
-        special_dir=save_dir,
+        save_heading=save_heading,
     )
 
     fig = plt.figure(figsize=(10, 8))

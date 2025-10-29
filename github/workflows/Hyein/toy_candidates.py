@@ -6,7 +6,7 @@ import torch
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 print(f"This script is running on {device}.")
 
-x1_grid = np.linspace(-np.pi, np.pi, 30)
+x1_grid = np.linspace(-1, 1, 30)
 x2_grid = np.linspace(-1, 1, 30)
 # x3_grid = np.linspace(-1, 1, 10)
 # x1, x2, x3 = np.meshgrid(x1_grid, x2_grid, x3_grid)
@@ -19,8 +19,8 @@ x1, x2= np.meshgrid(x1_grid, x2_grid)
 #%%
 import os
 save_dir = os.path.join(os.getcwd(), "github\workflows\Hyein\example_toys")
-y = np.exp(-3*x1) + x2
-eqn = "e^(-3x0)+1"
+y = np.exp(-2*x1) + 2*x2
+eqn = "e^(-2x0)+2x1"
 
 fig = plt.figure(figsize=(10, 8))
 

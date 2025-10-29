@@ -17,10 +17,10 @@ x2_grid = np.linspace(-1, 1, 30)
 
 x1, x2= np.meshgrid(x1_grid, x2_grid)
 X = np.stack((x1.flatten(), x2.flatten()), axis=1)
-y = np.exp(-2*x1) + x2
-eqn = "e^(-2x0)+x1"
+y = np.exp(-2*x1) + 2*x2
+eqn = "e^(-2x0)+2*x1"
 save_heading = os.path.join(os.getcwd(), "github\workflows\Hyein\multkan_sweep_autosave",
-                            f"exponential_{datetime.datetime.now().strftime('%Y%m%d_%H%M')}")
+                            f"exponential2_{datetime.datetime.now().strftime('%Y%m%d_%H%M')}")
 
 y = y.flatten().reshape(-1, 1)
 
@@ -50,25 +50,25 @@ out = sweep_multkan(
       X_train_norm, y_train_norm, X_val_norm, y_val_norm, X_test_norm, y_test_norm,
       param_grid={
           'width': [[X_train.shape[1], 2, 1]],
-          'grid': [30],
+          'grid': [10],
           # 'update_grid': [True, False],
           # 'grid_eps': [0.02, 0.5, 1],
           # 'stop_grid_update_step': [20, 30, 100],
           'k': [3],
           'mult_arity': [0],
-          'steps': [50],
+          'steps': [100],
           'opt': ['LBFGS'],
-          'lr': [0.01],
+          'lr': [0.01, 0.1, 1, 10],
           'update_grid': [True],
-          'lamb': [1e-4],
-          'lamb_l1': [0.1],
-          'lamb_coef': [0.],
-          'lamb_coefdiff': [5e-3, 1e-2, 1e-1, 1],
-          'lamb_entropy': [0.05],
+          'lamb': [0.001, 0.01, 0.1, 1, 10],
+          # 'lamb_l1': [0.01, 0.1, 1, 10],
+          # 'lamb_coef': [0.],
+          # 'lamb_coefdiff': [5e-3, 1e-2, 1e-1, 1],
+          # 'lamb_entropy': [0.01, 1, 1, 10],
           'prune': [True],
           'pruning_node_th': [0.01],
           'pruning_edge_th': [3e-2],
-          'symbolic': [False, True],
+          'symbolic': [True],
           # 'sym_weight_simple': [0.9],
           # 'sym_a_range': [(-10, 10)],
           # 'sym_b_range': [(-10, 10)],
