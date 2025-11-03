@@ -144,7 +144,7 @@ def _run_single_trial(args, verbose=False) -> Tuple[TrialResult, MultKAN, Dict[s
     # Override device/seed per trial
     model_kwargs['device'] = device
     model_kwargs['seed'] = seed
-    model_kwargs['grid_range'] = params.get('grid_range', [0.1, 0.9])
+    model_kwargs['grid_range'] = params.get('grid_range', [-1, 1])
 
     model = MultKAN(**model_kwargs)
 
@@ -162,11 +162,7 @@ def _run_single_trial(args, verbose=False) -> Tuple[TrialResult, MultKAN, Dict[s
         'batch': params.get('batch', -1),
         'log': params.get('log', 1),
     }
-
     res_spline = model.fit(dataset, **fit_kwargs)
-    if verbose:
-        model.plot()
-        plt.show()
 
     # Optional pruning to mimic notebook behavior
     def _want_prune(p: Dict[str, Any]) -> bool:
@@ -176,22 +172,33 @@ def _run_single_trial(args, verbose=False) -> Tuple[TrialResult, MultKAN, Dict[s
             return v in ('1', 'true', 'yes', 'y', 't')
         return bool(val)
 
+    refine_grid = [3, 5, 10, 20, 30]
+    refine_res = []
+    for grid in refine_grid:
+        model = model.refine(grid)
+        res_spline = model.fit(dataset, **fit_kwargs)
+        refine_res.append(res_spline)
+
+        if _want_prune(params):
+            # Unified pruning threshold handling: if 'pruning_th' is provided, use it for both node_th and edge_th
+            pruning_th = params.get('pruning_th', 1e-2)
+            node_th = params.get('pruning_node_th', pruning_th)
+            edge_th = params.get('pruning_edge_th', pruning_th)
+            try:
+                model = model.prune(node_th=node_th, edge_th=edge_th)
+            except Exception as e:
+                raise PruningError(f"Failed to prune model with node_th={node_th}, edge_th={edge_th}") from e
+
+    if verbose:
+        model.plot()
+        plt.show()
+
     def _want_symbolic(p: Dict[str, Any]) -> bool:
         val = p.get('symbolic', False)
         if isinstance(val, str):
             v = val.strip().lower()
             return v in ('1', 'true', 'yes', 'y', 't')
         return bool(val)
-
-    if _want_prune(params):
-        # Unified pruning threshold handling: if 'pruning_th' is provided, use it for both node_th and edge_th
-        pruning_th = params.get('pruning_th', 1e-2)
-        node_th = params.get('pruning_node_th', pruning_th)
-        edge_th = params.get('pruning_edge_th', pruning_th)
-        try:
-            model = model.prune(node_th=node_th, edge_th=edge_th)
-        except Exception as e:
-            raise PruningError(f"Failed to prune model with node_th={node_th}, edge_th={edge_th}") from e
 
     if _want_symbolic(params):
         lib = ['sin', 'cos', 'x', 'x^2', 'x^3', 'x^4', 'exp', 'log', 'sqrt', 'tanh', '1/x', '1/x^2']
@@ -212,6 +219,8 @@ def _run_single_trial(args, verbose=False) -> Tuple[TrialResult, MultKAN, Dict[s
             raise SymbolificationError(f"Failed during symbolification or subsequent fitting/plotting") from e
 
     mae_train, mae_val, mae_test, r2_train, r2_val, r2_test = _evaluate(model, dataset, scaler_y=scaler_y)
+    spline_train_loss = float(refine_res[-1]['train_loss'][0])
+    spline_test_loss = float(refine_res[-1]['test_loss'][0])
 
     return TrialResult(
         params=params,
@@ -223,8 +232,8 @@ def _run_single_trial(args, verbose=False) -> Tuple[TrialResult, MultKAN, Dict[s
         r2_test=r2_test,
         seed=seed,
         device=str(device),
-        spline_train_loss=float(res_spline['train_loss'][0]),
-        spline_test_loss=float(res_spline['test_loss'][0]),
+        spline_train_loss=spline_train_loss,
+        spline_test_loss=spline_test_loss,
     ), model, fit_kwargs, dataset
 
 

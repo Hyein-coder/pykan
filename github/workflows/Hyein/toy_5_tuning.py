@@ -5,7 +5,7 @@ import torch
 import os
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import MinMaxScaler
-from kan.custom_utils import remove_outliers_iqr
+from kan.custom_processing import remove_outliers_iqr
 import json
 import datetime
 
@@ -50,19 +50,16 @@ out = sweep_multkan(
       X_train_norm, y_train_norm, X_val_norm, y_val_norm, X_test_norm, y_test_norm,
       param_grid={
           'width': [
-              [X_train.shape[1], 2, 1],
-              [X_train.shape[1], 2, 2, 1],
               [X_train.shape[1], 4, 1],
-              [X_train.shape[1], 4, 4, 1],
               [X_train.shape[1], 10, 1],
-              [X_train.shape[1], 10, 10, 1],
+              [X_train.shape[1], 2, 1],
           ],
-          'grid': [10],
+          # 'grid': [10],
           # 'grid_eps': [0.02, 0.5, 1],
-          'stop_grid_update_step': [20],
           'k': [3],
           'mult_arity': [0],
           'steps': [50],
+          'stop_grid_update_step': [20],
           'opt': ['LBFGS'],
           'lr': [0.01, 0.1, 1],
           'update_grid': [True],
@@ -71,8 +68,7 @@ out = sweep_multkan(
           'lamb_coef': [0.1],
           'lamb_entropy': [0.1],
           'prune': [True],
-          'pruning_node_th': [0.01],
-          'pruning_edge_th': [3e-2],
+          'pruning_th': [0.05],
           'symbolic': [True],
           # 'sym_weight_simple': [0.1, 0.5, 0.9],
           # 'sym_a_range': [(-20, 20), (-10, 10)],

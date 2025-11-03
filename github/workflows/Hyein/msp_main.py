@@ -7,11 +7,11 @@ import os
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import MinMaxScaler
 
-from kan.custom_utils import remove_outliers_iqr
+from kan.custom_processing import remove_outliers_iqr
 import pandas as pd
 
 from kan.experiments.multkan_hparam_sweep import evaluate_params
-from kan.custom_utils import plot_activation_and_spline_coefficients
+from kan.custom_processing import plot_activation_and_spline_coefficients
 import matplotlib.pyplot as plt
 
 file_name = "20251014_150723_auto_MSP"

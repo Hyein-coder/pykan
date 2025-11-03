@@ -6,7 +6,7 @@ from sklearn.model_selection import train_test_split
 from sklearn.metrics import mean_squared_error, r2_score
 import os
 import json
-from kan.custom_utils import remove_outliers_iqr
+from kan.custom_processing import remove_outliers_iqr
 from sklearn.preprocessing import MinMaxScaler
 from tensorflow.keras.models import Sequential
 from tensorflow.keras.layers import Input, Dense

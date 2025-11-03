@@ -8,7 +8,7 @@ from sklearn.preprocessing import MinMaxScaler
 
 from kan.custom import MultKAN
 from sklearn.metrics import mean_squared_error, r2_score
-from kan.custom_utils import remove_outliers_iqr, evaluate_model_performance, plot_activation_functions
+from kan.custom_processing import remove_outliers_iqr, evaluate_model_performance, plot_activation_functions
 import datetime
 from kan.experiments.multkan_hparam_sweep import _seed_everything
 seed = 0
@@ -164,7 +164,7 @@ plt.tight_layout()
 plt.savefig(os.path.join(save_dir, f"{save_tag}_validation.png"))
 plt.show()
 #%%
-from kan.custom_utils import plot_data_per_interval, plot_spline_coefficients
+from kan.custom_processing import plot_data_per_interval, plot_spline_coefficients
 save_heading = os.path.join(save_dir, save_tag)
 X_norm = scaler_X.transform(X)
 y_norm = scaler_y.transform(y)

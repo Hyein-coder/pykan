@@ -1,6 +1,6 @@
 #%%
 import pandas as pd
-from kan.custom_utils import (plot_data_per_interval, plot_activation_and_spline_coefficients, get_masks)
+from kan.custom_processing import (plot_data_per_interval, plot_activation_and_spline_coefficients, get_masks)
 import matplotlib.pyplot as plt
 import os
 import datetime

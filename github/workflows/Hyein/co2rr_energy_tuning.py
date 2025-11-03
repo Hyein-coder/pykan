@@ -5,7 +5,7 @@ import torch
 import os
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import MinMaxScaler
-from kan.custom_utils import remove_outliers_iqr
+from kan.custom_processing import remove_outliers_iqr
 import json
 import datetime
 
