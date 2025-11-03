@@ -257,8 +257,9 @@ def plot_activation_and_spline_coefficients(
                 ax2.scatter(act.grid[i, spline_radius:-spline_radius], coef_node,
                            s=20, color='white', edgecolor='k', label='Coefficients')
                 slope = [x - y for x, y in zip(coef_node[1:], coef_node[:-1])]
-                ax2.bar(act.grid[i, spline_radius:-(spline_radius + 1)], slope,
+                bars = ax2.bar(act.grid[i, spline_radius:-(spline_radius + 1)], slope,
                         width=bar_width, align='edge', color='r', label='Slope')
+                # ax2.bar_label(bars, fmt='%.2f', fontsize=6, padding=3)
                 if titles:
                     ax.set_title(f'in {i} -- out {j}', fontsize=10)
         second_axs[-1, -1].legend(loc='best', fontsize=8, title=f'---Layer {l}---', title_fontsize=8)
@@ -269,3 +270,41 @@ def plot_activation_and_spline_coefficients(
             plt.show()
         figs.append(fig)
     return figs
+
+def get_spline_coef_and_slope(model, x=None):
+    # Ensure activations are cached
+    if isinstance(x, dict):
+        x_use = x.get('train_input', None)
+    else:
+        x_use = x
+    try:
+        model.get_act(x_use)
+    except Exception as e:
+        # Try again using cached data if available
+        if getattr(model, 'cache_data', None) is not None and x_use is None:
+            model.get_act(model.cache_data)
+        else:
+            raise e
+
+    coefs = []
+    slopes = []
+    depth = len(model.act_fun)
+    layers_to_plot = list(range(depth))
+
+    for l in layers_to_plot:
+        act = model.act_fun[l]
+        ni, no = act.coef.shape[:2]
+        coef = act.coef.tolist()
+
+        for i in range(ni):
+            coef_layer = []
+            slope_layer = []
+            for j in range(no):
+                coef_node = coef[i][j]
+                slope = [x - y for x, y in zip(coef_node[1:], coef_node[:-1])]
+                coef_layer.append(coef_node)
+                slope_layer.append(slope)
+            coefs.append(coef_layer)
+            slopes.append(slope_layer)
+
+    return coefs, slopes

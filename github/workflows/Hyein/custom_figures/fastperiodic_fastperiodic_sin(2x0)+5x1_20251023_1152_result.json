@@ -1,6 +1,6 @@
 {
     "params": {
-        "grid": 30,
+        "grid": 5,
         "k": 3,
         "lamb": 0.0001,
         "lamb_coef": 1,
@@ -12,7 +12,10 @@
         "pruning_edge_th": 0.03,
         "pruning_node_th": 0.01,
         "steps": 50,
-        "sym_a_range": "[-20, 20]",
+        "sym_a_range": [
+            -20,
+            20
+        ],
         "sym_weight_simple": 0.5,
         "symbolic": false,
         "update_grid": true,
@@ -31,14 +34,14 @@
             ]
         ]
     },
-    "val_loss": 0.054853737354278564,
-    "train_loss": 0.04875591769814491,
-    "test_loss": 0.052765846252441406,
-    "r2_train": 0.9995453913731392,
-    "r2_val": 0.9995196294591846,
-    "r2_test": 0.9995264005134755,
+    "val_loss": 0.2147226184606552,
+    "train_loss": 0.21753785014152527,
+    "test_loss": 0.21923932433128357,
+    "r2_train": 0.9944285177717808,
+    "r2_val": 0.9951113041964206,
+    "r2_test": 0.9944636349592793,
     "seed": 0,
     "device": "cpu",
-    "spline_train_loss": 0.05316047742962837,
-    "spline_test_loss": 0.05679325759410858
+    "spline_train_loss": 0.012983882799744606,
+    "spline_test_loss": 0.015503324568271637
 }

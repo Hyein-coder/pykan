@@ -151,6 +151,7 @@ def _run_single_trial(args, verbose=False) -> Tuple[TrialResult, MultKAN, Dict[s
     fit_kwargs = {
         'opt': params.get('opt', 'LBFGS'),
         'steps': params.get('steps', 50),
+        'stop_grid_update_step': params.get('stop_grid_update_step', 50),
         'lamb': params.get('lamb', 0.0),
         'lamb_l1': params.get('lamb_l1', 1.0),
         'lamb_entropy': params.get('lamb_entropy', 2.0),
