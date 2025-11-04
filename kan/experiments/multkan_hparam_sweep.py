@@ -10,7 +10,7 @@ import pandas as pd
 import matplotlib.pyplot as plt
 
 # Custom MultKAN written by Dr. DDP import path within this repository
-from kan.custom import MultKAN
+from kan.custom_multkan_ddp import MultKAN
 from sklearn.metrics import mean_squared_error, r2_score
 import datetime
 auto_save_path = f"multkan_hparam_sweep_{datetime.datetime.now().strftime('%Y%m%d_%H%M%S')}"

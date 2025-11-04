@@ -15,7 +15,7 @@ print(f"This script is running on {device}.")
 dir_current = os.getcwd()
 save_heading = os.path.join(dir_current, "github", "workflows", "Hyein", "multkan_sweep_autosave",
                             "CO2RR_MSP_" + datetime.datetime.now().strftime('%Y%m%d_%H%M'))
-filepath = os.path.join(dir_current, "github\workflows\TaeWoong", "25.01.14_CO2RR_GSA.xlsx")
+filepath = os.path.join(dir_current, "github", "workflows", "TaeWoong", "25.01.14_CO2RR_GSA.xlsx")
 
 xls = pd.ExcelFile(filepath)
 df_in  = pd.read_excel(xls, sheet_name='Input')
@@ -83,7 +83,7 @@ out = sweep_multkan(
           'lamb_coefdiff': [0.1],
           'lamb_entropy': [0.1],
           'prune': [True],
-          'pruning_th': [0.03, 0.05],
+          'pruning_th': [0.01],
           # 'symbolic': [True],
           # 'sym_weight_simple': [0.5],
       },
