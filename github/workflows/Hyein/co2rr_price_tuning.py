@@ -75,19 +75,18 @@ y = df_out_final[name_y].values.reshape(-1, 1)
 out = sweep_multkan(
       X_train_norm, y_train_norm, X_val_norm, y_val_norm, X_test_norm, y_test_norm,
       param_grid={
-          'width': [[X_train.shape[1], 2, 2, 2, 1]],
-          'grid': [10],
-          'grid_range': [[0, 1]],
-          'lr': [0.1],
+          'width': [[X_train.shape[1], X_train.shape[1], 1],
+                    [X_train.shape[1], X_train.shape[1], X_train.shape[1], 1]],
+          'lr': [0.01, 0.1, 1],
           'update_grid': [True],
-          'lamb': [1e-5, 1e-4, 1e-3, 1e-2],
+          'lamb': [0.001, 0.01, 0.1],
           'lamb_coef': [0.1],
           'lamb_coefdiff': [0.1],
-          'lamb_entropy': [0.01],
+          'lamb_entropy': [0.1],
           'prune': [True],
-          'pruning_th': [1e-3],
-          'symbolic': [True],
-          'sym_weight_simple': [0.5],
+          'pruning_th': [0.05],
+          # 'symbolic': [True],
+          # 'sym_weight_simple': [0.5],
       },
       seeds=[0, 17, 42],      # run each config with multiple seeds
       n_jobs=1,          # number of parallel worker processes
@@ -100,7 +99,8 @@ best = out['best']
 print('Best configuration:')
 print(json.dumps(best, indent=2))
 #%%
-res, _, _, _ = evaluate_params(
+res, model, _, _ = evaluate_params(
     X_train_norm, y_train_norm, X_val_norm, y_val_norm, best['params'], X_test_norm, y_test_norm, 0, scaler_y, device.type,
     save_heading=save_heading
 )
+# torch.save(model.state_dict(), f"{save_heading}_model.pt")
