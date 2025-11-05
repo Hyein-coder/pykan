@@ -1,5 +1,6 @@
 from .MultKAN import *
 from .custom_symbolic import Symbolic_KANLayer
+from .custom_LBFGS import LBFGS
 
 
 class MultKAN(nn.Module):

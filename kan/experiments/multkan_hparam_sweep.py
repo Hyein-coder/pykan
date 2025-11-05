@@ -17,6 +17,7 @@ auto_save_path = f"multkan_hparam_sweep_{datetime.datetime.now().strftime('%Y%m%
 
 # import colorcet as cc  # pip install colorcet
 from matplotlib import colors, rcParams, cm
+import time
 
 fs = 10
 dpi = 200
@@ -176,6 +177,7 @@ def _run_single_trial(args, verbose=False) -> Tuple[TrialResult, MultKAN, Dict[s
     refine_res = []
     for grid in refine_grid:
         model = model.refine(grid)
+        # time.sleep(2)
         res_spline = model.fit(dataset, **fit_kwargs)
         refine_res.append(res_spline)
 

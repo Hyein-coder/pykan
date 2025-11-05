@@ -1,3 +1,7 @@
+"""
+DEBUG THE ERROR IN THE OPTIMAL CASE TRAINING PARAMETERS
+"""
+
 from kan.experiments.multkan_hparam_sweep import sweep_multkan, evaluate_params
 import numpy as np
 import pandas as pd
@@ -8,6 +12,25 @@ from sklearn.preprocessing import MinMaxScaler
 from kan.custom_processing import remove_outliers_iqr
 import json
 import datetime
+import matplotlib.pyplot as plt
+plt.rcParams['figure.figsize'] = (15, 8)
+plt.rcParams['figure.dpi'] = 75
+plt.rcParams['savefig.dpi'] = 75*10
+
+root_dir = os.path.join(os.getcwd(), "github", "workflows", "Hyein")
+save_dir = os.path.join(root_dir, "custom_figures")
+
+fn = "CO2RR_MSP_20251104_1025"
+save_tag = fn + "_debugging"
+save_heading = os.path.join(save_dir, save_tag)
+
+df = pd.read_excel(os.path.join(root_dir, 'multkan_sweep_autosave', fn + ".xlsx"), sheet_name='best_avg_by_params')
+d_opt = df
+
+d_opt_flat = d_opt.iloc[0]
+d_opt_flat = d_opt_flat.to_dict()
+params = {k: v for k, v in d_opt_flat.items() if "param_" in k}
+params = {key.replace('param_', ''): value for key, value in params.items()}
 
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 print(f"This script is running on {device}.")
@@ -63,44 +86,18 @@ X_test_norm = scaler_X.transform(X_test)
 y_val_norm = scaler_y.transform(y_val)
 y_test_norm = scaler_y.transform(y_test)
 
-# 딥러닝을 진행하기 전 모든 데이터셋을 tensor로 변환  # 원래는 numpy 배열이었음 --- 아까 scikitlearn의 train test split 이나 .fit transform 스케일러를 사용하였기에
-# X_train_tensor = torch.tensor(X_train_norm, dtype=torch.float32, device=device)
-# X_val_tensor = torch.tensor(X_val_norm, dtype=torch.float32, device=device)
-# X_test_tensor = torch.tensor(X_test_norm, dtype=torch.float32, device=device)
-# y_train_tensor = torch.tensor(y_train_norm, dtype=torch.float32, device=device)
-# y_val_tensor = torch.tensor(y_val_norm, dtype=torch.float32, device=device)
-# y_test_tensor = torch.tensor(y_test_norm, dtype=torch.float32, device=device)
 
-y = df_out_final[name_y].values.reshape(-1, 1)
-out = sweep_multkan(
-      X_train_norm, y_train_norm, X_val_norm, y_val_norm, X_test_norm, y_test_norm,
-      param_grid={
-          'width': [[X_train.shape[1], X_train.shape[1], 1]],
-          'lr': [0.1],
-          # 'lr': [0.01, 0.1],
-          'update_grid': [True],
-          'lamb': [1e-5, 5e-5, 1e-4],
-          'lamb_coef': [0.1],
-          'lamb_coefdiff': [0.1],
-          'lamb_entropy': [0.1],
-          'prune': [True],
-          'pruning_th': [0.05],
-          # 'symbolic': [True],
-          # 'sym_weight_simple': [0, 0.5, 0.9],
-      },
-      seeds=[0, 1, 2, 3, 4, 5, 6, 7, 8, 9],      # run each config with multiple seeds
-      n_jobs=1,          # number of parallel worker processes
-      use_cuda=False,     # set False to force CPU,
-      scaler_y=scaler_y,
-      save_heading=save_heading,
-  )
 
-best = out['best']
-print('Best configuration:')
-print(json.dumps(best, indent=2))
-#%%
-res, model, _, _ = evaluate_params(
-    X_train_norm, y_train_norm, X_val_norm, y_val_norm, best['params'], X_test_norm, y_test_norm, 0, scaler_y, device.type,
+res, model, fit_kwargs, dataset = evaluate_params(
+    X_train_norm, y_train_norm, X_val_norm, y_val_norm, params, X_test_norm, y_test_norm, 0, scaler_y, device.type,
     save_heading=save_heading
 )
-torch.save(model.state_dict(), f"{save_heading}_model.pt")
+model.plot()
+plt.show()
+
+res2, model2, fit_kwargs2, dataset2 = evaluate_params(
+    X_train_norm, y_train_norm, X_val_norm, y_val_norm, params, X_test_norm, y_test_norm, 0, scaler_y, device.type,
+    save_heading=save_heading
+)
+model.plot()
+plt.show()

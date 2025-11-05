@@ -133,18 +133,19 @@ class MultKAN(MultKAN_raw):
         self.acts.append(x)  # acts shape: (batch, width[l])
 
         for l in range(self.depth):
-
+            if torch.isnan(self.act_fun[l].coef).any():
+                raise ValueError(f"NaN in coefficients for act_fun layer {l}")
             x_numerical, preacts, postacts_numerical, postspline = self.act_fun[l](x)
             # print(preacts, postacts_numerical, postspline)
 
             if torch.isnan(x_numerical).any():  # added checker
-                raise
+                raise ValueError(f"NaN in x_numerical for act_fun layer {l}")
             elif torch.isnan(preacts).any():
-                raise
+                raise ValueError(f"NaN in preacts for act_fun layer {l}")
             elif torch.isnan(postacts_numerical).any():
-                raise
+                raise ValueError(f"NaN in postacts_numerical for act_fun layer {l}")
             elif torch.isnan(postspline).any():
-                raise
+                raise ValueError(f"NaN in postspline for act_fun layer {l}")
             else:
                 pass
 
