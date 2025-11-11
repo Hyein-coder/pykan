@@ -141,7 +141,7 @@ def _run_single_trial(args, verbose=False) -> Tuple[TrialResult, MultKAN, Dict[s
     dataset = _build_dataset(X_train, y_train, X_val, y_val, X_test, y_test, device=device)
 
     # Separate model constructor kwargs from fit kwargs
-    model_kwargs = {k: params[k] for k in ['width', 'grid', 'grid_eps', 'k', 'mult_arity', 'seed', 'device'] if k in params}
+    model_kwargs = {k: params[k] for k in ['width', 'grid_eps', 'k', 'mult_arity', 'seed', 'device'] if k in params}
     # Override device/seed per trial
     model_kwargs['device'] = device
     model_kwargs['seed'] = seed
@@ -173,7 +173,10 @@ def _run_single_trial(args, verbose=False) -> Tuple[TrialResult, MultKAN, Dict[s
             return v in ('1', 'true', 'yes', 'y', 't')
         return bool(val)
 
-    refine_grid = [3, 5, 10, 20, 30]
+    max_grid = params.get('max_grid', 10)
+    refine_order = [3, 5, 10, 20, 30, 40, 50]
+    refine_grid = [i for i in refine_order if i <= max_grid]
+
     refine_res = []
     for grid in refine_grid:
         model = model.refine(grid)

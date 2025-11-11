@@ -76,18 +76,19 @@ out = sweep_multkan(
       X_train_norm, y_train_norm, X_val_norm, y_val_norm, X_test_norm, y_test_norm,
       param_grid={
           'width': [[X_train.shape[1], X_train.shape[1], 1]],
-          'lr': [1e-4, 0.001, 0.01, 0.1],
+          'lr': [0.1],
+          # 'lr': [0.01, 0.1],
           'update_grid': [True],
-          'lamb': [1e-5, 5e-5, 1e-4, 5e-4, 0.001, 0.005],
+          'lamb': [1e-5, 5e-5, 1e-4, 5e-4, 1e-3],
           'lamb_coef': [0.1],
           'lamb_coefdiff': [0.1],
           'lamb_entropy': [0.1],
           'prune': [True],
-          'pruning_th': [0.01],
+          'pruning_th': [0.05],
           # 'symbolic': [True],
-          # 'sym_weight_simple': [0.5],
+          # 'sym_weight_simple': [0, 0.5, 0.9],
       },
-      seeds=[0, 17, 42],      # run each config with multiple seeds
+      seeds=[60+i for i in range(40)],      # run each config with multiple seeds
       n_jobs=1,          # number of parallel worker processes
       use_cuda=False,     # set False to force CPU,
       scaler_y=scaler_y,

@@ -77,8 +77,9 @@ out = sweep_multkan(
       param_grid={
           'width': [[X_train.shape[1], X_train.shape[1], 1]],
           'lr': [0.1],
-          # 'lr': [0.01, 0.1],
+          'max_grid': [10, 30, 50],
           'update_grid': [True],
+          # 'lamb': [1e-3],
           'lamb': [1e-5, 5e-5, 1e-4, 5e-4, 1e-3],
           'lamb_coef': [0.1],
           'lamb_coefdiff': [0.1],
@@ -88,6 +89,7 @@ out = sweep_multkan(
           # 'symbolic': [True],
           # 'sym_weight_simple': [0, 0.5, 0.9],
       },
+      # seeds=[0, 1],      # run each config with multiple seeds
       seeds=[i for i in range(100)],      # run each config with multiple seeds
       n_jobs=1,          # number of parallel worker processes
       use_cuda=False,     # set False to force CPU,
