@@ -308,3 +308,28 @@ def get_spline_coef_and_slope(model, x=None):
             slopes.append(slope_layer)
 
     return coefs, slopes
+
+def find_index_sign_revert(data_list):
+    """
+    Finds the first index where the sign changes and persists for
+    more than one element.
+
+    Args:
+        data_list (list): A list of numbers.
+
+    Returns:
+        int or None: The first index of a persistent sign change,
+                     or None if no such change is found.
+    """
+    if len(data_list) < 3:
+        # Not possible to have a persistent change
+        return None
+
+    signs = np.sign(data_list)
+
+    for i in range(1, len(signs) - 1):
+        if signs[i] != signs[i-1]:
+            if signs[i+1] == signs[i]:
+                return i
+
+    return None

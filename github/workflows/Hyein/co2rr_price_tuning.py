@@ -51,8 +51,8 @@ print(f"검증셋 크기: {len(X_val)} ({len(X_val)/len(X)*100:.1f}%)")
 print(f"테스트셋 크기: {len(X_test)} ({len(X_test)/len(X)*100:.1f}%)")
 
 # 1. MinMaxScaler 객체 생성 --- 범위를 0.1~0.9로 재설정
-scaler_X = MinMaxScaler(feature_range=(0.1, 0.9))
-scaler_y = MinMaxScaler(feature_range=(0.1, 0.9))
+scaler_X = MinMaxScaler()
+scaler_y = MinMaxScaler()
 
 X_train_norm = scaler_X.fit_transform(X_train) # 훈련 데이터로 스케일러 학습 및 변환 (fit_transform)
 y_train_norm = scaler_y.fit_transform(y_train) # X_train의 각 변수(컬럼)별로 최소값은 0, 최대값은 1이 되도록 변환됩니다.
@@ -76,11 +76,11 @@ out = sweep_multkan(
       X_train_norm, y_train_norm, X_val_norm, y_val_norm, X_test_norm, y_test_norm,
       param_grid={
           'width': [[X_train.shape[1], X_train.shape[1], 1]],
-          'lr': [0.1],
-          'max_grid': [10, 30, 40, 50],
+          'lr': [0.01, 0.1, 1],
+          'max_grid': [10, 30, 50],
           'update_grid': [True],
           # 'lamb': [1e-3],
-          'lamb': [1e-5, 5e-5, 1e-4, 5e-4, 1e-3],
+          'lamb': [1e-5, 1e-4, 1e-3],
           'lamb_coef': [0.1],
           'lamb_coefdiff': [0.1],
           'lamb_entropy': [0.1],
@@ -90,7 +90,7 @@ out = sweep_multkan(
           # 'sym_weight_simple': [0, 0.5, 0.9],
       },
       # seeds=[0, 1],      # run each config with multiple seeds
-      seeds=[i for i in range(100)],      # run each config with multiple seeds
+      seeds=[i for i in range(10)],      # run each config with multiple seeds
       n_jobs=1,          # number of parallel worker processes
       use_cuda=False,     # set False to force CPU,
       scaler_y=scaler_y,
