@@ -1,7 +1,7 @@
 import torch
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
-def create_log_sum_function(n_inputs, c_min=10, c_max=500, _device='cpu', seed=None):
+def create_log_sum_function(n_inputs, c_min=1, c_max=10, _device='cpu', seed=None):
     """
     A function factory that creates a target function of the form:
     f(x) = sum(log(c_i * x_i))
@@ -31,9 +31,9 @@ def create_log_sum_function(n_inputs, c_min=10, c_max=500, _device='cpu', seed=N
             x (torch.Tensor): The input tensor, expected shape [batch_size, n_inputs].
                               All values in x * multipliers must be positive.
         """
-        safe_x = x + torch.ones_like(x) * 1.2
-        multiplied_x = safe_x * multipliers
-        log_x = torch.log(multiplied_x)
+        safe_x = x + torch.ones_like(x) * (1 + 1e-3)
+        multiplied_x = safe_x * (10**multipliers)
+        log_x = torch.log(multiplied_x + 50)
         final_sum = torch.sum(log_x, dim=1)
         return final_sum
 
@@ -45,6 +45,7 @@ if __name__ == "__main__":
     from kan.utils import ex_round
     import numpy as np
     import matplotlib.pyplot as plt
+    import matplotlib.cm as cm
     from kan.custom_processing import find_index_sign_revert
 
     import json
@@ -71,8 +72,22 @@ if __name__ == "__main__":
     # ---
 
     models = []
+    dummy_data = np.linspace(-1, 1, 100)
     for nx in num_inputs:
         f_test, mult_test = create_log_sum_function(nx, _device=device.type, seed=0)
+        digits = int(np.ceil(nx / 10))
+        sorted_multiplier_indices = np.argsort(mult_test.detach().cpu().numpy())[::-1].tolist()
+
+        cmap = cm.get_cmap('viridis')
+        for i in sorted_multiplier_indices:
+            input_i = torch.Tensor(
+                [np.zeros_like(dummy_data)] * i + [dummy_data] + [np.zeros_like(dummy_data)] * (nx - i - 1)).T
+            f_vary = f_test(input_i)
+            plt.plot(dummy_data, f_vary, label=str(i), color=cmap(i/(nx-1)))
+        plt.grid()
+        plt.savefig(save_heading + f'_nx{nx:02d}_vary_inputs.png')
+        plt.show()
+
         dataset = create_dataset(f_test, n_var=nx, train_num=1000, test_num=100, device=device, normalize_label=True)
 
         # grids_to_sym = [3, 5, 10, 20]
@@ -163,7 +178,6 @@ if __name__ == "__main__":
                     scores_interval_norm.append(np.zeros(scores_tot.shape))
 
             width = 0.25
-            digits = int(np.ceil(nx / 10))
 
             fig, ax = plt.subplots(figsize=(8 * digits, 3 * digits))
             xticks = np.arange(len(masks)+1) * (width * scores_tot.shape[0] * 1.2)
@@ -291,13 +305,10 @@ if __name__ == "__main__":
     ax_first_rank.step(
         np.arange(mat_width + 1) - 0.5, reversed_multipliers + reversed_multipliers[-1::],
         where='post', linewidth=2, color='k', label='Importance Reversed Multiplier')
-    ax_first_rank.set_ylabel('First Rank Multiplier')
+    ax_first_rank.set_ylabel('Multiplier')
     ax_first_rank.set_xlabel('Number of Inputs')
     ax_first_rank.legend(frameon=False, loc='upper left')
 
     plt.savefig(save_heading + '_summary_multipliers.png')
     plt.show()
 
-#%%
-
-#%%
