@@ -15,9 +15,7 @@ device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 print(f"This script is running on {device}.")
 
 dir_current = os.getcwd()
-save_heading = os.path.join(dir_current, "github", "workflows", "Hyein", "multkan_sweep_autosave",
-                            "JHC_x_H2O" + datetime.datetime.now().strftime('%Y%m%d_%H%M'))
-filepath = os.path.join(dir_current, "github\workflows\Hyein", "Alamo_Data_JHC.csv")
+filepath = os.path.join(dir_current, "github", "workflows", "Hyein", "Alamo_Data_JHC.csv")
 
 filedata  = pd.read_csv(filepath)
 name_X = ["CO2_loading", "MEA_mol", "Temp"]
@@ -25,6 +23,8 @@ name_y = "log_x_HCO3-"
 df_in = filedata[name_X]
 df_out = filedata[[name_y]]
 
+save_heading = os.path.join(dir_current, "github", "workflows", "Hyein", "multkan_sweep_autosave",
+                            "JHC_" + name_y + "_" + datetime.datetime.now().strftime('%Y%m%d_%H%M'))
 df_in_final, df_out_final = remove_outliers_iqr(df_in, df_out)
 
 removed_count = len(df_in) - len(df_in_final)  # 몇 개 지웠는지 세기
@@ -43,7 +43,6 @@ print(f"훈련셋 크기: {len(X_train)} ({len(X_train)/len(X)*100:.1f}%)")
 print(f"검증셋 크기: {len(X_val)} ({len(X_val)/len(X)*100:.1f}%)")
 print(f"테스트셋 크기: {len(X_test)} ({len(X_test)/len(X)*100:.1f}%)")
 
-# 1. MinMaxScaler 객체 생성 --- 범위를 0.1~0.9로 재설정
 scaler_X = MinMaxScaler()
 scaler_y = MinMaxScaler()
 
@@ -60,7 +59,7 @@ y = df_out_final[name_y].values.reshape(-1, 1)
 out = sweep_multkan(
       X_train_norm, y_train_norm, X_val_norm, y_val_norm, X_test_norm, y_test_norm,
       param_grid={
-          'width': [[X_train.shape[1], X_train.shape[1], 1]],
+          'width': [[X_train.shape[1], X_train.shape[1]*4, 1]],
           'lr': [0.01, 0.1, 1],
           'max_grid': [10, 30, 50],
           'update_grid': [True],
@@ -69,12 +68,12 @@ out = sweep_multkan(
           'lamb_coefdiff': [0.1],
           'lamb_entropy': [0.1],
           'prune': [True],
-          'pruning_th': [0.05],
+          'pruning_th': [0.01, 0.03, 0.05],
           # 'symbolic': [True],
           # 'sym_weight_simple': [0, 0.5, 0.9],
       },
       # seeds=[0, 1],      # run each config with multiple seeds
-      seeds=[i for i in range(10)],      # run each config with multiple seeds
+      seeds=[i for i in range(5)],      # run each config with multiple seeds
       n_jobs=1,          # number of parallel worker processes
       use_cuda=False,     # set False to force CPU,
       scaler_y=scaler_y,

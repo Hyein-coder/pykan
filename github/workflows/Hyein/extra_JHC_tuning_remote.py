@@ -15,8 +15,6 @@ device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 print(f"This script is running on {device}.")
 
 dir_current = os.getcwd()
-save_heading = os.path.join(dir_current, "github", "workflows", "Hyein", "multkan_sweep_autosave",
-                            "JHC_x_H2O" + datetime.datetime.now().strftime('%Y%m%d_%H%M'))
 filepath = os.path.join(dir_current, "github", "workflows", "Hyein", "Alamo_Data_JHC.csv")
 
 filedata  = pd.read_csv(filepath)
@@ -25,6 +23,8 @@ name_y = "log_x_HCO3-"
 df_in = filedata[name_X]
 df_out = filedata[[name_y]]
 
+save_heading = os.path.join(dir_current, "github", "workflows", "Hyein", "multkan_sweep_autosave",
+                            "JHC_x_" + name_y + "_" + datetime.datetime.now().strftime('%Y%m%d_%H%M'))
 df_in_final, df_out_final = remove_outliers_iqr(df_in, df_out)
 
 removed_count = len(df_in) - len(df_in_final)  # 몇 개 지웠는지 세기
