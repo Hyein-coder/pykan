@@ -53,8 +53,8 @@ if __name__ == "__main__":
     import os
     import datetime
 
-    # num_inputs = [50]
     num_inputs = [2, 5, 10, 30, 50]
+    # num_inputs = [50]
     save_heading = os.path.join(os.getcwd(), 'github', 'workflows', 'Hyein', 'multvariable',
                                 "toy_7_multiple_sweep_" + datetime.datetime.now().strftime('%Y%m%d_%H%M'))
 
@@ -96,7 +96,10 @@ if __name__ == "__main__":
         plt.savefig(save_heading + f'_nx{nx:02d}_vary_inputs.png')
         plt.show()
 
-        dataset = create_dataset(f_test, n_var=nx, train_num=1000, test_num=100, device=device, normalize_label=True)
+        if nx < 50:
+            dataset = create_dataset(f_test, n_var=nx, train_num=1000, test_num=100, device=device, normalize_label=True)
+        else:
+            dataset = create_dataset(f_test, n_var=nx, train_num=10000, test_num=1000, device=device, normalize_label=True)
 
         # grids_to_sym = [3, 5, 10, 20]
         grids_to_sym = [10]
