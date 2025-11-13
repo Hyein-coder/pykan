@@ -37,7 +37,7 @@ def create_log_sum_function(n_inputs, m_min=1, m_max=5, _device='cpu', seed=None
         final_sum = torch.sum(log_x, dim=1)
         return final_sum
 
-    return target_function, multipliers
+    return target_function, multipliers.detach().cpu().numpy()
 
 if __name__ == "__main__":
     from kan import create_dataset
@@ -46,6 +46,7 @@ if __name__ == "__main__":
     import numpy as np
     import matplotlib.pyplot as plt
     import matplotlib.cm as cm
+    import matplotlib.colors as mcolors
     from kan.custom_processing import find_index_sign_revert
 
     import json
@@ -77,15 +78,21 @@ if __name__ == "__main__":
     for nx in num_inputs:
         f_test, mult_test = create_log_sum_function(nx, _device=device.type, seed=0)
         digits = int(np.ceil(nx / 10))
-        sorted_multiplier_indices = np.argsort(mult_test.detach().cpu().numpy())[::-1].tolist()
+        sorted_multiplier_indices = np.argsort(mult_test)[::-1].tolist()
 
+        fig_input, ax_input = plt.subplots(figsize=(9, 6))
         cmap = cm.get_cmap('viridis')
+        norm = mcolors.Normalize(vmin=min(mult_test), vmax=max(mult_test))
         for i in sorted_multiplier_indices:
             input_i = torch.Tensor(
                 [np.zeros_like(dummy_data)] * i + [dummy_data] + [np.zeros_like(dummy_data)] * (nx - i - 1)).T
             f_vary = f_test(input_i)
-            plt.plot(dummy_data, f_vary, label=str(i), color=cmap(i/(nx-1)))
+            plt.plot(dummy_data, f_vary, color=cmap(norm(mult_test[i])))
         plt.grid()
+
+        mappable = cm.ScalarMappable(norm=norm, cmap=cmap)
+        cbar = fig_input.colorbar(mappable, ax=ax_input, label='Multiplier', pad=0.08)
+
         plt.savefig(save_heading + f'_nx{nx:02d}_vary_inputs.png')
         plt.show()
 
@@ -305,7 +312,7 @@ if __name__ == "__main__":
         where='post', linewidth=2, color='r', label='First Rank Multiplier')
     ax_first_rank.step(
         np.arange(mat_width + 1) - 0.5, reversed_multipliers + reversed_multipliers[-1::],
-        where='post', linewidth=2, color='k', label='Importance Reversed Multiplier')
+        where='post', linewidth=2, color='k', ls=':', label='Importance Reversed Multiplier')
     ax_first_rank.set_ylabel('Multiplier')
     ax_first_rank.set_xlabel('Number of Inputs')
     ax_first_rank.legend(frameon=False, loc='upper left')
@@ -313,3 +320,5 @@ if __name__ == "__main__":
     plt.savefig(save_heading + '_summary_multipliers.png')
     plt.show()
 
+    with open(save_heading + f'_summary.json', 'w') as f:
+        json.dump(summary, f, cls=NumpyJSONEncoder)
