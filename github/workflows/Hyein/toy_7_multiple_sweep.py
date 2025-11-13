@@ -1,15 +1,15 @@
 import torch
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
-def create_log_sum_function(n_inputs, c_min=1, c_max=10, _device='cpu', seed=None):
+def create_log_sum_function(n_inputs, m_min=1, m_max=5, _device='cpu', seed=None):
     """
     A function factory that creates a target function of the form:
     f(x) = sum(log(c_i * x_i))
 
     Args:
         n_inputs (int): The number of input features (x_i).
-        c_min (float): The minimum value for the random multipliers.
-        c_max (float): The maximum value for the random multipliers.
+        m_min (float): The minimum value for the random multipliers.
+        m_max (float): The maximum value for the random multipliers.
         _device (str): The device to store the multipliers on.
 
     Returns:
@@ -21,7 +21,7 @@ def create_log_sum_function(n_inputs, c_min=1, c_max=10, _device='cpu', seed=Non
     if seed is not None:
         generator.manual_seed(seed)
 
-    multipliers = c_min + (c_max - c_min) * torch.rand(n_inputs, device=_device)
+    multipliers = m_min + (m_max - m_min) * torch.rand(n_inputs, device=_device)
 
     def target_function(x):
         """
@@ -32,8 +32,8 @@ def create_log_sum_function(n_inputs, c_min=1, c_max=10, _device='cpu', seed=Non
                               All values in x * multipliers must be positive.
         """
         safe_x = x + torch.ones_like(x) * (1 + 1e-3)
-        multiplied_x = safe_x * (10**multipliers)
-        log_x = torch.log(multiplied_x + 50)
+        multiplied_x = safe_x * (5**multipliers)
+        log_x = torch.log(multiplied_x + 100.)
         final_sum = torch.sum(log_x, dim=1)
         return final_sum
 
@@ -52,6 +52,7 @@ if __name__ == "__main__":
     import os
     import datetime
 
+    # num_inputs = [50]
     num_inputs = [2, 5, 10, 30, 50]
     save_heading = os.path.join(os.getcwd(), 'github', 'workflows', 'Hyein', 'multvariable',
                                 "toy_7_multiple_sweep_" + datetime.datetime.now().strftime('%Y%m%d_%H%M'))
