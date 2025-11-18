@@ -43,7 +43,6 @@ print(f"훈련셋 크기: {len(X_train)} ({len(X_train)/len(X)*100:.1f}%)")
 print(f"검증셋 크기: {len(X_val)} ({len(X_val)/len(X)*100:.1f}%)")
 print(f"테스트셋 크기: {len(X_test)} ({len(X_test)/len(X)*100:.1f}%)")
 
-# 1. MinMaxScaler 객체 생성 --- 범위를 0.1~0.9로 재설정
 scaler_X = MinMaxScaler()
 scaler_y = MinMaxScaler()
 
@@ -60,20 +59,21 @@ y = df_out_final[name_y].values.reshape(-1, 1)
 out = sweep_multkan(
       X_train_norm, y_train_norm, X_val_norm, y_val_norm, X_test_norm, y_test_norm,
       param_grid={
-          'width': [[X_train.shape[1], X_train.shape[1], 1]],
+          'width': [[X_train.shape[1], X_train.shape[1]*4, 1]],
           'lr': [0.01, 0.1, 1],
           'max_grid': [10, 30, 50],
           'update_grid': [True],
-          # 'lamb': [1e-3, 1e-2, 1e-1, 1],
-          'lamb': [1e-3, 1e-2],
-          'lamb_coef': [0.1],
-          'lamb_coefdiff': [0.1],
-          'lamb_entropy': [0.1],
+          'lamb': [1e-3],
+          'lamb_coef': [0.001, 0.01, 0.1, 1],
+          'lamb_coefdiff': [0.001, 0.01, 0.1, 1],
+          'lamb_entropy': [0.001, 0.01, 0.1, 1],
           'prune': [True],
-          'pruning_th': [0.05],
+          'pruning_th': [0.01, 0.03, 0.05, 0.1],
+          # 'symbolic': [True],
+          # 'sym_weight_simple': [0, 0.5, 0.9],
       },
       # seeds=[0, 1],      # run each config with multiple seeds
-      seeds=[i for i in range(5)],      # run each config with multiple seeds
+      seeds=[i for i in range(10)],      # run each config with multiple seeds
       n_jobs=1,          # number of parallel worker processes
       use_cuda=False,     # set False to force CPU,
       scaler_y=scaler_y,
@@ -89,3 +89,6 @@ res, model, _, _ = evaluate_params(
     save_heading=save_heading
 )
 torch.save(model.state_dict(), f"{save_heading}_model.pt")
+
+print("Evaluation: ")
+print(res)
