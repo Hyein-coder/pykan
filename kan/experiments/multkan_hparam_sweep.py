@@ -18,6 +18,7 @@ auto_save_path = f"multkan_hparam_sweep_{datetime.datetime.now().strftime('%Y%m%
 # import colorcet as cc  # pip install colorcet
 from matplotlib import colors, rcParams, cm
 import time
+import sys
 
 fs = 10
 dpi = 200
@@ -423,13 +424,13 @@ def sweep_multkan(
     y_test: Optional[np.ndarray] = None,
     param_grid: Optional[Dict[str, List[Any]]] = None,
     seeds: Optional[List[int]] = None,
-    n_jobs: int = os.cpu_count() or 1,
+    n_jobs: int = 1,
     use_cuda: bool = True,
     scaler_y: Optional[Any] = None,
     save_heading: str = None,
 ) -> Dict[str, Any]:
     """
-    Run a hyperparameter sweep for MultKAN (sequential execution; no parallel computing).
+    Run a hyperparameter sweep for MultKAN. If n_jobs > 1, trials are executed in parallel using putils.parallel_eval (Ray); otherwise run sequentially.
 
     Parameters:
     - X_train, y_train, X_val, y_val, (optional X_test, y_test): numpy arrays
@@ -437,7 +438,6 @@ def sweep_multkan(
         width, grid, k, mult_arity, steps, lamb, lr, etc. Keys not used by the model constructor are
         passed to fit().
     - seeds: list of seeds per trial combination; if None, uses [0].
-    - n_jobs: number of worker processes (ignored; kept for backward compatibility).
     - use_cuda: if True and CUDA available, use cuda:0; otherwise CPU.
     - save_path: if provided, progress will be saved after each trial. If the path
       ends with .xlsx or .xls, results are written to an Excel workbook with sheets
@@ -510,38 +510,32 @@ def sweep_multkan(
         except Exception:
             return dict(r)
 
-    # Sequential execution (parallel computing removed)
+    # Execute tasks: parallel if n_jobs > 1, else sequential
     total = len(tasks)
-    for idx, t in enumerate(tasks, start=1):
-        combo_params = t[6]
-        prune_msg = ''
-        # respect either 'prune' or 'pruning' flags (bool or string)
-        def _want_prune_log(p: Dict[str, Any]) -> bool:
-            val = p.get('prune', None)
-            if val is None:
-                val = p.get('pruning', False)
-            if isinstance(val, str):
-                v = val.strip().lower()
-                return v in ('1','true','yes','y','t')
-            return bool(val)
-        if _want_prune_log(combo_params):
-            # Prefer unified 'pruning_th' for display; fallback to individual thresholds
-            _p_th = combo_params.get('pruning_th', None)
-            _node_th = combo_params.get('prune_node_th', _p_th if _p_th is not None else 1e-2)
-            _edge_th = combo_params.get('prune_edge_th', _p_th if _p_th is not None else 3e-2)
-            if _p_th is not None:
-                prune_msg = f", prune=True(th={_p_th})"
-            else:
-                prune_msg = f", prune=True(node_th={_node_th}, edge_th={_edge_th})"
-        for seed_idx, seed_val in enumerate(seeds, start=1):
-            print(f"[MultKAN Sweep] Training model {idx}/{total} -- seed # {seed_idx} (params={ {k: combo_params[k] for k in combo_params if k in ['lamb','lr',]} }{prune_msg})")
+    if n_jobs and n_jobs > 1:
+        # Import parallel_eval from putils in .ignore\\deploy\\script via sys.path
+        root_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..'))
+        putils_dir = os.path.join(root_dir, '.ignore', 'deploy', 'script')
+        if putils_dir not in sys.path:
+            sys.path.append(putils_dir)
+        import importlib
+        _parallel_eval = importlib.import_module('putils').parallel_eval
+
+        # Prepare per-seed tasks
+        tasks_with_seed = []
+        for t in tasks:
+            for seed_val in seeds:
+                tasks_with_seed.append((*t, seed_val))
+
+        def _trial_entry(task_tuple, params=None, i=None):
+            combo_params = task_tuple[6]
+            seed_val = task_tuple[9] if len(task_tuple) > 9 else None
             try:
-                res, model, _, _ = _run_single_trial((*t, seed_val))
-                results.append(res)
-                last_result_for_save: Any = res
+                res, _model, _fk, _ds = _run_single_trial(task_tuple)
+                return res
             except Exception as e:
                 import traceback, datetime
-                err_info = {
+                return {
                     'params': combo_params,
                     'val_loss': 999,
                     'train_loss': 999,
@@ -550,30 +544,108 @@ def sweep_multkan(
                     'r2_val': -99,
                     'r2_test': -99,
                     'seed': seed_val,
-                    'device': t[7],
+                    'device': task_tuple[7],
                     'error': str(e),
                     'traceback': traceback.format_exc(),
-                    'failed_at_index': idx,
-                    'failed_at_total': total,
                     'timestamp': datetime.datetime.now().isoformat(timespec='seconds')
                 }
-                print(f"[MultKAN Sweep] Error on model {idx}/{total} -- seed #{seed_idx}: {e}")
-                # Record the failure as a result row and continue
-                results.append(err_info)
-                last_result_for_save = err_info
-            # After each trial (success or failure), attempt to save progress mandatorily
-            try:
-                successful = [r for r in results if _is_success(r)]
-                if successful:
-                    best_so_far = max(successful, key=lambda r: (getattr(r, 'r2_val', None) if hasattr(r, 'r2_val') else r.get('r2_val')))
+
+        # Map n_jobs to Ray's num_cpus via n_cores_rest
+        try:
+            cpu_total = os.cpu_count() or 1
+        except Exception:
+            cpu_total = 1
+        n_cores_rest = max(cpu_total - int(n_jobs), 0)
+
+        results = _parallel_eval(
+            _trial_entry,
+            tasks_with_seed,
+            params=None,
+            parallel=True,
+            target='local',
+            n_cores_rest=n_cores_rest,
+            init_params=False,
+            batch=False,
+        )
+        # Aggregate after all parallel runs
+        agg_rows, best_agg = _aggregate_by_params(results)
+        # Save once at the end
+        try:
+            successful = [r for r in results if _is_success(r)]
+            best_so_far = max(successful, key=lambda r: (getattr(r, 'r2_val', None) if hasattr(r, 'r2_val') else r.get('r2_val'))) if successful else None
+            progress = {'completed': len(results), 'total': len(results)}
+            last_result_for_save = results[-1] if results else {}
+            _save_excel_single(
+                save_data_path,
+                results,
+                best_so_far if best_so_far else {},
+                progress,
+                last_result_for_save,
+            )
+            _save_excel_params_group(save_data_path, agg_rows, best_agg)
+        except Exception as e2:
+            print(f"[MultKAN Sweep] Warning: failed to save final progress (parallel): {e2}")
+    else:
+        for idx, t in enumerate(tasks, start=1):
+            combo_params = t[6]
+            prune_msg = ''
+            # respect either 'prune' or 'pruning' flags (bool or string)
+            def _want_prune_log(p: Dict[str, Any]) -> bool:
+                val = p.get('prune', None)
+                if val is None:
+                    val = p.get('pruning', False)
+                if isinstance(val, str):
+                    v = val.strip().lower()
+                    return v in ('1','true','yes','y','t')
+                return bool(val)
+            if _want_prune_log(combo_params):
+                # Prefer unified 'pruning_th' for display; fallback to individual thresholds
+                _p_th = combo_params.get('pruning_th', None)
+                _node_th = combo_params.get('prune_node_th', _p_th if _p_th is not None else 1e-2)
+                _edge_th = combo_params.get('prune_edge_th', _p_th if _p_th is not None else 3e-2)
+                if _p_th is not None:
+                    prune_msg = f", prune=True(th={_p_th})"
                 else:
-                    best_so_far = None
-                progress = {'completed': idx, 'total': total}
-                _save_excel_single(
-                    save_data_path, results, best_so_far[0] if best_so_far == [] else (best_so_far if best_so_far else {}),
-                    progress, last_result_for_save)
-            except Exception as e2:
-                print(f"[MultKAN Sweep] Warning: failed to save progress: {e2}")
+                    prune_msg = f", prune=True(node_th={_node_th}, edge_th={_edge_th})"
+            for seed_idx, seed_val in enumerate(seeds, start=1):
+                print(f"[MultKAN Sweep] Training model {idx}/{total} -- seed # {seed_idx} (params={ {k: combo_params[k] for k in combo_params if k in ['lamb','lr',]} }{prune_msg})")
+                try:
+                    res, model, _, _ = _run_single_trial((*t, seed_val))
+                    results.append(res)
+                    last_result_for_save: Any = res
+                except Exception as e:
+                    import traceback, datetime
+                    err_info = {
+                        'params': combo_params,
+                        'val_loss': 999,
+                        'train_loss': 999,
+                        'test_loss': 999,
+                        'r2_train': -99,
+                        'r2_val': -99,
+                        'r2_test': -99,
+                        'seed': seed_val,
+                        'device': t[7],
+                        'error': str(e),
+                        'traceback': traceback.format_exc(),
+                        'timestamp': datetime.datetime.now().isoformat(timespec='seconds')
+                    }
+                    print(f"[MultKAN Sweep] Error on model {idx}/{total} -- seed #{seed_idx}: {e}")
+                    # Record the failure as a result row and continue
+                    results.append(err_info)
+                    last_result_for_save = err_info
+                # After each trial (success or failure), attempt to save progress mandatorily
+                try:
+                    successful = [r for r in results if _is_success(r)]
+                    if successful:
+                        best_so_far = max(successful, key=lambda r: (getattr(r, 'r2_val', None) if hasattr(r, 'r2_val') else r.get('r2_val')))
+                    else:
+                        best_so_far = None
+                    progress = {'completed': idx, 'total': total}
+                    _save_excel_single(
+                        save_data_path, results, best_so_far[0] if best_so_far == [] else (best_so_far if best_so_far else {}),
+                        progress, last_result_for_save)
+                except Exception as e2:
+                    print(f"[MultKAN Sweep] Warning: failed to save progress: {e2}")
         agg_rows, best_agg = _aggregate_by_params(results)
         _save_excel_params_group(save_data_path, agg_rows, best_agg)
 
@@ -656,33 +728,35 @@ def _make_toy_dataset(n=200, noise=0.0, seed=0):
 
 def main():
     import argparse
+    import datetime
     parser = argparse.ArgumentParser(description='Hyperparameter sweep for MultKAN (sequential)')
-    # Keep --n_jobs for backward compatibility but ignore it
-    parser.add_argument('--n_jobs', type=int, default=1, help='Ignored (sequential execution)')
+
+    # Basic
+
     parser.add_argument('--no_cuda', action='store_true', help='Disable CUDA even if available')
-    parser.add_argument('--out', type=str, default='./multkan_sweep_results.json')
+    timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
+    parser.add_argument('--out', type=str,
+                        default=f'./github/workflows/Hyein/multkan_sweep_autosave/res_{timestamp}.json')
     parser.add_argument('--seed', type=int, default=0)
     args = parser.parse_args()
 
     X_train, y_train, X_val, y_val, X_test, y_test = _make_toy_dataset(seed=args.seed)
 
     param_grid = {
-        'width': [[X_train.shape[1], 6, 1], [X_train.shape[1], 10, 1]],
+        'width': [[X_train.shape[1], 6, 1]],
         'grid': [3, 5],
         'k': [3],
-        'mult_arity': [2, 3],
-        'steps': [40, 60],
+        'mult_arity': [0],
         'opt': ['LBFGS'],
         'lr': [1.0],
-        'lamb': [0.0, 0.01],
+        'lamb': [0.01],
         'update_grid': [True],
     }
 
     out = sweep_multkan(
         X_train, y_train, X_val, y_val, X_test, y_test,
         param_grid=param_grid,
-        seeds=[0, 1],
-        n_jobs=args.n_jobs,
+        seeds=args.seed,
         use_cuda=not args.no_cuda,
     )
 
