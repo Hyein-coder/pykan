@@ -19,8 +19,8 @@ x1, x2= np.meshgrid(x1_grid, x2_grid)
 #%%
 import os
 save_dir = os.path.join(os.getcwd(), "github\workflows\Hyein\example_toys")
-y = x1**2 + x2/4
-eqn = "x1^2+0.25x2"
+y = x1**2 / (x2+1.02) / 10 + np.exp(2 * x2)
+eqn = "x1^2_div_10(x2+1.02)+exp(2x2)"
 
 fig = plt.figure(figsize=(10, 8))
 
@@ -34,8 +34,8 @@ fig = plt.figure(figsize=(10, 8))
 
 # Double variable
 ax = fig.add_subplot(111, projection='3d')
-surface = ax.plot_surface(x1, x2, y, cmap='viridis', edgecolor='none')
-ax.set_xlabel('x0')
+surface = ax.plot_surface(x2, x1, y, cmap='viridis', edgecolor='none')
+ax.set_xlabel('x2')
 ax.set_ylabel('x1')
 ax.set_zlabel('y')
 fig.colorbar(surface, shrink=0.5, aspect=5)

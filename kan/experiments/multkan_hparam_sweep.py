@@ -175,7 +175,7 @@ def _run_single_trial(args, verbose=False) -> Tuple[TrialResult, MultKAN, Dict[s
             return v in ('1', 'true', 'yes', 'y', 't')
         return bool(val)
 
-    max_grid = params.get('max_grid', 10)
+    max_grid = params.get('max_grid', 5)
     refine_order = [3, 5, 10, 20, 30, 40, 50]
     refine_grid = [i for i in refine_order if i <= max_grid]
 
@@ -461,9 +461,9 @@ def sweep_multkan(
     if param_grid is None:
         param_grid = {
             'width': [[X_train.shape[1], 8, 1]],
-            'grid': [3],
+            'max_grid': [5],
             'k': [3],
-            'mult_arity': [2],
+            'mult_arity': [0],
             'steps': [50],
             'opt': ['LBFGS'],
             'lr': [1.0],
