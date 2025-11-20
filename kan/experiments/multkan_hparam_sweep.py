@@ -3,6 +3,7 @@ import json
 import os
 from dataclasses import dataclass, asdict
 from typing import Dict, Any, List, Tuple, Optional
+import copy
 
 import numpy as np
 import torch
@@ -209,13 +210,17 @@ def _run_single_trial(args, verbose=False) -> Tuple[TrialResult, MultKAN, Dict[s
     if _want_symbolic(params):
         lib = ['sin', 'cos', 'x', 'x^2', 'x^3', 'x^4', 'exp', 'log', 'sqrt', 'tanh', '1/x', '1/x^2']
         sym_weight_simple = params.get('sym_weight_simple', 0.8)
+        sym_steps = params.get('sym_steps', fit_kwargs['steps'])
         sym_r2_threshold = params.get('sym_r2_threshold', 0.)
         sym_a_range = params.get('sym_a_range', (-10, 10))
         sym_b_range = params.get('sym_b_range', (-10, 10))
+
+        sym_fit_kwargs = copy.deepcopy(fit_kwargs)
+        sym_fit_kwargs['steps'] = sym_steps
         try:
             model.auto_symbolic(lib=lib, weight_simple=sym_weight_simple, r2_threshold=sym_r2_threshold,
                                 verbose=verbose, a_range=sym_a_range, b_range=sym_b_range)
-            model.fit(dataset, **fit_kwargs)
+            model.fit(dataset, **sym_fit_kwargs)
 
             if verbose:
                 model.plot()
