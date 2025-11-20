@@ -27,7 +27,7 @@ print(f"TARGET: {name_y}")
 
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
-df_in_final, df_out_final = remove_outliers_iqr(df_in, df_out, rr=20)
+df_in_final, df_out_final = remove_outliers_iqr(df_in, df_out)
 
 removed_count = len(df_in) - len(df_in_final)
 print(f"# of data after removing outliers: {len(df_in_final)} 개 ({removed_count} 개 제거됨)")
@@ -60,25 +60,26 @@ out = sweep_multkan(
       X_train_norm, y_train_norm, X_val_norm, y_val_norm, X_test_norm, y_test_norm,
       param_grid={
           'width': [[num_input, num_input, 1]],
-          'grid': [10],
+          'grid': [30],
           'k': [3],
           'mult_arity': [0],
           'steps': [50],
           'opt': ['LBFGS'],
-          'lr': [1],
-          # 'lr': [0.001, 0.01, 0.1, 1],
+          'lr': [0.001, 0.01, 0.1, 1],
           'update_grid': [True],
           'lamb': [0.01],
-          # 'lamb_coef': [0.001, 0.01, 0.1, 1],
-          # 'lamb_entropy': [0.001, 0.01, 0.1, 1],
+          # 'lamb_coef': [0.1],
+          # 'lamb_entropy': [0.1],
+          'lamb_coef': [0.001, 0.01, 0.1, 1],
+          'lamb_entropy': [0.001, 0.01, 0.1, 1],
           'prune': [True],
           'pruning_node_th': [0.01],
           'pruning_edge_th': [3e-2],
-          # 'symbolic': [True],
-          # 'sym_weight_simple': [0, 0.5, 0.8],
+          'symbolic': [True],
+          'sym_weight_simple': [0, 0.8],
       },
-      seeds=[0, 1],      # run each config with multiple seeds
-      # seeds=[i for i in range(5)],      # run each config with multiple seeds
+      # seeds=[0, 1],      # run each config with multiple seeds
+      seeds=[i for i in range(5)],      # run each config with multiple seeds
       use_cuda=False,     # set False to force CPU
       save_heading=save_heading,
   )
