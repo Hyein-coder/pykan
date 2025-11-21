@@ -45,21 +45,45 @@ y_test_norm = scaler_y.transform(y_test)
 num_input = X_train.shape[1]
 
 # First: Learning rate and lambda
+# out = sweep_multkan(
+#       X_train_norm, y_train_norm, X_val_norm, y_val_norm, X_test_norm, y_test_norm,
+#       param_grid={
+#           'width': [
+#               [num_input, num_input, 1],
+#               [num_input, num_input, num_input, 1],
+#           ],
+#           'lr': [0.01, 0.1, 1],
+#           'lamb': [0.001, 0.01, 0.1, 1],
+#           'stop_grid_update_step': [20],
+#           'lamb_entropy': [0.1],
+#           'lamb_coef': [0.1],
+#           'lamb_coefdiff': [0.5],
+#           'prune': [True],
+#           'pruning_th': [0.05],
+#           'symbolic': [True],
+#       },
+#       seeds=[i for i in range(5)],      # run each config with multiple seeds
+#       n_jobs=1,          # number of parallel worker processes
+#       use_cuda=False,     # set False to force CPU
+#       save_heading=save_heading,
+#   )
+
+# Second: Lambdas
 out = sweep_multkan(
       X_train_norm, y_train_norm, X_val_norm, y_val_norm, X_test_norm, y_test_norm,
       param_grid={
           'width': [
               [num_input, num_input, 1],
-              [num_input, num_input, num_input, 1],
           ],
-          'lr': [0.01, 0.1, 1],
-          'lamb': [0.001, 0.01, 0.1, 1],
+          'lr': [0.1],
+          'lamb': [0.01],
           'stop_grid_update_step': [20],
-          'lamb_entropy': [0.1],
-          'lamb_coef': [0.1],
-          'lamb_coefdiff': [0.5],
+          'lamb_entropy': [0.001, 0.01, 0.1, 1],
+          'lamb_coef': [0.001, 0.01, 0.1, 1],
+          'lamb_coefdiff': [0.005, 0.05, 0.5, 1],
           'prune': [True],
-          'pruning_th': [0.05],
+          'pruning_th': [0.02, 0.05],
+          'symbolic': [True],
       },
       seeds=[i for i in range(5)],      # run each config with multiple seeds
       n_jobs=1,          # number of parallel worker processes
@@ -67,27 +91,7 @@ out = sweep_multkan(
       save_heading=save_heading,
   )
 
-# Second: Lambdas
-# out = sweep_multkan(
-#       X_train_norm, y_train_norm, X_val_norm, y_val_norm, X_test_norm, y_test_norm,
-#       param_grid={
-#           'width': [
-#               [1],
-#           ],
-#           'lr': [],
-#           'lamb': [],
-#           'stop_grid_update_step': [20],
-#           'lamb_entropy': [0.001, 0.01, 0.1, 1],
-#           'lamb_coef': [0.001, 0.01, 0.1, 1],
-#           'lamb_coefdiff': [0.001, 0.01, 0.1, 1],
-#           'prune': [True],
-#           'pruning_th': [0.05],
-#       },
-#       seeds=[i for i in range(5)],      # run each config with multiple seeds
-#       n_jobs=1,          # number of parallel worker processes
-#       use_cuda=False,     # set False to force CPU
-#       save_heading=save_heading,
-#   )
+# Third: Training steps and stop_grid_update_step
 #%%
 import matplotlib.pyplot as plt
 df = pd.read_excel(save_heading + ".xlsx", sheet_name='results')
