@@ -166,6 +166,9 @@ def _run_single_trial(args, verbose=False) -> Tuple[TrialResult, MultKAN, Dict[s
         'log': params.get('log', 1),
     }
     res_spline = model.fit(dataset, **fit_kwargs)
+    if verbose:
+        model.plot()
+        plt.show()
 
     # Optional pruning to mimic notebook behavior
     def _want_prune(p: Dict[str, Any]) -> bool:
@@ -193,6 +196,9 @@ def _run_single_trial(args, verbose=False) -> Tuple[TrialResult, MultKAN, Dict[s
             edge_th = params.get('pruning_edge_th', pruning_th)
             try:
                 model = model.prune(node_th=node_th, edge_th=edge_th)
+                if verbose:
+                    model.plot()
+                    plt.show()
             except Exception as e:
                 raise PruningError(f"Failed to prune model with node_th={node_th}, edge_th={edge_th}") from e
 
