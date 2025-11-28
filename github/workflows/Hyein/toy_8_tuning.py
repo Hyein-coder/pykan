@@ -54,8 +54,7 @@ out = sweep_multkan(
               [num_input, num_input, num_input, 1],
           ],
           'lr': [0.01, 0.1, 1],
-          'lamb': [0.001, 0.01, 0.1, 1],    # 0.01 (ddp)
-          'steps': [20, 50],
+          'lamb': [0, 1e-5, 1e-4, 0.001, 0.01],    # 0.01 (ddp)
           'stop_grid_update_step': [20],
           'lamb_entropy': [0.1],
           'lamb_coef': [0.1],
