@@ -19,8 +19,8 @@ x1, x2= np.meshgrid(x1_grid, x2_grid)
 #%%
 import os
 save_dir = os.path.join(os.getcwd(), "github\workflows\Hyein\example_toys")
-y = x1**2 / (x2+1.02) / 10 + np.exp(2 * x2)
-eqn = "x1^2_div_10(x2+1.02)+exp(2x2)"
+y = x1**2 / (x2+1.08) / 1.8 + np.exp(2 * x2)
+eqn = "x1^2_div_1.8(x2+1.08)+exp(2x2)"
 
 fig = plt.figure(figsize=(10, 8))
 
