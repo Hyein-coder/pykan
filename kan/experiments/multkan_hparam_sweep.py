@@ -22,7 +22,7 @@ import time
 import sys
 
 fs = 10
-dpi = 200
+dpi = 100
 config_figure = {'figure.figsize': (3, 2.5), 'figure.titlesize': fs,
                  'font.size': fs, 'font.family': 'sans-serif', 'font.serif': ['computer modern roman'],
                  'font.sans-serif': ['Helvetica Neue LT Pro'],  # Avenir LT Std, Helvetica Neue LT Pro, Helvetica LT Std
@@ -201,10 +201,6 @@ def _run_single_trial(args, verbose=False) -> Tuple[TrialResult, MultKAN, Dict[s
                     plt.show()
             except Exception as e:
                 raise PruningError(f"Failed to prune model with node_th={node_th}, edge_th={edge_th}") from e
-
-    if verbose:
-        model.plot()
-        plt.show()
 
     def _want_symbolic(p: Dict[str, Any]) -> bool:
         val = p.get('symbolic', False)
@@ -753,16 +749,23 @@ def main():
 
     X_train, y_train, X_val, y_val, X_test, y_test = _make_toy_dataset(seed=args.seed)
 
+    num_input = X_train.shape[1]
+    # Recommended parameter sets
     param_grid = {
-        'width': [[X_train.shape[1], 6, 1]],
-        'grid': [3, 5],
-        'k': [3],
-        'mult_arity': [0],
-        'opt': ['LBFGS'],
-        'lr': [1.0],
-        'lamb': [0.01],
-        'update_grid': [True],
-    }
+        'width': [
+            [num_input, 1],
+            [num_input, num_input, 1],
+        ],
+        'lr': [0.01, 0.1, 1],
+        'lamb': [0.001, 0.01, 0.1, 1],  # 0.01 (ddp)
+        'stop_grid_update_step': [20],
+        'lamb_entropy': [0.1],
+        'lamb_coef': [0.1],
+        'lamb_coefdiff': [0.5],
+        'prune': [True],
+        'pruning_th': [0.05],
+        'symbolic': [True],
+    },
 
     out = sweep_multkan(
         X_train, y_train, X_val, y_val, X_test, y_test,
