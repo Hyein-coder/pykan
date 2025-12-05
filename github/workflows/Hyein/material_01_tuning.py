@@ -81,12 +81,35 @@ out = sweep_multkan(
       use_cuda=False,     # set False to force CPU
       save_heading=save_heading,
   )
-print(out['results_avg_table'][['r2_val_mean']])
+#%%
+import matplotlib.pyplot as plt
+df = pd.read_excel(save_heading + ".xlsx", sheet_name='results')
+
+param_cols = [col for col in df.columns if 'param' in col and df[col].nunique() > 1]
+num_params = len(param_cols)
+cols = 3
+rows = int(np.ceil(num_params / cols))
+
+fig, axs = plt.subplots(rows, cols, figsize=(10, 4*rows), constrained_layout=True)
+axs = np.atleast_1d(axs).flatten()
+
+for i, param_name in enumerate(param_cols):
+    ax = axs[i]
+    ax.scatter(df[param_name], df['r2_val'], alpha=0.7, c='blue', edgecolors='k')
+    ax.set_xlabel(param_name, fontsize=14)
+    ax.set_ylabel('r2_val')
+    ax.grid(True, linestyle='--', alpha=0.6)
+
+# Hide any unused subplots if the grid is larger than the number of plots
+for i in range(num_params, len(axs)):
+    axs[i].axis('off')
+
+plt.suptitle("R2 Values for Different Parameters", fontsize=14)
+plt.show()
 
 best = out['best']
-print('Best configuration:')
-print(json.dumps(best, indent=2))
 
+#%%
 res, _, _, _ = evaluate_params(
     X_train, y_train, X_val, y_val, best['params'], X_test, y_test, 0, scaler_y, device.type,
     save_heading=save_heading

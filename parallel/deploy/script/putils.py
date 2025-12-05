@@ -14,6 +14,7 @@ import pandas as pd
 from utils import cprint, timestamp, remove_none, flatten_list, datadir, \
     scriptdir, checkexists, save, load, load_last_record
 
+os.makedirs(os.path.join(datadir, 'temp'), exist_ok=True)
 
 def get_connected_node_ip(domain='192.*'):
     command = 'cat /etc/hosts |grep -Po ' + domain
@@ -109,9 +110,9 @@ def get_parallel_settings(target, head='nodemaster01', domain='192.168.211.*', p
     return settings
     
 
-def parallel_eval(func, inputs, params=None, parallel=True, resume=False, target='dist', 
+def parallel_eval(func, inputs, params=None, parallel=True, resume=False, target='dist',
                   head='nodemaster01', port='40001', domain='192.168.211.*', redis_password='5241590000000000',
-                  env_name=None, namespace='default', n_cores_rest=2, save=False, basename=None, 
+                  env_name=None, namespace='default', n_cores_rest=2, _save=False, basename=None,
                   saving_interval=10, init_params=True, debug=False, timeout=None,
                   reset_config=False, batch=False, batch_size=1000, **kwargs):
     '''
@@ -121,10 +122,10 @@ def parallel_eval(func, inputs, params=None, parallel=True, resume=False, target
             params = ray.get(params)
     '''
     # Saving
-    if not parallel and not save:
+    if not parallel and not _save:
         cprint('parallel_eval:: Running in the serial mode but saving is not activated.')
         
-    if save or resume:
+    if _save or resume:
         assert basename
         assert '/' not in basename
     
@@ -163,6 +164,7 @@ def parallel_eval(func, inputs, params=None, parallel=True, resume=False, target
             works = [pfunc.remote(row, params=params, i=i, **kwargs) for i, (_, row) in enumerate(inputs.iterrows())]
         else:
             works = [pfunc.remote(_input, params=params, i=i, **kwargs) for i, _input in enumerate(inputs)]
+        n_works = len(works)
 
         cprint('Job distribution completed. Start receiving...', color='cyan')
         if batch:
@@ -172,7 +174,9 @@ def parallel_eval(func, inputs, params=None, parallel=True, resume=False, target
                 n = min(batch_size, len(remaining))
                 finished, remaining = ray.wait(remaining, num_returns=n)
                 results.extend(ray.get(finished))
-
+                if _save:
+                    filedir = os.path.join(datadir, 'temp', basename + '_' + str(n_works-n) + '.dill')
+                    save(filedir, results, verbose=False)
         elif timeout:
             cprint('Timeout is activated. This can slow down parallel processing.', color='y')
             N = len(inputs) if not isinstance(inputs, pd.DataFrame) else len(inputs.index)
@@ -181,6 +185,9 @@ def parallel_eval(func, inputs, params=None, parallel=True, resume=False, target
             for i, work in enumerate(works):
                 try:
                     results[i] = ray.get(work, timeout=timeout)
+                    if _save:
+                        filedir = os.path.join(datadir, 'temp', basename + '_' + str(n_works) + '.dill')
+                        save(filedir, results, verbose=False)
                 except Exception:
                     cprint('Timed out work:', i, color='y')
         elif debug:  # use this for debugging purpose
@@ -189,11 +196,17 @@ def parallel_eval(func, inputs, params=None, parallel=True, resume=False, target
             for i, work in enumerate(works):
                 try:
                     results[i] = ray.get(work)
+                    if _save:
+                        filedir = os.path.join(datadir, 'temp', basename + '_' + str(n_works) + '.dill')
+                        save(filedir, results, verbose=False)
                 except Exception as e:
                     cprint(f"[Need debugging] Error at i={i}: {e}", color='r')
                     raise
         else:
             results = ray.get(works)
+            if _save:
+                filedir = os.path.join(datadir, 'temp', basename + '_' + str(n_works) + '.dill')
+                save(filedir, results, verbose=False)
 
     # Serial mode
     else:
@@ -209,7 +222,7 @@ def parallel_eval(func, inputs, params=None, parallel=True, resume=False, target
                 if resume and i < processed_upto:
                     continue
                 results.append(func(row, params=params, i=i, **kwargs))
-                if save and (i != 0) and (i % saving_interval == 0):
+                if _save and (i != 0) and (i % saving_interval == 0):
                     filedir = os.path.join(datadir, 'temp', basename + '_' + str(i) + '.pkl')
                     save(filedir, results, verbose=False)
         else:
@@ -217,7 +230,7 @@ def parallel_eval(func, inputs, params=None, parallel=True, resume=False, target
                 if resume and i < processed_upto:
                     continue
                 results.append(func(_input, params=params, i=i, **kwargs))
-                if save and (i != 0) and (i % saving_interval == 0):
+                if _save and (i != 0) and (i % saving_interval == 0):
                     filedir = os.path.join(datadir, 'temp', basename + '_' + str(i) + '.pkl')
                     save(filedir, results, verbose=False)
     return results
@@ -237,6 +250,6 @@ if __name__ == '__main__':
         return x*x
     
     func = square
-    inputs = np.arange(10)
-    results = parallel_eval(func, inputs, parallel=True, params=None, target='dist', reset_config=True)
+    inputs = np.arange(10000)
+    results = parallel_eval(func, inputs, params=None, parallel=True, target='dist', reset_config=True)
     a = 1
