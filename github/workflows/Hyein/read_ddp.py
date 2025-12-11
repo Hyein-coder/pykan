@@ -5,7 +5,7 @@ with open(file_path, 'rb') as f:
     d = json.load(f)
 
 figure_path = r"D:\pykan\kan\experiments\figures"
-#%%
+#%
 import pandas as pd
 
 df = pd.DataFrame(d)
@@ -19,7 +19,7 @@ data_categories = df_expanded['data_name'].cat.categories
 import matplotlib.pyplot as plt
 import numpy as np
 
-data_name = 'Perovskite'
+data_name = 'AgNP'
 df_specific_data = df_expanded[df_expanded['data_name'] == data_name]
 params = list(params_df.columns)
 

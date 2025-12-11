@@ -65,16 +65,15 @@ out = sweep_multkan(
           'mult_arity': [0],
           'steps': [50],
           'opt': ['LBFGS'],
-          'lr': [0.001, 0.01, 0.1, 1],
+          'lr': [0.001, 1],
           'update_grid': [True],
-          'lamb': [0.01],
-          'lamb_coef': [0.001, 0.01, 0.1, 1],
-          'lamb_entropy': [0.001, 0.01, 0.1, 1],
+          'lamb': [1e-3, 1e-2, 1e-1],
+          'lamb_coef': [1e-2, 1e-1, 1],
+          'lamb_coefdiff': [1e-2, 1e-1, 1],
+          'lamb_entropy': [1e-2, 1e-1, 1],
           'prune': [True],
-          'pruning_node_th': [0.01],
-          'pruning_edge_th': [3e-2],
+          'pruning_th': [0.1, 0.2, 0.5],
           'symbolic': [True],
-          'sym_weight_simple': [0, 0.5, 0.8],
       },
       # seeds=[0, 1],      # run each config with multiple seeds
       seeds=[i for i in range(5)],      # run each config with multiple seeds
@@ -111,7 +110,7 @@ best = out['best']
 
 #%%
 res, _, _, _ = evaluate_params(
-    X_train, y_train, X_val, y_val, best['params'], X_test, y_test, 0, scaler_y, device.type,
+    X_train_norm, y_train_norm, X_val_norm, y_val_norm, best['params'], X_test_norm, y_test_norm, 0, scaler_y, device.type,
     save_heading=save_heading
 )
 
