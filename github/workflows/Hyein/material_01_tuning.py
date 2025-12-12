@@ -65,7 +65,7 @@ out = sweep_multkan(
           'mult_arity': [0],
           'steps': [50],
           'opt': ['LBFGS'],
-          'lr': [0.001, 1],
+          'lr': [0.01, 0.1],
           'update_grid': [True],
           'lamb': [1e-3, 1e-2, 1e-1],
           'lamb_coef': [1e-2, 1e-1, 1],
