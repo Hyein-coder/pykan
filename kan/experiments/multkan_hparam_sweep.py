@@ -795,6 +795,100 @@ def main():
     print('Best configuration:')
     print(json.dumps(best, indent=2))
 
+def plot_parameter_performance(f_param, root_dir, fail_lim=-90, poor_lim=0):
+    """
+    Plots categorical scatter plots of R2 values alongside failure rate bars.
+
+    Args:
+        f_param (str): The filename (without extension) of the excel results.
+        root_dir (str): The base directory containing the sweep folder.
+        fail_lim (float): Threshold below which a run is considered an 'Error'.
+        poor_lim (float): Threshold below which a run is considered 'Poor'.
+    """
+
+    file_path = os.path.join(root_dir, 'multkan_sweep_autosave', f"{f_param}.xlsx")
+    df = pd.read_excel(file_path, sheet_name='results')
+
+    # Filter for scatter plot (Acceptable results)
+    df_scatter = df[df['r2_val'] >= poor_lim].copy()
+
+    # Identify parameters that changed during the sweep
+    param_cols = [col for col in df.columns if 'param' in col and df[col].nunique() > 1]
+    num_params = len(param_cols)
+    cols = 3
+    rows = int(np.ceil(num_params / cols))
+
+    fig, axs = plt.subplots(rows, cols, figsize=(12, 4.5 * rows), constrained_layout=True)
+    axs = np.atleast_1d(axs).flatten()
+
+    for i, param_name in enumerate(param_cols):
+        ax = axs[i]
+
+        # 1. Prepare Categorical Mapping
+        # Sort unique values numerically first so the axis follows a logical order
+        unique_vals = np.sort(df[param_name].unique())
+        unique_labels = [str(val) for val in unique_vals]
+
+        # We use the index of the sorted unique values as our X positions
+        val_to_idx = {val: i for i, val in enumerate(unique_vals)}
+
+        # 2. Plot Scatter (Acceptable points)
+        if not df_scatter.empty:
+            # Map the parameter values in the scatter df to their categorical indices
+            scatter_x = df_scatter[param_name].map(val_to_idx)
+            ax.scatter(scatter_x, df_scatter['r2_val'],
+                       alpha=0.7, c='blue', edgecolors='k', zorder=5, label='Acceptable')
+
+        # 3. Calculate Failure Rates for Bars
+        total_counts = df.groupby(param_name).size()
+        extreme_failure_counts = df[df['r2_val'] < fail_lim].groupby(param_name).size()
+        poor_perf_counts = df[df['r2_val'] < poor_lim].groupby(param_name).size()
+
+        # Reindex to ensure we have a value for every category, filling missing with 0
+        extreme_rate = (extreme_failure_counts / total_counts * 100).reindex(unique_vals, fill_value=0).values
+        poor_rate = (poor_perf_counts / total_counts * 100).reindex(unique_vals, fill_value=0).values
+
+        # 4. Plot Bar Graphs on Secondary Axis
+        ax2 = ax.twinx()
+        x_indices = np.arange(len(unique_labels))
+        bar_width = 0.25
+
+        ax2.bar(x_indices - bar_width / 2, poor_rate, width=bar_width,
+                color='orange', alpha=0.4, label='Poor', align='center', zorder=1)
+
+        ax2.bar(x_indices + bar_width / 2, extreme_rate, width=bar_width,
+                color='red', alpha=0.6, label='Error', align='center', zorder=2)
+
+        # Formatting
+        ax.set_xticks(x_indices)
+        ax.set_xticklabels(unique_labels, rotation=45 if len(unique_labels) > 5 else 0)
+        ax.set_xlabel(param_name, fontsize=12)
+        ax.set_ylabel('r2_val')
+        ax2.set_ylabel('Failure Rate (%)', color='red')
+        ax2.tick_params(axis='y', labelcolor='red')
+        ax2.set_ylim(0, 105)
+
+        # Protect margins so markers aren't cut
+        ax.set_xlim(-0.5, len(unique_labels) - 0.5)
+        ax.grid(True, linestyle='--', alpha=0.4)
+
+        # Legend (Only on the last valid plot to save space, or use a global legend)
+        if i == num_params - 1:
+            lines, labels = ax.get_legend_handles_labels()
+            lines2, labels2 = ax2.get_legend_handles_labels()
+            ax.legend(lines + lines2, labels + labels2, loc='upper left', bbox_to_anchor=(1.15, 1))
+
+    # Hide unused plots
+    for j in range(num_params, len(axs)):
+        axs[j].axis('off')
+
+    plt.suptitle(f"Performance Analysis: {f_param}", fontsize=16)
+
+    # Save the result
+    save_path = os.path.join(root_dir, 'multkan_sweep_autosave', f"{f_param}_performance_summary.png")
+    plt.savefig(save_path, bbox_inches='tight')
+    plt.show()
+
 
 if __name__ == '__main__':
     main()

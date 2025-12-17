@@ -65,18 +65,18 @@ out = sweep_multkan(
           'mult_arity': [0],
           'steps': [50],
           'opt': ['LBFGS'],
-          'lr': [0.01, 0.1],
+          'lr': [0.1],
           'update_grid': [True],
-          'lamb': [1e-3, 1e-2, 1e-1],
-          'lamb_coef': [1e-2, 1e-1, 1],
-          'lamb_coefdiff': [1e-2, 1e-1, 1],
-          'lamb_entropy': [1e-2, 1e-1, 1],
+          'lamb': [1e-3],
+          'lamb_coef': [1e-1],
+          'lamb_coefdiff': [1e-2],
+          'lamb_entropy': [1e-1],
           'prune': [True],
           'pruning_th': [0.1, 0.2, 0.5],
           'symbolic': [True],
       },
       # seeds=[0, 1],      # run each config with multiple seeds
-      seeds=[i for i in range(5)],      # run each config with multiple seeds
+      seeds=[i for i in range(10)],      # run each config with multiple seeds
       use_cuda=False,     # set False to force CPU
       save_heading=save_heading,
   )
