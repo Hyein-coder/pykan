@@ -134,8 +134,7 @@ def _evaluate(model: MultKAN, dataset: Dict[str, torch.Tensor], scaler_y: Option
             _, _, mae_test, r2_test = mae_and_r2(model, dataset['test_input'], dataset['test_label'], scaler_y=scaler_y)
     return mae_train, mae_val, mae_test, r2_train, r2_val, r2_test
 
-
-def _run_single_trial(args, verbose=False) -> Tuple[TrialResult, MultKAN, Dict[str, Any], Dict[str, Any]]:
+def get_arg_dict(args):
     X_train, y_train, X_val, y_val, X_test, y_test, params, device_str, scaler_y, seed = args
     device = torch.device(device_str)
     _seed_everything(seed)
@@ -148,8 +147,6 @@ def _run_single_trial(args, verbose=False) -> Tuple[TrialResult, MultKAN, Dict[s
     model_kwargs['device'] = device
     model_kwargs['seed'] = seed
     model_kwargs['grid_range'] = params.get('grid_range', [-1, 1])
-
-    model = MultKAN(**model_kwargs)
 
     fit_kwargs = {
         'opt': params.get('opt', 'LBFGS'),
@@ -165,6 +162,13 @@ def _run_single_trial(args, verbose=False) -> Tuple[TrialResult, MultKAN, Dict[s
         'batch': params.get('batch', -1),
         'log': params.get('log', 1),
     }
+    return device, model_kwargs, fit_kwargs, dataset
+
+def _run_single_trial(args, verbose=False) -> Tuple[TrialResult, MultKAN, Dict[str, Any], Dict[str, Any]]:
+    X_train, y_train, X_val, y_val, X_test, y_test, params, device_str, scaler_y, seed = args
+    device, model_kwargs, fit_kwargs, dataset = get_arg_dict(args)
+
+    model = MultKAN(**model_kwargs)
     res_spline = model.fit(dataset, **fit_kwargs)
     if verbose:
         model.plot()

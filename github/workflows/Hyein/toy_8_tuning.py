@@ -22,6 +22,7 @@ save_heading = os.path.join(os.getcwd(), "github", "workflows", "Hyein", "multka
                             f"toy_8_{datetime.datetime.now().strftime('%Y%m%d_%H%M')}")
 y = y.flatten().reshape(-1, 1)
 
+feature_range = (0.1, 0.9)
 #%%
 X_temp, X_test, y_temp, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
 X_train, X_val, y_train, y_val = train_test_split(X_temp, y_temp, test_size=0.2, random_state=42)  # 0.2 × 0.8 = 0.16 (전체의 16%)
@@ -31,8 +32,8 @@ print(f"훈련셋 크기: {len(X_train)} ({len(X_train)/len(X)*100:.1f}%)")
 print(f"검증셋 크기: {len(X_val)} ({len(X_val)/len(X)*100:.1f}%)")
 print(f"테스트셋 크기: {len(X_test)} ({len(X_test)/len(X)*100:.1f}%)")
 
-scaler_X = MinMaxScaler()
-scaler_y = MinMaxScaler()
+scaler_X = MinMaxScaler(feature_range=feature_range)
+scaler_y = MinMaxScaler(feature_range=feature_range)
 
 X_train_norm = scaler_X.fit_transform(X_train)
 y_train_norm = scaler_y.fit_transform(y_train)
@@ -45,52 +46,53 @@ y_test_norm = scaler_y.transform(y_test)
 num_input = X_train.shape[1]
 
 # First: Learning rate and lambda and steps
-# out = sweep_multkan(
-#       X_train_norm, y_train_norm, X_val_norm, y_val_norm, X_test_norm, y_test_norm,
-#       param_grid={
-#           'width': [
-#               # [num_input, 1],
-#               [num_input, num_input, 1],
-#               [num_input, num_input, num_input, 1],
-#           ],
-#           'lr': [0.01, 0.1, 1],
-#           'lamb': [0.001, 0.01, 0.1, 1],    # 0.01 (ddp)
-#           'stop_grid_update_step': [20],
-#           'lamb_entropy': [0.1],
-#           'lamb_coef': [0.1],
-#           'lamb_coefdiff': [0.5],
-#           'prune': [True],
-#           'pruning_th': [0.05],
-#           # 'symbolic': [True],
-#       },
-#       seeds=[i for i in range(5)],      # run each config with multiple seeds
-#       n_jobs=1,          # number of parallel worker processes
-#       use_cuda=False,     # set False to force CPU
-#       save_heading=save_heading,
-#   )
 
-# Second: Lambdas
 out = sweep_multkan(
       X_train_norm, y_train_norm, X_val_norm, y_val_norm, X_test_norm, y_test_norm,
       param_grid={
           'width': [
+              # [num_input, 1],
               [num_input, num_input, 1],
+              [num_input, num_input, num_input, 1],
           ],
-          'lr': [0.01],
-          'lamb': [0.001],
+          'grid_range': [feature_range],
+          'lr': [0.01, 0.1, 1],
+          'lamb': [0.001, 0.01, 0.1, 1],    # 0.01 (ddp)
           'stop_grid_update_step': [20],
-          'lamb_entropy': [0.001, 0.01, 0.1, 1],
-          'lamb_coef': [0.1], #[0.001, 0.01, 0.1, 1],
-          'lamb_coefdiff': [0.5], #[0.005, 0.05, 0.5, 1],
+          'lamb_entropy': [0.1],
+          'lamb_coef': [0.1],
+          'lamb_coefdiff': [0.5],
           'prune': [True],
-          'pruning_th': [0.01, 0.02, 0.05, 0.1],
-          'symbolic': [True],
+          'pruning_th': [0.05],
+          # 'symbolic': [True],
       },
       seeds=[i for i in range(5)],      # run each config with multiple seeds
       n_jobs=1,          # number of parallel worker processes
       use_cuda=False,     # set False to force CPU
       save_heading=save_heading,
   )
+# Second: Lambdas
+# out = sweep_multkan(
+#       X_train_norm, y_train_norm, X_val_norm, y_val_norm, X_test_norm, y_test_norm,
+#       param_grid={
+#           'width': [
+#               [num_input, num_input, 1],
+#           ],
+#           'lr': [0.01],
+#           'lamb': [0.001],
+#           'stop_grid_update_step': [20],
+#           'lamb_entropy': [0.001, 0.01, 0.1, 1],
+#           'lamb_coef': [0.1], #[0.001, 0.01, 0.1, 1],
+#           'lamb_coefdiff': [0.5], #[0.005, 0.05, 0.5, 1],
+#           'prune': [True],
+#           'pruning_th': [0.01, 0.02, 0.05, 0.1],
+#           'symbolic': [True],
+#       },
+#       seeds=[i for i in range(5)],      # run each config with multiple seeds
+#       n_jobs=1,          # number of parallel worker processes
+#       use_cuda=False,     # set False to force CPU
+#       save_heading=save_heading,
+#   )
 
 #%%
 import matplotlib.pyplot as plt
@@ -125,7 +127,7 @@ res, model, _, _ = evaluate_params(
     X_train_norm, y_train_norm, X_val_norm, y_val_norm, best['params'], X_test_norm, y_test_norm, 0, scaler_y, device.type,
     save_heading=save_heading
 )
-torch.save(model.state_dict(), f"{save_heading}_model.pt")
+model.saveckpt(path=f"{save_heading}_model")
 
 print("Evaluation: ")
 print(res)
