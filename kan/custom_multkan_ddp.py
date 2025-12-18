@@ -242,9 +242,10 @@ class MultKAN(MultKAN_raw):
     def unfix_symbolic_all(self, log_history=False):  # changed log_history from True to False
         return super().unfix_symbolic_all(log_history=log_history)
 
-    def loadckpt(path='model'):
-        instance = super().load_ckpt(path=path)
-        return self.wrapping_methods(instance)
+    @classmethod
+    def loadckpt(cls, path='model'):
+        instance = super(MultKAN, cls).loadckpt(path=path)
+        return cls.wrapping_methods(instance)
 
     def rewind(self, model_id):
         instance = super().rewind(model_id)
@@ -487,8 +488,9 @@ class MultKAN(MultKAN_raw):
         self.symbolic_enabled = old_symbolic_enabled
         return results
 
-    def wrapping_methods(self, instance):
-        instance.__class__ = self.__class__  # transform parent instance to child instance
+    @classmethod
+    def wrapping_methods(cls, instance):
+        instance.__class__ = cls  # transform parent instance to child instance
         return instance
 
     def prune_node(self, threshold=1e-2, mode="auto", active_neurons_id=None, log_history=False):
@@ -787,3 +789,5 @@ class MultKAN(MultKAN_raw):
                     if num_active or sym_active:
                         complexity += 1
         return complexity
+
+KAN = MultKAN
