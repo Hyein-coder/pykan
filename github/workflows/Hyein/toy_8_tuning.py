@@ -53,20 +53,23 @@ out = sweep_multkan(
           'width': [
               # [num_input, 1],
               [num_input, num_input, 1],
-              [num_input, num_input, num_input, 1],
+              # [num_input, num_input, num_input, 1],
           ],
           'grid_range': [feature_range],
-          'lr': [0.01, 0.1, 1],
-          'lamb': [0.001, 0.01, 0.1, 1],    # 0.01 (ddp)
+          'lr': [0.1],
+          'lamb': [0.01],    # 0.01 (ddp)
           'stop_grid_update_step': [20],
-          'lamb_entropy': [0.1],
-          'lamb_coef': [0.1],
-          'lamb_coefdiff': [0.5],
+          'lamb_entropy': [0.001, 0.01, 0.1, 1],
+          'lamb_coef': [0.001, 0.01, 0.1, 1],
+          'lamb_coefdiff': [0.005, 0.05, 0.5, 1],
           'prune': [True],
           'pruning_th': [0.05],
-          # 'symbolic': [True],
+          'symbolic': [True],
+          'sym_weight_simple': [0.],
+          'sym_a_range': [(-50, 50)],
+          'sym_b_range': [(-50, 50)],
       },
-      seeds=[i for i in range(5)],      # run each config with multiple seeds
+      seeds=[i for i in range(10)],      # run each config with multiple seeds
       n_jobs=1,          # number of parallel worker processes
       use_cuda=False,     # set False to force CPU
       save_heading=save_heading,
