@@ -799,18 +799,18 @@ def main():
     print('Best configuration:')
     print(json.dumps(best, indent=2))
 
-def plot_parameter_performance(f_param, root_dir, fail_lim=-90, poor_lim=0):
+def plot_parameter_performance(file_name, dir_name, fail_lim=-90, poor_lim=0):
     """
     Plots categorical scatter plots of R2 values alongside failure rate bars.
 
     Args:
-        f_param (str): The filename (without extension) of the excel results.
-        root_dir (str): The base directory containing the sweep folder.
+        file_name (str): The filename (without extension) of the excel results.
+        dir_name (str): The base directory.
         fail_lim (float): Threshold below which a run is considered an 'Error'.
         poor_lim (float): Threshold below which a run is considered 'Poor'.
     """
 
-    file_path = os.path.join(root_dir, 'multkan_sweep_autosave', f"{f_param}.xlsx")
+    file_path = os.path.join(dir_name, f"{file_name}.xlsx")
     df = pd.read_excel(file_path, sheet_name='results')
 
     # Filter for scatter plot (Acceptable results)
@@ -886,10 +886,10 @@ def plot_parameter_performance(f_param, root_dir, fail_lim=-90, poor_lim=0):
     for j in range(num_params, len(axs)):
         axs[j].axis('off')
 
-    plt.suptitle(f"Performance Analysis: {f_param}", fontsize=16)
+    plt.suptitle(f"Performance Analysis: {file_name}", fontsize=16)
 
     # Save the result
-    save_path = os.path.join(root_dir, 'multkan_sweep_autosave', f"{f_param}_performance_summary.png")
+    save_path = os.path.join(dir_name, f"{file_name}_performance_summary.png")
     plt.savefig(save_path, bbox_inches='tight')
     plt.show()
 
