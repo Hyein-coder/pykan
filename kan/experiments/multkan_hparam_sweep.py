@@ -183,8 +183,10 @@ def _run_single_trial(args, verbose=False) -> Tuple[TrialResult, MultKAN, Dict[s
         return bool(val)
 
     max_grid = params.get('max_grid', 5)
-    refine_order = [3, 5, 10, 20, 30, 40, 50]
+    refine_order = [3, 10, 30]
     refine_grid = [i for i in refine_order if i <= max_grid]
+    if max_grid not in refine_grid:
+        refine_grid.append(max_grid)
 
     refine_res = []
     for grid in refine_grid:
@@ -799,19 +801,21 @@ def main():
     print('Best configuration:')
     print(json.dumps(best, indent=2))
 
-def plot_parameter_performance(file_name, dir_name, fail_lim=-90, poor_lim=0):
+def plot_parameter_performance(file_names, dir_name, save_name, fail_lim=-90, poor_lim=0):
     """
     Plots categorical scatter plots of R2 values alongside failure rate bars.
 
     Args:
-        file_name (str): The filename (without extension) of the excel results.
+        file_name (str): The list of filenames (without extension) of the excel results.
         dir_name (str): The base directory.
         fail_lim (float): Threshold below which a run is considered an 'Error'.
         poor_lim (float): Threshold below which a run is considered 'Poor'.
     """
-
-    file_path = os.path.join(dir_name, f"{file_name}.xlsx")
-    df = pd.read_excel(file_path, sheet_name='results')
+    dfs = []
+    for fn in file_names:
+        file_path = os.path.join(dir_name, f"{fn}.xlsx")
+        dfs.append(pd.read_excel(file_path, sheet_name='results'))
+    df = pd.concat(dfs)
 
     # Filter for scatter plot (Acceptable results)
     df_scatter = df[df['r2_val'] >= poor_lim].copy()
@@ -830,7 +834,11 @@ def plot_parameter_performance(file_name, dir_name, fail_lim=-90, poor_lim=0):
 
         # 1. Prepare Categorical Mapping
         # Sort unique values numerically first so the axis follows a logical order
-        unique_vals = np.sort(df[param_name].unique())
+        raw_uniques = df[param_name].unique()
+        try:
+            unique_vals = np.sort(raw_uniques)
+        except TypeError:
+            unique_vals = raw_uniques
         unique_labels = [str(val) for val in unique_vals]
 
         # We use the index of the sorted unique values as our X positions
@@ -886,10 +894,10 @@ def plot_parameter_performance(file_name, dir_name, fail_lim=-90, poor_lim=0):
     for j in range(num_params, len(axs)):
         axs[j].axis('off')
 
-    plt.suptitle(f"Performance Analysis: {file_name}", fontsize=16)
+    plt.suptitle(f"Performance Analysis: {save_name}", fontsize=16)
 
     # Save the result
-    save_path = os.path.join(dir_name, f"{file_name}_performance_summary.png")
+    save_path = os.path.join(dir_name, f"{save_name}_performance_summary.png")
     plt.savefig(save_path, bbox_inches='tight')
     plt.show()
 
