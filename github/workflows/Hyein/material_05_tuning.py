@@ -11,7 +11,7 @@ import datetime
 
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 print(f"This script is running on {device}.")
-data_name = "AutoAM"
+data_name = "CrossedBarrel"
 
 dir_current = os.getcwd()
 save_heading = os.path.join(dir_current, "github", "workflows", "Hyein", "multkan_sweep_autosave",
@@ -62,7 +62,7 @@ out = sweep_multkan(
       param_grid={
           'width': [[num_input, num_input, 1]],
           'grid_range': [feature_range],
-          'grid': [5],
+          'grid': [5, 30],
           'k': [3],
           'mult_arity': [0],
           'steps': [50],
@@ -77,6 +77,8 @@ out = sweep_multkan(
           'pruning_edge_th': [3e-2],
           'symbolic': [True],
           'sym_weight_simple': [0, 0.8],
+          # 'sym_a_range': [(-10, 10)],
+          # 'sym_b_range': [(-10, 10)],
       },
       # seeds=[0, 1],
       seeds=[i for i in range(10)],
@@ -86,7 +88,7 @@ out = sweep_multkan(
 
 #%%
 from kan.experiments.multkan_hparam_sweep import plot_parameter_performance
-plot_parameter_performance([os.path.basename(save_heading)], os.path.dirname(save_heading), os.path.basename(save_heading))
+plot_parameter_performance(os.path.basename(save_heading), os.path.dirname(save_heading))
 best = out['best']
 
 print("[Final] The Best Configuration:")
