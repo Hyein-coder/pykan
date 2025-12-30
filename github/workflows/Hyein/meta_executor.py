@@ -13,13 +13,15 @@ def main():
     target_scripts = [
         # "github/workflows/Hyein/toy_analytic_SHAP_Sobol.py",
         # "github/workflows/Hyein/toy_NN_tuning.py",
-        "github/workflows/Hyein/toy_NN_SHAP_Sobol.py",
+        # "github/workflows/Hyein/toy_NN_SHAP_Sobol.py",
+        "github/workflows/Hyein/toy_KAN_sweep.py",
+        "github/workflows/Hyein/toy_KAN_analyze.py",
     ]
     target_data = [
-        # 'log_sum_2d', 'log_sum_5d', 'log_sum_10d',
-        'log_sum_30d',
-        # 'convolution',
-        # 'original', 'mult_periodic', 'exponential', 'logarithm',
+        'convolution',
+        # 'original',
+        'mult_periodic', 'exponential', 'logarithm',
+        'log_sum_2d', 'log_sum_5d', 'log_sum_10d', 'log_sum_30d',
     ]
 
     for s in target_scripts:
