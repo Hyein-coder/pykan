@@ -3,11 +3,14 @@ import os
 
 def main():
     target_scripts = [
-        "github/workflows/Hyein/material_04_tuning.py",
-        "github/workflows/Hyein/material_05_tuning.py",
+        "github/workflows/Hyein/material_all_NN_SHAP.py",
+    ]
+    target_data = [
+        'AgNP', 'P3HT', 'AutoAM', 'Perovskite', 'CrossedBarrel'
     ]
     for s in target_scripts:
-        subprocess.run(['python', s])
+        for data in target_data:
+            subprocess.run(['python', s, data])
 
 if __name__ == '__main__':
     main()
