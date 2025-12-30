@@ -7,34 +7,7 @@ import matplotlib.pyplot as plt
 import shap
 from SALib.sample import sobol as saltelli
 from SALib.analyze import sobol
-
-# Note: SALib >= 1.4.0 uses 'from SALib.sample import saltelli'
-# If you are using an older version, it might be 'from SALib.sample import sobol_sequence'
-# or you might need to check your installed version.
-# For this script, I assume the standard import.
-
-# ==========================================
-# 1. Define Your Functions Here (Function Zoo)
-# ==========================================
-# We need this mainly for the BOUNDS and NAMES to set up the analysis correctly.
-FUNCTION_ZOO = {
-    "original": {
-        "bounds": [[-np.pi, np.pi], [-1, 1]],
-        "names": ["Angle (x0)", "Linear (x1)"]
-    },
-    "mult_periodic": {
-        "bounds": [[-np.pi, np.pi], [-1, 1]],
-        "names": ["Angle (x0)", "Multiplier (x1)"]
-    },
-    "exponential": {
-        "bounds": [[-1, 1], [-1, 1]],
-        "names": ["Exponent (x0)", "Linear (x1)"]
-    },
-    "logarithm": {
-        "bounds": [[-1, 1], [-1, 1]],
-        "names": ["Log (x0)", "Linear (x1)"]
-    }
-}
+from github.workflows.Hyein.toy_analytic_SHAP_Sobol import FUNCTION_ZOO
 
 
 def main():
