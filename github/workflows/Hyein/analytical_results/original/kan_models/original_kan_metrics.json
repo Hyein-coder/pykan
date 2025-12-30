@@ -1,0 +1,11 @@
+{
+    "dataset": "original",
+    "test_r2": 0.9969866565840861,
+    "best_params": {
+        "steps": 20,
+        "lamb": 0.001,
+        "k": 3,
+        "hidden_layer": 2,
+        "grid": 10
+    }
+}
