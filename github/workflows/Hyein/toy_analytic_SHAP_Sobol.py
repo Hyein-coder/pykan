@@ -18,39 +18,32 @@ from SALib.analyze import sobol
 # }
 
 FUNCTION_ZOO = {
-    # Case 1: Your original example (Additive)
-    # y = sin(2*x0) + 5*x1
-    # Expectation: High S1 for x1, No Interaction
+    # Toy 3
     "original": {
         "func": lambda x: np.sin(2 * x[0]) + 5 * x[1],
         "bounds": [[-np.pi, np.pi], [-1, 1]],
         "names": ["Angle (x0)", "Linear (x1)"]
     },
 
-    # Case 2: Pure Interaction (Multiplicative)
-    # y = x0 * x1
-    # Expectation: S1 might be low (or zero if centered at 0), ST should be high.
-    "multiplication": {
-        "func": lambda x: x[0] * x[1],
+    # Toy 5
+    "mult_periodic": {
+        "func": lambda x: x[1] * np.sin(2 * x[0]),
+        "bounds": [[-np.pi, np.pi], [-1, 1]],
+        "names": ["Angle (x0)", "Multiplier (x1)"]
+    },
+
+    # Toy 4
+    "exponential": {
+        "func": lambda x: np.exp(-2 * x[0]) + x[1],
         "bounds": [[-1, 1], [-1, 1]],
-        "names": ["A", "B"]
+        "names": ["Exponent (x0)", "Linear (x1)"]
     },
 
-    # Case 3: Non-linear Peak (Gaussian-like)
-    # y = exp(-(x0^2 + x1^2))
-    # Expectation: Equal importance, highly localized SHAP
-    "peak": {
-        "func": lambda x: np.exp(-(x[0] ** 2 + x[1] ** 2)),
-        "bounds": [[-2, 2], [-2, 2]],
-        "names": ["X-axis", "Y-axis"]
-    },
-
-    # Case 4: Discontinuous / Step Function
-    # y = x0 + (10 if x1 > 0 else 0)
-    "step": {
-        "func": lambda x: x[0] + (10.0 if x[1] > 0 else 0.0),
-        "bounds": [[0, 10], [-1, 1]],
-        "names": ["Continuous", "Switch"]
+    # Toy 6
+    "logarithm": {
+        "func": lambda x: np.log(20 * (x[0] + 1.2)) + x[1],
+        "bounds": [[-1, 1], [-1, 1]],
+        "names": ["Log (x0)", "Linear (x1)"]
     }
 }
 
