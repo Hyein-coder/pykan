@@ -1,60 +1,26 @@
+from kan import create_dataset
+from kan.custom import MultKAN
+from kan.utils import ex_round
 import torch
+import numpy as np
+import matplotlib.pyplot as plt
+import matplotlib.cm as cm
+import matplotlib.colors as mcolors
+from kan.custom_processing import find_index_sign_revert
+import json
+import os
+import datetime
+
+from github.workflows.Hyein.toy_7_log_sum_factory import create_log_sum_function, LOG_SUM_ZOO
+
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-
-def create_log_sum_function(n_inputs, m_min=1, m_max=5, _device='cpu', seed=None):
-    """
-    A function factory that creates a target function of the form:
-    f(x) = sum(log(c_i * x_i))
-
-    Args:
-        n_inputs (int): The number of input features (x_i).
-        m_min (float): The minimum value for the random multipliers.
-        m_max (float): The maximum value for the random multipliers.
-        _device (str): The device to store the multipliers on.
-
-    Returns:
-        tuple: (target_function, multipliers)
-            - target_function: The new PyTorch function.
-            - multipliers: The 1D tensor of random multipliers used.
-    """
-    generator = torch.Generator(device=_device)
-    if seed is not None:
-        generator.manual_seed(seed)
-
-    multipliers = m_min + (m_max - m_min) * torch.rand(n_inputs, device=_device)
-
-    def target_function(x):
-        """
-        Calculates sum(log(c_i * x_i)).
-
-        Args:
-            x (torch.Tensor): The input tensor, expected shape [batch_size, n_inputs].
-                              All values in x * multipliers must be positive.
-        """
-        safe_x = x + torch.ones_like(x) * (1 + 1e-3)
-        multiplied_x = safe_x * (5**multipliers)
-        log_x = torch.log(multiplied_x + 100.)
-        final_sum = torch.sum(log_x, dim=1)
-        return final_sum
-
-    return target_function, multipliers.detach().cpu().numpy()
+print(f"Running on device: {device}")
 
 if __name__ == "__main__":
-    from kan import create_dataset
-    from kan.custom import MultKAN
-    from kan.utils import ex_round
-    import numpy as np
-    import matplotlib.pyplot as plt
-    import matplotlib.cm as cm
-    import matplotlib.colors as mcolors
-    from kan.custom_processing import find_index_sign_revert
+    # num_inputs = [5]
+    num_inputs = sorted([int(k.split('_')[2][:-1]) for k in LOG_SUM_ZOO.keys()])
+    print(f"✅ Training on dimensions defined in ZOO: {num_inputs}")
 
-    import json
-    import os
-    import datetime
-
-    num_inputs = [2, 5, 10, 30, 50]
-    # num_inputs = [50]
     save_heading = os.path.join(os.getcwd(), 'github', 'workflows', 'Hyein', 'multvariable',
                                 "toy_7_multiple_sweep_" + datetime.datetime.now().strftime('%Y%m%d_%H%M'))
 
@@ -71,12 +37,13 @@ if __name__ == "__main__":
             if obj is None:
                 return None
             return super(NumpyJSONEncoder, self).default(obj)
-    # ---
 
     models = []
     dummy_data = np.linspace(-1, 1, 100)
     for nx in num_inputs:
-        f_test, mult_test = create_log_sum_function(nx, _device=device.type, seed=0)
+        print(f"============= Training on nx={nx}")
+        f_test, mult_test_tensor = create_log_sum_function(nx, _device=device.type, seed=0)
+        mult_test = mult_test_tensor.detach().cpu().numpy()
         digits = int(np.ceil(nx / 10))
         sorted_multiplier_indices = np.argsort(mult_test)[::-1].tolist()
 

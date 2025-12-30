@@ -6,6 +6,7 @@ import matplotlib.pyplot as plt
 import shap
 from SALib.sample import sobol as saltelli
 from SALib.analyze import sobol
+from github.workflows.Hyein.toy_7_log_sum_factory import LOG_SUM_ZOO
 
 # ==========================================
 # 1. Define Your Functions Here
@@ -17,7 +18,7 @@ from SALib.analyze import sobol
 #     'feature_names': ['x0', 'x1', ...]
 # }
 
-FUNCTION_ZOO = {
+STANDARD_ZOO = {
     # Toy 3
     "original": {
         "func": lambda x: np.sin(2 * x[0]) + 5 * x[1],
@@ -53,7 +54,7 @@ FUNCTION_ZOO = {
         "names": ["Convex (x0)", "Denominator (x1)"]
     }
 }
-
+FUNCTION_ZOO = {**STANDARD_ZOO, **LOG_SUM_ZOO}
 
 def main():
     # ==========================================
