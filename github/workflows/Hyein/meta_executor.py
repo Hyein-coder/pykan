@@ -11,7 +11,7 @@ def main():
 
 
     target_scripts = [
-        "github/workflows/Hyein/toy_NN_tuning.py",
+        "github/workflows/Hyein/toy_NN_SHAP_Sobol.py",
     ]
     target_data = [
         'original', 'mult_periodic', 'exponential', 'logarithm',
