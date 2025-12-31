@@ -15,7 +15,7 @@ def main():
         # "github/workflows/Hyein/toy_NN_tuning.py",
         # "github/workflows/Hyein/toy_NN_SHAP_Sobol.py",
         "github/workflows/Hyein/toy_KAN_sweep.py",
-        "github/workflows/Hyein/toy_KAN_analyze.py",
+        # "github/workflows/Hyein/toy_KAN_analyze.py",
     ]
     target_data = [
         'convolution',

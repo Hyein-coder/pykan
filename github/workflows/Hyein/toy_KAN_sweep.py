@@ -6,6 +6,7 @@ import torch
 import numpy as np
 import matplotlib.pyplot as plt
 import pandas as pd
+import yaml
 from sklearn.base import BaseEstimator, RegressorMixin
 from sklearn.model_selection import train_test_split, RandomizedSearchCV
 from sklearn.metrics import r2_score
@@ -19,35 +20,44 @@ from kan.custom import MultKAN
 # (Make sure this path matches your actual project structure)
 from github.workflows.Hyein.toy_analytic_SHAP_Sobol import FUNCTION_ZOO
 
+# Fix YAML loading for tuples (just in case)
+def tuple_constructor(loader, node):
+    return tuple(loader.construct_sequence(node))
+yaml.add_constructor('tag:yaml.org,2002:python/tuple', tuple_constructor, Loader=yaml.SafeLoader)
 
-# ==========================================
-# 2. Scikit-Learn Wrapper for KAN
-# ==========================================
+
 class KANRegressor(BaseEstimator, RegressorMixin):
     """
     A wrapper to make MultKAN compatible with Scikit-learn's RandomizedSearchCV.
-    Now includes Symbolic Regression capabilities.
+
+    n_layers defines the depth:
+      - n_layers=1 -> [nx, 1] (Shallow)
+      - n_layers=2 -> [nx, nx, 1] (1 Hidden Layer)
+      - n_layers=3 -> [nx, nx, nx, 1] (2 Hidden Layers)
     """
 
     def __init__(self,
-                 hidden_layer=5,
+                 n_layers=2,  # [MODIFIED] Replaced hidden_layer (width) with n_layers (depth)
                  grid=3,
                  k=3,
                  lamb=0.01,
-                 lamb_coef=0.1,  # [NEW] Coefficient regularization
-                 lamb_entropy=0.1,  # [NEW] Entropy regularization
-                 lr=0.1,  # [NEW] Learning rate
+                 lamb_coef=0.1,
+                 lamb_entropy=0.1,
+                 lr=0.1,
                  steps=20,
-                 # Symbolic Regression Parameters (Defaults)
+                 pruning_enabled=True,
+                 # Symbolic Regression Parameters
                  symbolic_enabled=True,
-                 sym_lib=None,  # List of functions: ['x', 'x^2', 'sin', ...]
+                 sym_lib=None,
                  sym_weight_simple=0.0,
-                 sym_r2_threshold=0.0,  # 0.0 means stricter filtering usually not applied aggressively
+                 sym_r2_threshold=0.0,
                  sym_a_range=(-10, 10),
                  sym_b_range=(-10, 10),
                  device='cpu'):
 
-        self.hidden_layer = hidden_layer
+        self.dataset = None
+
+        self.n_layers = n_layers
         self.grid = grid
         self.k = k
         self.lamb = lamb
@@ -55,6 +65,10 @@ class KANRegressor(BaseEstimator, RegressorMixin):
         self.lamb_entropy = lamb_entropy
         self.lr = lr
         self.steps = steps
+
+        self.pruning_enabled = pruning_enabled
+        self.pruning_node_th = 0.01
+        self.pruning_edge_th = 0.03
 
         # Symbolic params
         self.symbolic_enabled = symbolic_enabled
@@ -72,11 +86,10 @@ class KANRegressor(BaseEstimator, RegressorMixin):
     def fit(self, X, y):
         self._n_features = X.shape[1]
 
-        # Determine width
-        if self.hidden_layer > 0:
-            width = [self._n_features, self.hidden_layer, 1]
-        else:
-            width = [self._n_features, 1]
+        # [MODIFIED] Determine width based on n_layers (depth)
+        # n_layers=2 means [nx, nx, 1]
+        #TODO: 이게 잘 안 되면, nx를 2배로 늘려서 해보기
+        width = [self._n_features] * self.n_layers + [1]
 
         # Initialize KAN
         self.model = MultKAN(width=width, grid=self.grid, k=self.k,
@@ -87,18 +100,16 @@ class KANRegressor(BaseEstimator, RegressorMixin):
             'train_input': torch.tensor(X, dtype=torch.float32, device=self.device),
             'train_label': torch.tensor(y, dtype=torch.float32, device=self.device).reshape(-1, 1),
             'test_input': torch.tensor(X, dtype=torch.float32, device=self.device),
-            # Using Train as dummy test for internal loop
             'test_label': torch.tensor(y, dtype=torch.float32, device=self.device).reshape(-1, 1)
         }
         self.dataset = dataset
 
-        # 1. Initialize with BASE Grid (Grid=3)
+        # 1. Initialize with BASE Grid
         start_grid = 3
         self.model = MultKAN(width=width, grid=start_grid, k=self.k,
                              grid_range=(0.1, 0.9), seed=42, device=self.device)
 
-        # 2. Phase 1: Train Coarse Model (Numeric)
-        # Added new regularization parameters and LR
+        # 2. Phase 1: Train Coarse Model
         self.model.fit(dataset, opt='LBFGS', steps=self.steps,
                        lamb=self.lamb, lamb_coef=self.lamb_coef, lamb_entropy=self.lamb_entropy,
                        lr=self.lr)
@@ -110,17 +121,22 @@ class KANRegressor(BaseEstimator, RegressorMixin):
                            lamb=self.lamb, lamb_coef=self.lamb_coef, lamb_entropy=self.lamb_entropy,
                            lr=self.lr)
 
+        if self.pruning_enabled:
+            try:
+                self.model.prune(node_th=self.pruning_node_th, edge_th=self.pruning_edge_th)
+            except Exception as e:
+                print(f"   ⚠️ Prunning failed (ignoring): {e}")
+
+        # 4. Phase 3: Symbolic
         if self.symbolic_enabled:
             try:
-                # Attempt to lock activation functions to symbolic formulas
                 self.model.auto_symbolic(lib=self.sym_lib,
                                          weight_simple=self.sym_weight_simple,
                                          r2_threshold=self.sym_r2_threshold,
-                                         verbose=0,  # Turn off verbose for grid search
+                                         verbose=0,
                                          a_range=self.sym_a_range,
                                          b_range=self.sym_b_range)
 
-                # Re-fit the coefficients of the chosen symbolic functions
                 self.model.fit(dataset, opt='LBFGS', steps=self.steps, lr=self.lr)
             except Exception as e:
                 print(f"   ⚠️ Symbolic failed (ignoring): {e}")
@@ -223,14 +239,14 @@ def main():
     # 5. Hyperparameter Tuning
     # ==========================================
     param_distributions = {
-        'hidden_layer': [0, nx],
+        'n_layers': [1, 2],
         'grid': [3, 5, 10],
         'k': [3],
         'steps': [20, 50],
         'lamb': [0.001, 0.01, 0.1],
         'lamb_coef': [0.01, 0.1, 1.0],  # Penalize large coefficients (sparsity)
         'lamb_entropy': [0.1, 2.0, 10.0],  # Penalize complexity (for symbolic)
-        'lr': [0.05, 0.1, 0.5]  # Learning rate for LBFGS
+        'lr': [0.01, 0.1, 0.5]  # Learning rate for LBFGS
     }
 
     # Pass default symbolic options here if you want to override defaults
