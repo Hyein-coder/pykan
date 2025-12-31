@@ -5,8 +5,11 @@ import joblib
 import numpy as np
 import torch
 import matplotlib.pyplot as plt
+import pandas as pd
 from sklearn.model_selection import train_test_split
 import yaml  # <--- [NEW] Import YAML
+from sklearn.preprocessing import MinMaxScaler
+from kan.custom_processing import remove_outliers_iqr
 
 # ==========================================
 # [FIX] Register Python Tuple for YAML Loading
@@ -25,23 +28,22 @@ except AttributeError:
 # ==========================================
 # Import your wrapper and function ZOO
 from github.workflows.Hyein.toy_KAN_sweep import KANRegressor
-from github.workflows.Hyein.toy_analytic_SHAP_Sobol import FUNCTION_ZOO
 from kan.experiments.analysis import find_index_sign_revert
 
 
 def main():
-    parser = argparse.ArgumentParser(description="Tune KAN for Analytical Functions.")
-    parser.add_argument("func_name", type=str, nargs='?', default="original",
-                        choices=FUNCTION_ZOO.keys(),
-                        help="Choose a function from the ZOO.")
+    parser = argparse.ArgumentParser(description="Run SHAP and Sobol analysis for a specific dataset.")
+    parser.add_argument("data_name", type=str, nargs='?', default="P3HT",
+                        help="The name of the dataset (default: P3HT)")
 
     args = parser.parse_args()
-    data_name = args.func_name
+    data_name = args.data_name
     # ==========================================
     # 1. Setup Paths & Load Model/Scalers
     # ==========================================
-    root_dir = os.path.join(os.getcwd(), 'github', 'workflows', 'Hyein', 'analytical_results', data_name)
-    savepath = os.path.join(root_dir, "kan_models")
+    root_dir = os.path.join(os.getcwd(), 'github', 'workflows', 'Hyein')
+    filepath = os.path.join(root_dir, "data", f"{data_name}.csv")
+    savepath = os.path.join(root_dir, "material_kan_models", data_name)
 
     ckpt_path = os.path.join(savepath, f'{data_name}_best_kan_model')
     scaler_x_path = os.path.join(savepath, f'{data_name}_mlp_scaler_X.pkl')
@@ -72,61 +74,57 @@ def main():
     # ==========================================
     # 2. Regenerate Data
     # ==========================================
-    print("\n🎲 Regenerating Train data for analysis...")
-    config = FUNCTION_ZOO[data_name]
-    target_func = config["func"]
-    bounds = config["bounds"]
-    feat_names = config["names"]
-    nx = len(bounds)
+    # Check if file exists
+    if not os.path.exists(filepath):
+        print(f"❌ Error: Data file not found at {filepath}")
+        return
 
-    X_raw = np.random.uniform(low=[b[0] for b in bounds], high=[b[1] for b in bounds], size=(1000, nx))
-    y_raw = np.apply_along_axis(target_func, 1, X_raw).reshape(-1, 1)
-    # noise = np.random.normal(0, np.std(y_raw) * 0.05, size=y_raw.shape)
-    # y_raw = y_raw + noise
+    filedata = pd.read_csv(filepath)
+    name_X = filedata.columns[:-1].tolist()
+    name_y = filedata.columns[-1]
+    df_in = filedata[name_X]
+    df_out = filedata[[name_y]]
+    print(f"TARGET: {name_y}")
 
-    # Split
-    X_train, X_test, y_train, y_test = train_test_split(X_raw, y_raw, test_size=0.2, random_state=42)
+    df_in_final, df_out_final = remove_outliers_iqr(df_in, df_out)
 
-    # Normalize Inputs (Critical for range analysis 0.1 ~ 0.9)
-    X_train_norm = scaler_X.transform(X_train)
+    removed_count = len(df_in) - len(df_in_final)
+    print(f"# of data after removing outliers: {len(df_in_final)} ({removed_count} removed)")
+
+    X = df_in_final[name_X].values
+    y = df_out_final[name_y].values.reshape(-1, 1)
+
+    X_temp_denorm, X_test_denorm, y_temp_denorm, y_test_denorm = train_test_split(X, y, test_size=0.2, random_state=42)
+    X_train_denorm, X_val_denorm, y_train_denorm, y_val_denorm = train_test_split(X_temp_denorm, y_temp_denorm,
+                                                                                  test_size=0.2, random_state=42)
+    print(f"Train/Validation/Test : {len(X_train_denorm)} / {len(X_val_denorm)} / {len(X_test_denorm)}")
+
+    feat_names = name_X
+
+    X_train_norm = scaler_X.fit_transform(X_train_denorm)
+    y_train_norm = scaler_y.fit_transform(y_train_denorm)
 
     # Create dataset dict (needed for forward pass logic sometimes)
     dataset = {
         'train_input': torch.tensor(X_train_norm, dtype=torch.float32, device=device),
-        'train_label': torch.tensor(y_train, dtype=torch.float32, device=device).reshape(-1, 1)
+        'train_label': torch.tensor(y_train_denorm, dtype=torch.float32, device=device).reshape(-1, 1)
         # Label scaling optional here
     }
 
     # Run forward pass once to populate internals (splines, activations)
     model.forward(dataset['train_input'])
     scores_tot = model.feature_score.detach().cpu().numpy()  # Global scores
-    #
-    # fig_tot, ax_tot = plt.subplots()
-    #
-    # positions = range(len(scores_tot))
-    # bars = ax_tot.bar(positions, scores_tot, color='skyblue', edgecolor='black')
-    # ax_tot.bar_label(bars, fmt='%.2f', padding=3)
-    # ax_tot.set_xticks(list(positions))  # Set positions first
-    # ax_tot.set_xticklabels(feat_names, rotation=15, ha='center')  # Then set text labels
-    # ax_tot.set_ylabel("Global Attribution Score")
-    # ax_tot.set_title(f"Feature Importance: {data_name}")
-    #
-    # # Save & Show
-    # plot_path_tot = os.path.join(savepath, f"{data_name}_scores_global.png")
-    # plt.tight_layout()
-    # plt.savefig(plot_path_tot, dpi=300)
-    # plt.show()
 
     # ==========================================
     # 3. Inflection Point Analysis (Layer 0)
     # ==========================================
     print("\n🔍 Analyzing Inflection Points in Layer 0...")
 
-    depth = len(model.act_fun)
     l = 0  # Analyze Layer 0
     act = model.act_fun[l]
     ni, no = act.coef.shape[:2]
     coef = act.coef.tolist()
+    depth = len(model.act_fun)
 
     inflection_points_per_input = []  # Store list of inflection points for each input feature
 
@@ -140,8 +138,6 @@ def main():
             ax = axs[j, i]
 
             # 1. Get Data
-            # Note: spline_preacts might not be populated unless update_grid_from_samples or similar was called during training/forward
-            # We assume model has tracked data. If not, we might need model.forward(dataset['train_input']) again.
             inputs = model.spline_preacts[l][:, j, i].cpu().detach().numpy()
             outputs = model.spline_postacts[l][:, j, i].cpu().detach().numpy()
 
@@ -161,16 +157,27 @@ def main():
 
             # Calculate Slope
             slope = [x - y for x, y in zip(coef_node[1:], coef_node[:-1])]
+            slope_2nd = [(x - y)*10 for x, y in zip(slope[1:], slope[:-1])]
             bar_width = (act.grid[i, 1:] - act.grid[i, :-1]).mean().item() / 2  # Approx width
 
             # Plot Slope
             ax2.bar(act.grid[i, spline_radius:-(spline_radius + 1)].cpu(), slope,
                     width=bar_width, align='center', color='r', alpha=0.3, label='Slope')
+            if depth == 1:
+                ax2.bar(act.grid[i, spline_radius:-(spline_radius + 2)], slope_2nd,
+                        width=bar_width, align='edge', color='g', label='2nd Slope')
 
             ax.set_title(f'in {i} -> out {j}', fontsize=9)
 
             # 4. Find Inflection
-            idx_revert = find_index_sign_revert(slope)
+            if depth == 1:
+                idx_revert = find_index_sign_revert(slope_2nd)
+            elif depth == 2:
+                idx_revert = find_index_sign_revert(slope)
+            else:
+                print("Depth > 2 not supported yet.")
+                idx_revert = None
+
             if idx_revert is not None:
                 inflection_val = act.grid[i, spline_radius + idx_revert].item()
                 feature_inflections.append(inflection_val)
