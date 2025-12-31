@@ -4,11 +4,15 @@ import os
 def main():
     target_scripts = [
         # "github/workflows/Hyein/material_all_NN_SHAP.py",
-        # "github/workflows/Hyein/material_KAN_sweep.py",
+        "github/workflows/Hyein/material_KAN_sweep.py",
         "github/workflows/Hyein/material_KAN_analyze.py",
     ]
     target_data = [
-        'AgNP', 'P3HT', 'AutoAM', 'Perovskite', 'CrossedBarrel'
+        # 'AgNP', 'P3HT', 'AutoAM', 'Perovskite',
+        'CrossedBarrel'
+        # 'CO2HE', 'CO2HP',
+        # 'CO2RRUR', 'CO2RRRC', 'CO2RRRA', 'CO2RRNPV', 'CO2RRMSP', 'CO2RRLCA',
+        # 'CO2RREE', 'CO2RRE', 'CO2RRCC', 'CO2RRCA', 'CO2RRC', 'CO2RRA',
     ]
 
 

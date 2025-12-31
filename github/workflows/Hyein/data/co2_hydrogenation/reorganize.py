@@ -1,0 +1,61 @@
+import pandas as pd
+import os
+
+# ================= CONFIGURATION =================
+# 1. File Paths
+root_dir = os.path.dirname(os.path.abspath(__file__))
+INPUT_FILE = 'data_parsed.csv'  # Replace with your actual raw file name
+
+# 2. Target Column Name
+# Enter the exact name of the Y variable in your raw csv
+TARGET_COL = 'minimum_selling_price'    # minimum_selling_price, CO2_emission
+OUTPUT_FILE = f'{TARGET_COL}.csv'  # This is the file you will use in the main code
+
+# =================================================
+
+def clean_dataset():
+    if not os.path.exists(os.path.join(root_dir, INPUT_FILE)):
+        print(f"❌ Error: Input file '{INPUT_FILE}' not found.")
+        return
+
+    print(f"📖 Loading {INPUT_FILE}...")
+    df = pd.read_csv(os.path.join(root_dir, INPUT_FILE))
+    print(f"   - Initial shape: {df.shape}")
+
+    # 1. Filter rows where flag is 'success'
+    if 'flag' in df.columns:
+        # .str.strip() handles potential whitespace like "success "
+        df = df[df['flag'].astype(str).str.strip() == 'success']
+        print(f"   - Rows after filtering 'success': {len(df)}")
+    else:
+        print("   ⚠️ Warning: 'flag' column not found. Skipping row filtering.")
+
+    # 2. Select Features (x1 - x16)
+    feature_cols = [f'x{i}' for i in range(1, 17)]
+
+    # Verify these columns exist
+    missing = [col for col in feature_cols if col not in df.columns]
+    if missing:
+        print(f"❌ Error: The following expected columns are missing: {missing}")
+        return
+
+    # 3. Construct Final DataFrame
+    # Format: [x1, x2, ..., x16, target]
+    if TARGET_COL not in df.columns:
+        print(f"❌ Error: Target column '{TARGET_COL}' not found in dataset.")
+        return
+
+    final_cols = feature_cols + [TARGET_COL]
+    df_clean = df[final_cols].copy()
+
+    # 4. Save to new file
+    df_clean.to_csv(os.path.join(root_dir, OUTPUT_FILE), index=False)
+
+    print("\n✅ Success!")
+    print(f"   - Saved cleaned dataset to: {OUTPUT_FILE}")
+    print(f"   - Final columns: {list(df_clean.columns)}")
+    print(f"   - You can now load this file in your main KAN script.")
+
+
+if __name__ == "__main__":
+    clean_dataset()
