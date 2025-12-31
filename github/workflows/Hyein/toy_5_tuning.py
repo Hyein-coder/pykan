@@ -1,4 +1,4 @@
-from kan.experiments.multkan_hparam_sweep import sweep_multkan, evaluate_params
+from kan.experiments.multkan_hparam_sweep_materials import sweep_multkan, evaluate_params
 import numpy as np
 import pandas as pd
 import torch

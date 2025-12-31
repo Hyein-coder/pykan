@@ -53,7 +53,7 @@ for f in file_name:
 import torch
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import MinMaxScaler
-from kan.experiments.multkan_hparam_sweep import evaluate_params, _to_tensor
+from kan.experiments.multkan_hparam_sweep_materials import evaluate_params, _to_tensor
 import numpy as np
 from kan.utils import ex_round
 

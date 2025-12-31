@@ -1,4 +1,4 @@
-from kan.experiments.multkan_hparam_sweep import sweep_multkan, evaluate_params
+from kan.experiments.multkan_hparam_sweep_materials import sweep_multkan, evaluate_params
 import numpy as np
 import matplotlib.pyplot as plt
 import torch
@@ -19,8 +19,8 @@ x1, x2= np.meshgrid(x1_grid, x2_grid)
 #%%
 import os
 save_dir = os.path.join(os.getcwd(), "github\workflows\Hyein\example_toys")
-y = x1**2 / (x2+1.08) / 1.8 + np.exp(2 * x2)
-eqn = "x1^2_div_1.8(x2+1.08)+exp(2x2)"
+y = np.log(20 * (x1 + 1.2)) + x2
+eqn = "log(20(x0+1.2))+x1"
 
 fig = plt.figure(figsize=(10, 8))
 
@@ -35,10 +35,33 @@ fig = plt.figure(figsize=(10, 8))
 # Double variable
 ax = fig.add_subplot(111, projection='3d')
 surface = ax.plot_surface(x2, x1, y, cmap='viridis', edgecolor='none')
-ax.set_xlabel('x2')
-ax.set_ylabel('x1')
+ax.set_xlabel('x1')
+ax.set_ylabel('x0')
 ax.set_zlabel('y')
 fig.colorbar(surface, shrink=0.5, aspect=5)
 plt.savefig(os.path.join(save_dir, f"{eqn}.png"))
 plt.show()
 
+#%%
+# Create a new figure
+fig = plt.figure(figsize=(8, 6))
+ax = fig.add_subplot(111)  # standard 2D plot (removed projection='3d')
+
+# Create filled contour plot
+# levels=20 determines the number of color bands (higher = smoother)
+contour_filled = ax.contourf(x2, x1, y, cmap='viridis', levels=20)
+
+# Optional: Add contour lines on top for better definition
+# ax.contour(x2, x1, y, colors='white', alpha=0.3, linewidths=0.5)
+
+ax.set_xlabel('x1')
+ax.set_ylabel('x0')
+ax.set_title(f'Contour Plot of {eqn}')
+
+# Add colorbar
+cbar = fig.colorbar(contour_filled)
+cbar.set_label('y')
+
+# Save and Show
+plt.savefig(os.path.join(save_dir, f"{eqn}_contour.png"))
+plt.show()

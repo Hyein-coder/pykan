@@ -10,7 +10,7 @@ from sklearn.preprocessing import MinMaxScaler
 from kan.custom_processing import remove_outliers_iqr
 import pandas as pd
 
-from kan.experiments.multkan_hparam_sweep import evaluate_params
+from kan.experiments.multkan_hparam_sweep_materials import evaluate_params
 from kan.custom_processing import plot_activation_and_spline_coefficients
 import matplotlib.pyplot as plt
 

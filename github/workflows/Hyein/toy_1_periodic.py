@@ -10,7 +10,7 @@ from kan.custom import MultKAN
 from sklearn.metrics import mean_squared_error, r2_score
 from kan.custom_processing import remove_outliers_iqr, evaluate_model_performance, plot_activation_functions
 import datetime
-from kan.experiments.multkan_hparam_sweep import _seed_everything
+from kan.experiments.multkan_hparam_sweep_materials import _seed_everything
 seed = 0
 _seed_everything(seed=seed)
 

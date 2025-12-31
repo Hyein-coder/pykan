@@ -1,4 +1,4 @@
-from kan.experiments.multkan_hparam_sweep import sweep_multkan, evaluate_params
+from kan.experiments.multkan_hparam_sweep_materials import sweep_multkan, evaluate_params
 import numpy as np
 import pandas as pd
 import torch
@@ -87,7 +87,7 @@ out = sweep_multkan(
   )
 
 #%%
-from kan.experiments.multkan_hparam_sweep import plot_parameter_performance
+from kan.experiments.multkan_hparam_sweep_materials import plot_parameter_performance
 plot_parameter_performance(os.path.basename(save_heading), os.path.dirname(save_heading))
 best = out['best']
 
