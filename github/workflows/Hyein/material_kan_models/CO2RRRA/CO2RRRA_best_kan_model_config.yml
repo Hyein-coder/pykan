@@ -1,9 +1,9 @@
 affine_trainable: false
-auto_save: false
+auto_save: true
 base_fun_name: silu
 ckpt_path: ./model
 device: cpu
-grid: 3
+grid: 10
 grid_eps: 0.02
 grid_range:
 - -1
@@ -13,15 +13,19 @@ mult_arity: 2
 round: 0
 sb_trainable: true
 sp_trainable: true
-state_id: 0
+state_id: 1
 symbolic.funs_name.0:
 - - tanh
-  - tanh
+  - 1/x^2
+  - exp
   - tanh
   - x^2
+  - tanh
+  - exp
+  - x^4
 symbolic_enabled: true
 width:
-- - 4
+- - 8
   - 0
 - - 1
   - 0

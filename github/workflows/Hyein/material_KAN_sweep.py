@@ -43,6 +43,7 @@ class KANRegressor(BaseEstimator, RegressorMixin):
                  k=3,
                  lamb=0.01,
                  lamb_coef=0.1,
+                 lamb_coefdiff=0.,
                  lamb_entropy=0.1,
                  lr=0.1,
                  steps=20,
@@ -52,8 +53,7 @@ class KANRegressor(BaseEstimator, RegressorMixin):
                  sym_lib=None,
                  sym_weight_simple=0.0,
                  sym_r2_threshold=0.0,
-                 sym_a_range=(-10, 10),
-                 sym_b_range=(-10, 10),
+                 sym_range=10,
                  device='cpu'):
 
         self.dataset = None
@@ -63,6 +63,7 @@ class KANRegressor(BaseEstimator, RegressorMixin):
         self.k = k
         self.lamb = lamb
         self.lamb_coef = lamb_coef
+        self.lamb_coefdiff = lamb_coefdiff
         self.lamb_entropy = lamb_entropy
         self.lr = lr
         self.steps = steps
@@ -77,8 +78,9 @@ class KANRegressor(BaseEstimator, RegressorMixin):
         self.sym_lib = sym_lib if sym_lib is not None else lib
         self.sym_weight_simple = sym_weight_simple
         self.sym_r2_threshold = sym_r2_threshold
-        self.sym_a_range = sym_a_range
-        self.sym_b_range = sym_b_range
+        self.sym_range = sym_range
+        self.sym_a_range = (-sym_range, sym_range)
+        self.sym_b_range = (-sym_range, sym_range)
 
         self.device = device
         self.model = None
@@ -89,7 +91,6 @@ class KANRegressor(BaseEstimator, RegressorMixin):
 
         # [MODIFIED] Determine width based on n_layers (depth)
         # n_layers=2 means [nx, nx, 1]
-        #TODO: 이게 잘 안 되면, nx를 2배로 늘려서 해보기
         width = [self._n_features] * self.n_layers + [1]
 
         # Initialize KAN
@@ -108,19 +109,19 @@ class KANRegressor(BaseEstimator, RegressorMixin):
         # 1. Initialize with BASE Grid
         start_grid = 3
         self.model = MultKAN(width=width, grid=start_grid, k=self.k,
-                             grid_range=(0.1, 0.9), seed=42, device=self.device)
+                             seed=42, device=self.device)
 
         # 2. Phase 1: Train Coarse Model
         self.model.fit(dataset, opt='LBFGS', steps=self.steps,
                        lamb=self.lamb, lamb_coef=self.lamb_coef, lamb_entropy=self.lamb_entropy,
-                       lr=self.lr)
+                       lr=self.lr, lamb_coefdiff=self.lamb_coefdiff)
 
         # 3. Phase 2: Grid Extension (if needed)
         if self.grid > start_grid:
             self.model = self.model.refine(self.grid)
             self.model.fit(dataset, opt='LBFGS', steps=self.steps,
                            lamb=self.lamb, lamb_coef=self.lamb_coef, lamb_entropy=self.lamb_entropy,
-                           lr=self.lr)
+                           lr=self.lr, lamb_coefdiff=self.lamb_coefdiff)
 
         if self.pruning_enabled:
             try:
@@ -183,7 +184,7 @@ class KANRegressor(BaseEstimator, RegressorMixin):
 # ==========================================
 def main():
     parser = argparse.ArgumentParser(description="Run SHAP and Sobol analysis for a specific dataset.")
-    parser.add_argument("data_name", type=str, nargs='?', default="P3HT",
+    parser.add_argument("data_name", type=str, nargs='?', default="CO2HE",
                         help="The name of the dataset (default: P3HT)")
 
     args = parser.parse_args()
@@ -212,6 +213,7 @@ def main():
     df_out = filedata[[name_y]]
     print(f"TARGET: {name_y}")
 
+    # TODO: Data가 너무 많이 지워지긴 함
     df_in_final, df_out_final = remove_outliers_iqr(df_in, df_out)
 
     removed_count = len(df_in) - len(df_in_final)
@@ -241,14 +243,16 @@ def main():
     # 5. Hyperparameter Tuning
     # ==========================================
     param_distributions = {
-        'n_layers': [1, 2, 3],
-        'grid': [3, 5, 10],
+        'n_layers': [1, 2],
+        'grid': [5, 10],
         'k': [3],
         'steps': [20, 50],
-        'lamb': [0.001, 0.01, 0.1],
+        'lamb': [0.01, 0.1, 1.0],
         'lamb_coef': [0.01, 0.1, 1.0],  # Penalize large coefficients (sparsity)
-        'lamb_entropy': [0.1, 2.0, 10.0],  # Penalize complexity (for symbolic)
-        'lr': [0.01, 0.1, 0.5]  # Learning rate for LBFGS
+        'lamb_coefdiff': [0, 0.01, 0.1],
+        'lamb_entropy': [0.001, 0.01, 0.1, 2.0, 10.0],  # Penalize complexity (for symbolic)
+        'lr': [0.01, 0.1, 0.5],  # Learning rate for LBFGS
+        'sym_range': [10, 50],
     }
 
     # Pass default symbolic options here if you want to override defaults
@@ -258,7 +262,7 @@ def main():
     search = RandomizedSearchCV(
         estimator=kan_wrapper,
         param_distributions=param_distributions,
-        n_iter=15,  # Increased slightly to cover new params
+        n_iter=25,  # Increased slightly to cover new params
         cv=3,
         scoring='r2',
         n_jobs=1,  # IMPORTANT: Keep 1 for CUDA safety

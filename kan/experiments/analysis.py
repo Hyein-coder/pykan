@@ -28,7 +28,7 @@ def find_index_sign_revert(data_list, epsilon=5e-3):
             effective_signs.append(prev_sign)
         else:
             effective_signs.append(np.sign(val))
-    print(effective_signs)
+    # print(effective_signs)
 
     # Now search for the persistent sign change using these cleaned signs
     for i in range(1, len(effective_signs) - 1):
