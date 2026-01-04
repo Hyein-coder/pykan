@@ -37,7 +37,7 @@ def main():
     # ==========================================
     root_dir = os.path.join(os.getcwd(), 'github', 'workflows', 'Hyein')
     filepath = os.path.join(root_dir, "data", f"{data_name}.csv")
-    savepath = os.path.join(root_dir, "material_nn_models")
+    savepath = os.path.join(root_dir, "material_nn_models", data_name)
 
     # Check if file exists
     if not os.path.exists(filepath):

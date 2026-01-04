@@ -183,8 +183,8 @@ class KANRegressor(BaseEstimator, RegressorMixin):
 # 3. Main Tuning Script
 # ==========================================
 def main():
-    parser = argparse.ArgumentParser(description="Run SHAP and Sobol analysis for a specific dataset.")
-    parser.add_argument("data_name", type=str, nargs='?', default="CO2HE",
+    parser = argparse.ArgumentParser(description="Tune KAN for a specific dataset.")
+    parser.add_argument("data_name", type=str, nargs='?', default="P3HT",
                         help="The name of the dataset (default: P3HT)")
 
     args = parser.parse_args()
