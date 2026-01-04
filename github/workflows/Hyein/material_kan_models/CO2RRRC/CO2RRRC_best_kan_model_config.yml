@@ -15,14 +15,14 @@ sb_trainable: true
 sp_trainable: true
 state_id: 1
 symbolic.funs_name.0:
-- - tanh
+- - 1/x^2
   - 1/x^2
-  - exp
-  - tanh
-  - exp
-  - tanh
-  - exp
-  - exp
+  - 1/x^2
+  - 1/x^2
+  - 1/x^2
+  - 1/x^2
+  - 1/x^2
+  - 1/x^2
 symbolic_enabled: true
 width:
 - - 8

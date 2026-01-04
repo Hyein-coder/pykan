@@ -262,7 +262,7 @@ def main():
     search = RandomizedSearchCV(
         estimator=kan_wrapper,
         param_distributions=param_distributions,
-        n_iter=25,  # Increased slightly to cover new params
+        n_iter=30,  # Increased slightly to cover new params
         cv=3,
         scoring='r2',
         n_jobs=1,  # IMPORTANT: Keep 1 for CUDA safety
@@ -337,7 +337,7 @@ def main():
     best_kan_model.forward(best_estimator.dataset['train_input'])
     scores_tot = best_kan_model.feature_score.detach().cpu().numpy()  # Global scores
 
-    fig_tot, ax_tot = plt.subplots()
+    fig_tot, ax_tot = plt.subplots(figsize=(6,6))
 
     positions = range(len(scores_tot))
     bars = ax_tot.bar(positions, scores_tot, color='skyblue', edgecolor='black')

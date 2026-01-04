@@ -243,7 +243,7 @@ def main():
     # ==========================================
     # 5. Plot Range-Based Scores
     # ==========================================
-    width = 0.2
+    width = 0.08
     n_features = scores_tot.shape[0]
     n_intervals = len(scores_interval_norm)
 
@@ -271,7 +271,7 @@ def main():
     ax.set_xticklabels(labels, rotation=15, ha='center', fontsize=9)
     ax.set_ylabel("Normalized Attribution Score")
     ax.set_title(f"Feature Importance per Range (sliced by {feat_names[mask_idx]})")
-    ax.legend(loc='upper right', bbox_to_anchor=(1.15, 1))
+    ax.legend(loc='upper right', bbox_to_anchor=(1, 1))
     ax.set_ylim(0, max_score * 1.2)
     plt.tight_layout()
 
@@ -280,6 +280,41 @@ def main():
     plt.show()
     print(f"📊 Range-based score plot saved to: {plot_path_score}")
 
+
+    model.forward(dataset['train_input'])
+    scores_tot = model.feature_score.detach().cpu().numpy()  # Global scores
+
+    fig_tot, ax_tot = plt.subplots(figsize=(5,5))
+
+    positions = range(len(scores_tot))
+    bars = ax_tot.bar(positions, scores_tot, color='skyblue', edgecolor='black')
+    ax_tot.bar_label(bars, fmt='%.2f', padding=3)
+    ax_tot.set_xticks(list(positions))  # Set positions first
+    ax_tot.set_xticklabels(feat_names, rotation=15, ha='center')  # Then set text labels
+    ax_tot.set_ylabel("Global Attribution Score")
+    ax_tot.set_title(f"Feature Importance: {data_name}")
+
+    # Save & Show
+    plot_path_tot = os.path.join(savepath, f"{data_name}_scores_global.png")
+    plt.tight_layout()
+    plt.savefig(plot_path_tot, dpi=300)
+    plt.show()
+
+    # Ensure scores_tot is a flat 1D array
+    if len(scores_tot.shape) > 1:
+        scores_tot = scores_tot.flatten()
+
+    df_scores = pd.DataFrame({
+        'Feature': feat_names,
+        'Global_Attribution_Score': scores_tot
+    })
+
+    # Optional: Sort by importance
+    df_scores = df_scores.sort_values(by='Global_Attribution_Score', ascending=False)
+
+    # 3. Save to CSV
+    score_csv_path = os.path.join(savepath, f'{data_name}_global_attribution_scores.csv')
+    df_scores.to_csv(score_csv_path, index=False)
 
 if __name__ == "__main__":
     main()
