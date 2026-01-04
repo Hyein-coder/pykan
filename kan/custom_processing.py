@@ -87,7 +87,7 @@ def evaluate_model_performance(model, dataset, scaler_y, phase="validation", dis
 
     return pred_real, label_real, {'rmse': rmse, 'r2': r2, 'mae': mae}
 
-def plot_data_per_interval(X_norm, y_norm, name_X, name_y, mask_idx, mask_interval):
+def plot_data_per_interval(X_norm, y_norm, name_X, name_y, mask_idx, mask_interval, ymax=1.):
     nx = X_norm.shape[1]
     fig, axs = plt.subplots(nrows=1, ncols=nx, figsize=(20, 3.5), constrained_layout=True)
     axs = np.atleast_1d(axs)
@@ -100,10 +100,10 @@ def plot_data_per_interval(X_norm, y_norm, name_X, name_y, mask_idx, mask_interv
     y_vals = y_norm.ravel()  # y가 (N,1)이어도 (N,)으로 평탄화
 
     # mask_interval = [0, 0.3, 0.6, 1.0]
-    masks = [ ((x_mask > lb) & (x_mask <= ub)) for lb, ub in zip(mask_interval, mask_interval[1:] + [1.0])]
+    masks = [ ((x_mask > lb) & (x_mask <= ub)) for lb, ub in zip(mask_interval, mask_interval[1:] + [ymax])]
 
     colors = ['tab:blue', 'tab:orange', 'tab:green', 'tab:red']
-    labels = [f'{lb} < x{mask_idx} <= {ub}' for lb, ub in zip(mask_interval, mask_interval[1:] + [1.0])]
+    labels = [f'{lb} < x{mask_idx} <= {ub}' for lb, ub in zip(mask_interval, mask_interval[1:] + [ymax])]
 
     for mask, c, lab in zip(masks, colors, labels):
         if np.any(mask):  # 해당 구간 데이터가 있을 때만 그림

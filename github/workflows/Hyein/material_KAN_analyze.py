@@ -222,7 +222,6 @@ def main():
             # 4. Find Inflection
             if depth == 1:
                 idx_revert = find_index_sign_revert(slope_2nd)
-                idx_revert = idx_revert + 1 if idx_revert is not None else idx_revert
             elif depth == 2:
                 idx_revert = find_index_sign_revert(slope)
             else:

@@ -12,7 +12,7 @@ def main():
         'CO2RRLCA',
         # 'P3HT', 'CrossedBarrel',
         'CO2RRE', 'CO2RRNPV', 'CO2RRRC', 'CO2RRUR',
-        # 'CO2HE', 'CO2RRCC', 'CO2RRCA', 'CO2RRRA',
+        'CO2HE', 'CO2RRCC', 'CO2RRCA', 'CO2RRRA',
         # 'CO2RRMSP', 'CO2RREE', 'CO2RRC', 'CO2RRA', 'CO2HP',
     ]
 
