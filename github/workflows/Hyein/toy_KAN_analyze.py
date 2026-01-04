@@ -97,26 +97,6 @@ def main():
         # Label scaling optional here
     }
 
-    # Run forward pass once to populate internals (splines, activations)
-    model.forward(dataset['train_input'])
-    scores_tot = model.feature_score.detach().cpu().numpy()  # Global scores
-    #
-    # fig_tot, ax_tot = plt.subplots()
-    #
-    # positions = range(len(scores_tot))
-    # bars = ax_tot.bar(positions, scores_tot, color='skyblue', edgecolor='black')
-    # ax_tot.bar_label(bars, fmt='%.2f', padding=3)
-    # ax_tot.set_xticks(list(positions))  # Set positions first
-    # ax_tot.set_xticklabels(feat_names, rotation=15, ha='center')  # Then set text labels
-    # ax_tot.set_ylabel("Global Attribution Score")
-    # ax_tot.set_title(f"Feature Importance: {data_name}")
-    #
-    # # Save & Show
-    # plot_path_tot = os.path.join(savepath, f"{data_name}_scores_global.png")
-    # plt.tight_layout()
-    # plt.savefig(plot_path_tot, dpi=300)
-    # plt.show()
-
     # ==========================================
     # 2.5 [NEW] Plot Input vs Output (Ground Truth vs Prediction)
     # ==========================================
@@ -162,6 +142,26 @@ def main():
     plot_path_io = os.path.join(savepath, f"{data_name}_input_vs_output.png")
     plt.savefig(plot_path_io, dpi=300)
     plt.show()
+
+    # Run forward pass once to populate internals (splines, activations)
+    model.forward(dataset['train_input'])
+    scores_tot = model.feature_score.detach().cpu().numpy()  # Global scores
+    #
+    # fig_tot, ax_tot = plt.subplots()
+    #
+    # positions = range(len(scores_tot))
+    # bars = ax_tot.bar(positions, scores_tot, color='skyblue', edgecolor='black')
+    # ax_tot.bar_label(bars, fmt='%.2f', padding=3)
+    # ax_tot.set_xticks(list(positions))  # Set positions first
+    # ax_tot.set_xticklabels(feat_names, rotation=15, ha='center')  # Then set text labels
+    # ax_tot.set_ylabel("Global Attribution Score")
+    # ax_tot.set_title(f"Feature Importance: {data_name}")
+    #
+    # # Save & Show
+    # plot_path_tot = os.path.join(savepath, f"{data_name}_scores_global.png")
+    # plt.tight_layout()
+    # plt.savefig(plot_path_tot, dpi=300)
+    # plt.show()
 
     # ==========================================
     # 3. Inflection Point Analysis (Layer 0)

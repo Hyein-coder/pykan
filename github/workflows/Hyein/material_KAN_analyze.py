@@ -115,6 +115,52 @@ def main():
         # Label scaling optional here
     }
 
+    # ==========================================
+    # 2.5 [NEW] Plot Input vs Output (Ground Truth vs Prediction)
+    # ==========================================
+
+    pred_y_norm = model(dataset['train_input']).detach().cpu().numpy()
+    try:
+        pred_y = scaler_y.inverse_transform(pred_y_norm)
+    except ValueError:
+        # Fallback if dimensions mismatch or scaler wasn't fitted on 2D
+        pred_y = pred_y_norm
+
+    n_features = X_train_denorm.shape[1]
+    n_cols = 2
+    n_rows = (n_features + n_cols - 1) // n_cols
+
+    fig_io, axs_io = plt.subplots(n_rows, n_cols, figsize=(6 * n_cols, 5 * n_rows), constrained_layout=True)
+    axs_io = axs_io.flatten()
+
+    for i in range(n_features):
+        ax = axs_io[i]
+
+        # Plot Ground Truth (Gray)
+        # X_train is the raw input (before normalization), y_train is raw output
+        ax.scatter(X_train_denorm[:, i], y_train_denorm, alpha=0.5, c='gray', s=15, label='Ground Truth')
+
+        # Plot Prediction (Red)
+        ax.scatter(X_train_denorm[:, i], pred_y, alpha=0.5, c='red', s=15, label='Prediction')
+
+        feature_label = feat_names[i] if feat_names and i < len(feat_names) else f"Feature {i}"
+        ax.set_xlabel(feature_label)
+        ax.set_ylabel("Output y")
+        ax.set_title(f"{feature_label} vs Output")
+        ax.legend(loc='upper left')
+        ax.grid(True, alpha=0.3)
+
+    # Hide unused subplots
+    for i in range(n_features, len(axs_io)):
+        axs_io[i].axis('off')
+
+    plt.suptitle(f"Input vs Output Analysis: {data_name}", fontsize=14)
+
+    # Save & Show
+    plot_path_io = os.path.join(savepath, f"{data_name}_input_vs_output.png")
+    plt.savefig(plot_path_io, dpi=300)
+    plt.show()
+
     # Run forward pass once to populate internals (splines, activations)
     model.forward(dataset['train_input'])
     scores_tot = model.feature_score.detach().cpu().numpy()  # Global scores
@@ -168,14 +214,15 @@ def main():
             ax2.bar(act.grid[i, spline_radius:-(spline_radius + 1)].cpu(), slope,
                     width=bar_width, align='center', color='r', alpha=0.3, label='Slope')
             if depth == 1:
-                ax2.bar(act.grid[i, spline_radius:-(spline_radius + 2)], slope_2nd,
-                        width=bar_width, align='edge', color='g', label='2nd Slope')
+                ax2.bar(act.grid[i, spline_radius+1:-(spline_radius + 1)] + bar_width/3, slope_2nd,
+                        width=bar_width, align='edge', color='g', alpha=0.3, label='2nd Slope')
 
             ax.set_title(f'in {i} -> out {j}', fontsize=9)
 
             # 4. Find Inflection
             if depth == 1:
                 idx_revert = find_index_sign_revert(slope_2nd)
+                idx_revert = idx_revert + 1 if idx_revert is not None else idx_revert
             elif depth == 2:
                 idx_revert = find_index_sign_revert(slope)
             else:
