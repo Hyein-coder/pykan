@@ -161,16 +161,23 @@ def main():
 
             # Calculate Slope
             slope = [x - y for x, y in zip(coef_node[1:], coef_node[:-1])]
+            slope_2nd = [x - y for x, y in zip(slope[1:], slope[:-1])]
             bar_width = (act.grid[i, 1:] - act.grid[i, :-1]).mean().item() / 2  # Approx width
 
             # Plot Slope
             ax2.bar(act.grid[i, spline_radius:-(spline_radius + 1)].cpu(), slope,
                     width=bar_width, align='center', color='r', alpha=0.3, label='Slope')
+            if depth < 2:
+                ax2.bar(act.grid[i, spline_radius:-(spline_radius + 2)].cpu() + bar_width/3, slope_2nd,
+                        width=bar_width, align='center', color='g', alpha=0.3, label='2nd Slope')
 
             ax.set_title(f'in {i} -> out {j}', fontsize=9)
 
             # 4. Find Inflection
-            idx_revert = find_index_sign_revert(slope)
+            if depth == 1:
+                idx_revert = find_index_sign_revert(slope_2nd)
+            elif depth == 2:
+                idx_revert = find_index_sign_revert(slope)
             if idx_revert is not None:
                 inflection_val = act.grid[i, spline_radius + idx_revert].item()
                 feature_inflections.append(inflection_val)

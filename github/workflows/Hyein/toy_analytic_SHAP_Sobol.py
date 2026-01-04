@@ -7,6 +7,7 @@ import shap
 from SALib.sample import sobol as saltelli
 from SALib.analyze import sobol
 from github.workflows.Hyein.toy_7_log_sum_factory import LOG_SUM_ZOO
+from github.workflows.Hyein.toy_8_convex_factory import CONVEX_ZOO
 
 # ==========================================
 # 1. Define Your Functions Here
@@ -54,7 +55,7 @@ STANDARD_ZOO = {
         "names": ["Convex (x0)", "Denominator (x1)"]
     }
 }
-FUNCTION_ZOO = {**STANDARD_ZOO, **LOG_SUM_ZOO}
+FUNCTION_ZOO = {**STANDARD_ZOO, **LOG_SUM_ZOO, **CONVEX_ZOO}
 
 def main():
     # ==========================================
