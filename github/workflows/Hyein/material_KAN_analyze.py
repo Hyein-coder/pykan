@@ -7,8 +7,8 @@ import torch
 import matplotlib.pyplot as plt
 import pandas as pd
 from sklearn.model_selection import train_test_split
+from sklearn.metrics import r2_score
 import yaml  # <--- [NEW] Import YAML
-from sklearn.preprocessing import MinMaxScaler
 from kan.custom_processing import remove_outliers_iqr
 
 # ==========================================
@@ -103,11 +103,15 @@ def main():
 
     X_train_norm = scaler_X.fit_transform(X_train_denorm)
     y_train_norm = scaler_y.fit_transform(y_train_denorm)
+    X_test_norm = scaler_X.fit_transform(X_test_denorm)
+    y_test_norm = scaler_y.fit_transform(y_test_denorm)
 
     # Create dataset dict (needed for forward pass logic sometimes)
     dataset = {
         'train_input': torch.tensor(X_train_norm, dtype=torch.float32, device=device),
-        'train_label': torch.tensor(y_train_denorm, dtype=torch.float32, device=device).reshape(-1, 1)
+        'train_label': torch.tensor(y_train_denorm, dtype=torch.float32, device=device).reshape(-1, 1),
+        'test_input': torch.tensor(X_test_norm, dtype=torch.float32, device=device),
+        'test_label': torch.tensor(y_test_denorm, dtype=torch.float32, device=device).reshape(-1, 1)
         # Label scaling optional here
     }
 
@@ -284,6 +288,9 @@ def main():
     model.forward(dataset['train_input'])
     scores_tot = model.feature_score.detach().cpu().numpy()  # Global scores
 
+    # ==========================================
+    # 6. Plot Global Scores
+    # ==========================================
     fig_tot, ax_tot = plt.subplots(figsize=(5,5))
 
     positions = range(len(scores_tot))
@@ -315,6 +322,33 @@ def main():
     # 3. Save to CSV
     score_csv_path = os.path.join(savepath, f'{data_name}_global_attribution_scores.csv')
     df_scores.to_csv(score_csv_path, index=False)
+
+    # ==========================================
+    # 7. Parity Plot
+    # ==========================================
+
+    # y_pred_test_norm = model.predict(dataset['test_input'])
+    # r2_test = r2_score(y_test_norm, y_pred_test_norm)
+    #
+    # plt.figure(figsize=(6, 6))
+    # y_pred_test = scaler_y.inverse_transform(y_pred_test_norm.reshape(1, -1))
+    # plt.scatter(y_test_denorm, y_pred_test, alpha=0.6, edgecolors='k', s=30, label='Test Data')
+    #
+    # # Perfect fit line
+    # min_val = min(y_test_denorm.min(), y_pred_test.min())
+    # max_val = max(y_test_denorm.max(), y_pred_test.max())
+    # plt.plot([min_val, max_val], [min_val, max_val], 'r--', lw=2, label='Perfect Fit')
+    #
+    # plt.title(f"Parity Plot: {data_name} (R2={r2_test:.4f})")
+    # plt.xlabel("Actual Value")
+    # plt.ylabel("Predicted Value")
+    # plt.legend()
+    # plt.grid(True, linestyle='--', alpha=0.5)
+    #
+    # plot_path = os.path.join(savepath, f"{data_name}_parity_plot.png")
+    # plt.savefig(plot_path, dpi=300)
+    # plt.show()
+    # print(f"📊 Parity plot saved to: {plot_path}")
 
 if __name__ == "__main__":
     main()
