@@ -118,6 +118,52 @@ def main():
     # plt.show()
 
     # ==========================================
+    # 2.5 [NEW] Plot Input vs Output (Ground Truth vs Prediction)
+    # ==========================================
+
+    pred_y_norm = model(dataset['train_input']).detach().cpu().numpy()
+    try:
+        pred_y = scaler_y.inverse_transform(pred_y_norm)
+    except ValueError:
+        # Fallback if dimensions mismatch or scaler wasn't fitted on 2D
+        pred_y = pred_y_norm
+
+    n_features = X_train.shape[1]
+    n_cols = 2
+    n_rows = (n_features + n_cols - 1) // n_cols
+
+    fig_io, axs_io = plt.subplots(n_rows, n_cols, figsize=(6 * n_cols, 5 * n_rows), constrained_layout=True)
+    axs_io = axs_io.flatten()
+
+    for i in range(n_features):
+        ax = axs_io[i]
+
+        # Plot Ground Truth (Gray)
+        # X_train is the raw input (before normalization), y_train is raw output
+        ax.scatter(X_train[:, i], y_train, alpha=0.5, c='gray', s=15, label='Ground Truth')
+
+        # Plot Prediction (Red)
+        ax.scatter(X_train[:, i], pred_y, alpha=0.5, c='red', s=15, label='Prediction')
+
+        feature_label = feat_names[i] if feat_names and i < len(feat_names) else f"Feature {i}"
+        ax.set_xlabel(feature_label)
+        ax.set_ylabel("Output y")
+        ax.set_title(f"{feature_label} vs Output")
+        ax.legend(loc='upper left')
+        ax.grid(True, alpha=0.3)
+
+    # Hide unused subplots
+    for i in range(n_features, len(axs_io)):
+        axs_io[i].axis('off')
+
+    plt.suptitle(f"Input vs Output Analysis: {data_name}", fontsize=14)
+
+    # Save & Show
+    plot_path_io = os.path.join(savepath, f"{data_name}_input_vs_output.png")
+    plt.savefig(plot_path_io, dpi=300)
+    plt.show()
+
+    # ==========================================
     # 3. Inflection Point Analysis (Layer 0)
     # ==========================================
     print("\n🔍 Analyzing Inflection Points in Layer 0...")
