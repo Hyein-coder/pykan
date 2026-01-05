@@ -31,7 +31,7 @@ from kan.experiments.analysis import find_index_sign_revert
 
 def main():
     parser = argparse.ArgumentParser(description="Tune KAN for Analytical Functions.")
-    parser.add_argument("func_name", type=str, nargs='?', default="original",
+    parser.add_argument("func_name", type=str, nargs='?', default="exponential",
                         choices=FUNCTION_ZOO.keys(),
                         help="Choose a function from the ZOO.")
 
@@ -321,6 +321,25 @@ def main():
         else:
             scores_interval_norm.append(np.zeros(scores_tot.shape))
             print(f"   Interval {labels[i]}: 0 samples (Skipping)")
+
+    # ==========================================
+    # 4.5 [NEW] Save Range Split Data for NN Training
+    # ==========================================
+    split_data_savepath = os.path.join(savepath, f"{data_name}_range_split_data.pkl")
+
+    # Pack everything needed to reproduce these splits for the NN
+    split_data = {
+        'dataset': dataset,  # The full dataset (tensors)
+        'masks': masks,  # The boolean masks for each interval
+        'labels': labels,  # The text labels (e.g., "0.1 < x < 0.3")
+        'selected_mask_idx': selected_mask_idx,  # The feature index used for splitting
+        'selected_mask_name': feat_names[selected_mask_idx],  # The feature name
+        'feature_names': feat_names,  # All feature names
+        'scaler_X': scaler_X,  # Scalers (needed for NN inputs)
+        'scaler_y': scaler_y
+    }
+
+    joblib.dump(split_data, split_data_savepath)
 
     # ==========================================
     # 5. Plot Range-Based Scores

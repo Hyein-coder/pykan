@@ -1,12 +1,11 @@
 {
     "range": "0.10 < x0 <= 0.26",
-    "test_r2": -0.5620646008138699,
+    "test_r2": 0.998281112865065,
     "best_params": {
         "solver": "lbfgs",
-        "learning_rate_init": 0.01,
+        "learning_rate_init": 0.001,
         "hidden_layer_sizes": [
-            100,
-            100
+            128
         ],
         "alpha": 0.001,
         "activation": "relu"

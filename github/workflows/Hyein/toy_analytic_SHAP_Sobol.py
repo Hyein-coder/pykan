@@ -9,50 +9,87 @@ from SALib.analyze import sobol
 from github.workflows.Hyein.toy_7_log_sum_factory import LOG_SUM_ZOO
 from github.workflows.Hyein.toy_8_convex_factory import CONVEX_ZOO
 
-# ==========================================
-# 1. Define Your Functions Here
-# ==========================================
-# Format:
-# 'name': {
-#     'func': lambda x: ...,  (input x is a numpy array [x0, x1, ...])
-#     'bounds': [[min, max], [min, max], ...],
-#     'feature_names': ['x0', 'x1', ...]
-# }
+def plot_custom_bars(names, values, title, ylabel, savepath, color="skyblue", show=True):
+    """
+    Helper function to draw vertical bar plots in the specific requested style:
+    - Vertical bars
+    - Skyblue color with black edge
+    - Values printed on top
+    - Rotated x-axis labels
+    """
+    fig, ax = plt.subplots(figsize=(max(6, len(names) * 1.2), 6))
+
+    # Create Vertical Bars
+    bars = ax.bar(names, values, color=color, edgecolor='black', width=0.7)
+
+    # Add number labels on top of bars
+    # padding=3 adds a little space between the bar and the text
+    ax.bar_label(bars, fmt='%.2f', padding=3, fontsize=10)
+
+    # Formatting
+    ax.set_ylabel(ylabel, fontsize=12)
+    ax.set_title(title, fontsize=14)
+
+    # Rotate x-axis labels slightly for readability
+    ax.set_xticks(range(len(names)))
+    ax.set_xticklabels(names, rotation=15, ha='center', fontsize=10)
+
+    # Adjust Y-limit to make room for labels
+    if len(values) > 0:
+        ax.set_ylim(0, max(values) * 1.15)
+
+    plt.tight_layout()
+    plt.savefig(savepath, dpi=300)
+    if show:
+        plt.show()
+    else:
+        plt.close()
+    # print(f"   📊 Plot saved: {savepath}")
 
 STANDARD_ZOO = {
     # Toy 3
     "original": {
         "func": lambda x: np.sin(2 * x[0]) + 5 * x[1],
         "bounds": [[-np.pi, np.pi], [-1, 1]],
-        "names": ["Angle (x0)", "Linear (x1)"]
+        "names": ["Angle (x0)", "Linear (x1)"],
+        "mask_idx": None,
+        "mask_division": []
     },
 
     # Toy 5
     "mult_periodic": {
         "func": lambda x: x[1] * np.sin(2 * x[0]),
         "bounds": [[-np.pi, np.pi], [-1, 1]],
-        "names": ["Angle (x0)", "Multiplier (x1)"]
+        "names": ["Angle (x0)", "Multiplier (x1)"],
+        "mask_idx": None,
+        "mask_division": []
     },
 
     # Toy 4
     "exponential": {
         "func": lambda x: np.exp(-2 * x[0]) + x[1],
         "bounds": [[-1, 1], [-1, 1]],
-        "names": ["Exponent (x0)", "Linear (x1)"]
+        "names": ["Exponent (x0)", "Linear (x1)"],
+        "mask_idx": 0,
+        "mask_division": [0.4]
     },
 
     # Toy 6
     "logarithm": {
         "func": lambda x: np.log(20 * (x[0] + 1.2)) + x[1],
         "bounds": [[-1, 1], [-1, 1]],
-        "names": ["Log (x0)", "Linear (x1)"]
+        "names": ["Log (x0)", "Linear (x1)"],
+        "mask_idx": 0,
+        "mask_division": [-0.8]
     },
 
     # Toy 8
     "convolution": {
         "func": lambda x: x[0] ** 2 / (x[1] + 1.08) / 1.8,
         "bounds": [[-1, 1], [-1, 1]],
-        "names": ["Convex (x0)", "Denominator (x1)"]
+        "names": ["Convex (x0)", "Denominator (x1)"],
+        "mask_idx": None,
+        "mask_division": []
     }
 }
 FUNCTION_ZOO = {**STANDARD_ZOO, **LOG_SUM_ZOO, **CONVEX_ZOO}
@@ -113,13 +150,15 @@ def main():
     print(results_df)
     results_df.to_csv(os.path.join(savepath, "sobol_indices.csv"), index=False)
 
-    plt.figure(figsize=(8, 5))
-    plt.title(f"Sobol Sensitivity - {case_name}")
-    plt.barh(results_df['Feature'][::-1], results_df['Total_Effect (ST)'][::-1], color='skyblue')
-    plt.xlabel("Total Effect Index")
-    plt.tight_layout()
-    plt.savefig(os.path.join(savepath, "sobol_plot.png"), dpi=150)
-    plt.close()
+    # Plot (Custom Style)
+    plot_custom_bars(
+        names=results_df['Feature'],
+        values=results_df['Total_Effect (ST)'],
+        title=f"Sobol Sensitivity: {case_name}",
+        ylabel="Total Effect Index (ST)",
+        savepath=os.path.join(savepath, "sobol_plot.png"),
+        color='bisque'
+    )
 
     # ==========================================
     # 4. SHAP Analysis
@@ -156,7 +195,7 @@ def main():
     shap_importance_df = pd.DataFrame({
         'Feature': feature_names,
         'Mean_Abs_SHAP': mean_abs_shap
-    }).sort_values(by='Mean_Abs_SHAP', ascending=False)
+    })
 
     shap_importance_df.to_csv(os.path.join(savepath, "shap_mean_abs.csv"), index=False)
 
@@ -167,17 +206,15 @@ def main():
     plt.close()
 
     # [NEW] Plot 2: Bar Plot (Mean Absolute Values)
-    plt.figure()
-    shap.summary_plot(
-        shap_values,
-        X_test,
-        feature_names=feature_names,
-        plot_type="bar",  # <--- This creates the bar plot
-        show=False
+    # Plot (Custom Style)
+    plot_custom_bars(
+        names=shap_importance_df['Feature'],
+        values=shap_importance_df['Mean_Abs_SHAP'],
+        title=f"SHAP Importance: {case_name}",
+        ylabel="mean(|SHAP value|)",
+        savepath=os.path.join(savepath, "shap_bar_plot.png"),
+        color='thistle'
     )
-    plt.savefig(os.path.join(savepath, "shap_bar_plot.png"), dpi=150, bbox_inches='tight')
-    plt.close()
-
 
 if __name__ == "__main__":
     main()

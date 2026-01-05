@@ -16,39 +16,9 @@ from sklearn.neural_network import MLPRegressor
 from sklearn.metrics import r2_score
 from SALib.sample import sobol as sample_sobol
 from SALib.analyze import sobol as analyze_sobol
-from github.workflows.Hyein.toy_NN_SHAP_Sobol import plot_custom_bars
 
-# ==========================================
-# Helper: Custom Plotting Style
-# ==========================================
-# def plot_custom_bars(names, values, title, ylabel, savepath, color='skyblue'):
-#     """
-#     Draws vertical bar plots with skyblue fill, black edges, and values on top.
-#     """
-#     fig, ax = plt.subplots(figsize=(max(6, len(names) * 1.2), 6))
-#
-#     # Create Vertical Bars
-#     bars = ax.bar(names, values, color=color, edgecolor='black', width=0.7)
-#
-#     # Add number labels on top
-#     ax.bar_label(bars, fmt='%.2f', padding=3, fontsize=10)
-#
-#     # Formatting
-#     ax.set_ylabel(ylabel, fontsize=12)
-#     ax.set_title(title, fontsize=14)
-#
-#     # Rotate x-axis labels
-#     ax.set_xticks(range(len(names)))
-#     ax.set_xticklabels(names, rotation=15, ha='center', fontsize=10)
-#
-#     # Adjust Y-limit
-#     if len(values) > 0:
-#         ax.set_ylim(0, max(values) * 1.15)
-#
-#     plt.tight_layout()
-#     plt.savefig(savepath, dpi=300)
-#     plt.close()
-#     print(f"      📊 Plot saved: {os.path.basename(savepath)}")
+from github.workflows.Hyein.toy_analytic_SHAP_Sobol import FUNCTION_ZOO
+from github.workflows.Hyein.toy_NN_SHAP_Sobol import plot_custom_bars
 
 
 def tune_and_analyze_subset(X_sub, y_sub, feat_names, scaler_X, save_dir, range_label):
@@ -194,14 +164,17 @@ def tune_and_analyze_subset(X_sub, y_sub, feat_names, scaler_X, save_dir, range_
 
 
 def main():
-    parser = argparse.ArgumentParser(description="Train MLP and Analyze SHAP/Sobol on Range Splits.")
-    parser.add_argument("data_name", type=str, nargs='?', default="AgNP", help="Dataset name")
+    parser = argparse.ArgumentParser(description="Tune KAN for Analytical Functions.")
+    parser.add_argument("func_name", type=str, nargs='?', default="exponential",
+                        choices=FUNCTION_ZOO.keys(),
+                        help="Choose a function from the ZOO.")
+
     args = parser.parse_args()
-    data_name = args.data_name
+    case_name = args.func_name
 
     # 1. Setup Paths
-    root_dir = os.path.join(os.getcwd(), 'github', 'workflows', 'Hyein', 'material_kan_models', data_name)
-    split_data_path = os.path.join(root_dir, f"{data_name}_range_split_data.pkl")
+    root_dir = os.path.join(os.getcwd(), 'github', 'workflows', 'Hyein', 'analytical_results', case_name)
+    split_data_path = os.path.join(root_dir, "kan_models", f"{case_name}_range_split_data.pkl")
 
     if not os.path.exists(split_data_path):
         print(f"❌ Error: Split data not found at {split_data_path}")
