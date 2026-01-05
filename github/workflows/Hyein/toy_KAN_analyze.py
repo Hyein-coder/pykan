@@ -239,31 +239,67 @@ def main():
     print(f"📊 Activation analysis saved to: {plot_path_act}")
 
     # ==========================================
-    # 4. Range-Based Attribution Scoring
+    # 4. Range-Based Attribution Scoring (Iterative Search)
     # ==========================================
-    # We will pick the most significant input feature (highest global score) to slice
-    # Or you can set `mask_idx` manually.
 
-    # Let's pick the feature with the highest global score to analyze
-    mask_idx = np.argmax(scores_tot)
-    print(f"\n✂️ Slicing data based on Feature {mask_idx} (Highest Importance)...")
+    # Sort features by global score (Highest -> Lowest)
+    sorted_feat_indices = np.argsort(scores_tot)[::-1]
 
-    # Get valid inflection points for this feature (within 0.1~0.9 range)
-    raw_ips = inflection_points_per_input[mask_idx]
-    valid_ips = [ip for ip in raw_ips if ip is not None and 0.1 < ip < 0.9]
+    selected_mask_idx = None
+    masks = []
+    labels = []
 
-    # Remove duplicates and sort
-    unique_ips = sorted(list(set([round(ip, 3) for ip in valid_ips])))
+    print("\n🔍 Searching for a feature that splits data into valid ranges...")
 
-    # Define Intervals: [0.1, ip1, ip2, ..., 0.9]
-    mask_interval = [0.1] + unique_ips + [0.9]
-    print(f"   Intervals defined: {mask_interval}")
+    for mask_idx in sorted_feat_indices:
+        feat_name = feat_names[mask_idx]
+        print(f"   Checking Feature {mask_idx} ({feat_name})...", end=" ")
 
-    # Create Masks
-    x_mask = dataset['train_input'][:, mask_idx]
-    masks = [((x_mask > lb) & (x_mask <= ub)) for lb, ub in zip(mask_interval[:-1], mask_interval[1:])]
-    labels = [f'{lb:.2f} < x{mask_idx} <= {ub:.2f}' for lb, ub in zip(mask_interval[:-1], mask_interval[1:])]
+        # Get valid inflection points for this feature (within 0.1~0.9 range)
+        raw_ips = inflection_points_per_input[mask_idx]
+        valid_ips = [ip for ip in raw_ips if ip is not None and 0.1 < ip < 0.9]
 
+        # Remove duplicates and sort
+        unique_ips = sorted(list(set([round(ip, 3) for ip in valid_ips])))
+
+        # If no inflection points, we can't split "into both areas"
+        if len(unique_ips) == 0:
+            print("Skipping (No inflection points in 0.1-0.9).")
+            continue
+
+        # Define Intervals: [0.1, ip1, ip2, ..., 0.9]
+        mask_interval = [0.1] + unique_ips + [0.9]
+
+        # Create Candidate Masks
+        x_mask_data = dataset['train_input'][:, mask_idx]
+        candidate_masks = [((x_mask_data > lb) & (x_mask_data <= ub))
+                           for lb, ub in zip(mask_interval[:-1], mask_interval[1:])]
+
+        # Check if "mask exists in both areas"
+        # (Meaning: At least 2 intervals have samples)
+        non_empty_count = sum([1 for m in candidate_masks if torch.any(m)])
+
+        if non_empty_count >= 2:
+            print(f"✅ Selected! (Found {non_empty_count} active intervals)")
+            selected_mask_idx = mask_idx
+            masks = candidate_masks
+            labels = [f'{lb:.2f} < x{mask_idx} <= {ub:.2f}' for lb, ub in zip(mask_interval[:-1], mask_interval[1:])]
+            break
+        else:
+            print(f"Skipping (Data only exists in {non_empty_count} interval).")
+
+    # Fallback: If loop finishes without success, pick the top feature anyway (to prevent crash)
+    if selected_mask_idx is None:
+        print("⚠️ Warning: No feature provided a valid split. Defaulting to top feature.")
+        selected_mask_idx = sorted_feat_indices[0]
+        # Re-generate masks for the top feature (even if empty/single)
+        # ... (simplified logic just to ensure variables exist)
+        x_mask_data = dataset['train_input'][:, selected_mask_idx]
+        masks = [(x_mask_data > -np.inf)]  # Dummy mask
+        labels = ["All Range"]
+
+    # Now calculate scores for the chosen masks
+    print(f"\n✂️ Slicing data based on Feature {selected_mask_idx}...")
     scores_interval_norm = []
 
     # Compute Scores per Interval

@@ -33,7 +33,7 @@ from kan.experiments.analysis import find_index_sign_revert
 
 def main():
     parser = argparse.ArgumentParser(description="Run SHAP and Sobol analysis for a specific dataset.")
-    parser.add_argument("data_name", type=str, nargs='?', default="AgNP",
+    parser.add_argument("data_name", type=str, nargs='?', default="CO2RRLCA",
                         help="The name of the dataset (default: P3HT)")
 
     args = parser.parse_args()
@@ -329,6 +329,26 @@ def main():
             print(f"   Interval {labels[i]}: 0 samples (Skipping)")
 
     # ==========================================
+    # 4.5 [NEW] Save Range Split Data for NN Training
+    # ==========================================
+    split_data_savepath = os.path.join(savepath, f"{data_name}_range_split_data.pkl")
+    print(f"\n💾 Saving range split data to: {split_data_savepath}")
+
+    # Pack everything needed to reproduce these splits for the NN
+    split_data = {
+        'dataset': dataset,  # The full dataset (tensors)
+        'masks': masks,  # The boolean masks for each interval
+        'labels': labels,  # The text labels (e.g., "0.1 < x < 0.3")
+        'selected_mask_idx': selected_mask_idx,  # The feature index used for splitting
+        'selected_mask_name': feat_names[selected_mask_idx],  # The feature name
+        'feature_names': feat_names,  # All feature names
+        'scaler_X': scaler_X,  # Scalers (needed for NN inputs)
+        'scaler_y': scaler_y
+    }
+
+    joblib.dump(split_data, split_data_savepath)
+
+    # ==========================================
     # 5. Plot Range-Based Scores
     # ==========================================
     width = 0.08
@@ -433,6 +453,80 @@ def main():
     # plt.savefig(plot_path, dpi=300)
     # plt.show()
     # print(f"📊 Parity plot saved to: {plot_path}")
+
+    # ==========================================
+    # 8. [UPDATED] Plot Input vs Output (Original Data Colored)
+    # ==========================================
+    print("\n📈 Plotting Input vs Output (Original Data Colored by Range)...")
+
+    # 1. Get Model Predictions (Full Data)
+    pred_y_norm = model(dataset['train_input']).detach().cpu().numpy()
+    try:
+        pred_y = scaler_y.inverse_transform(pred_y_norm)
+    except ValueError:
+        pred_y = pred_y_norm
+
+    # 2. Setup Colors
+    cmap = plt.get_cmap('tab10')
+    colors = [cmap(k) for k in range(len(masks))]
+
+    n_features = X_train_denorm.shape[1]
+    n_cols = 2
+    n_rows = (n_features + n_cols - 1) // n_cols
+
+    fig_io, axs_io = plt.subplots(n_rows, n_cols, figsize=(6 * n_cols, 5 * n_rows), constrained_layout=True)
+    axs_io = axs_io.flatten()
+
+    for i in range(n_features):
+        ax = axs_io[i]
+
+        # A. Plot Predictions (Neutral Background)
+        # We plot the predicted values in gray to show the model's "fit"
+        ax.scatter(X_train_denorm[:, i], pred_y, alpha=0.2, c='gray', s=20, label='Prediction')
+
+        # B. Plot Original Data (Ground Truth) Colored by Mask
+        # We iterate through the generated masks to color the ACTUAL data points
+        for m_idx, (mask, label) in enumerate(zip(masks, labels)):
+            # Convert torch mask to numpy if needed
+            if torch.is_tensor(mask):
+                mask_np = mask.cpu().numpy().astype(bool)
+            else:
+                mask_np = mask
+
+            # Filter data for this range
+            if mask_np.sum() > 0:
+                # Select X feature 'i'
+                x_seg = X_train_denorm[mask_np, i]
+
+                # [CHANGED] Use y_train_denorm (Original Data) instead of pred_y
+                y_seg_original = y_train_denorm[mask_np]
+
+                # Plot this segment with a specific color
+                ax.scatter(x_seg, y_seg_original, alpha=0.9, s=15,
+                           color=colors[m_idx % len(colors)],
+                           label=f"{label}")
+
+        feature_label = feat_names[i] if feat_names and i < len(feat_names) else f"Feature {i}"
+        ax.set_xlabel(feature_label)
+        ax.set_ylabel("Output y")
+        ax.set_title(f"{feature_label} vs Output")
+
+        # Add legend (only for the first plot to avoid clutter)
+        if i == 0:
+            ax.legend(loc='upper left', fontsize=8, markerscale=1.5)
+        ax.grid(True, alpha=0.3)
+
+    # Hide unused subplots
+    for i in range(n_features, len(axs_io)):
+        axs_io[i].axis('off')
+
+    plt.suptitle(f"Input vs Output (Data Colored by Range): {data_name}", fontsize=14)
+
+    # Save & Show
+    plot_path_io = os.path.join(savepath, f"{data_name}_in_out_range.png")
+    plt.savefig(plot_path_io, dpi=300)
+    plt.show()
+    print(f"📊 Colored Input-Output plots saved to: {plot_path_io}")
 
 if __name__ == "__main__":
     main()

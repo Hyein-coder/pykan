@@ -14,14 +14,14 @@ from SALib.analyze import sobol as analyze_sobol
 
 # Assuming this custom module exists in your environment
 from kan.custom_processing import remove_outliers_iqr
-
+from github.workflows.Hyein.toy_NN_SHAP_Sobol import plot_custom_bars
 
 def main():
     # ==========================================
     # 0. Argument Parsing
     # ==========================================
     parser = argparse.ArgumentParser(description="Run SHAP and Sobol analysis for a specific dataset.")
-    parser.add_argument("data_name", type=str, nargs='?', default="P3HT",
+    parser.add_argument("data_name", type=str, nargs='?', default="AgNP",
                         help="The name of the dataset (default: P3HT)")
 
     # Optional: Add flags for specific settings if needed
@@ -111,23 +111,20 @@ def main():
     shap_summary_df = pd.DataFrame({
         'Feature': feature_names,
         'Mean_Abs_SHAP': np.abs(shap_values).mean(axis=0)
-    }).sort_values(by='Mean_Abs_SHAP', ascending=False)
+    })
 
     shap_summary_path = os.path.join(savepath, f'{data_name}_shap_importance.csv')
     shap_summary_df.to_csv(shap_summary_path, index=False)
 
     # Plot 1: Bar Plot
-    plt.figure()
-    shap.summary_plot(
-        shap_values,
-        X_test_norm[:num_shap_sample],
-        feature_names=feature_names,
-        plot_type="bar",
-        show=False
+    plot_custom_bars(
+        names=shap_summary_df['Feature'],
+        values=shap_summary_df['Mean_Abs_SHAP'],
+        title=f"SHAP Global Importance (MLP) - {data_name}",
+        ylabel="mean(|SHAP value|)",
+        savepath=os.path.join(savepath, f"{data_name}_mlp_shap_bar_plot.png"),
+        color='thistle'
     )
-    plt.savefig(os.path.join(savepath, f'{data_name}_shap_bar_plot.png'), dpi=300, bbox_inches='tight')
-    plt.show()
-    plt.close()
 
     # Plot 2: Dot Plot
     plt.figure()
@@ -135,7 +132,7 @@ def main():
         shap_values,
         X_test_norm[:num_shap_sample],
         feature_names=feature_names,
-        show=False
+        show=True
     )
     plt.savefig(os.path.join(savepath, f'{data_name}_shap_dot_plot.png'), dpi=300, bbox_inches='tight')
     plt.close()
@@ -171,29 +168,23 @@ def main():
         'Feature': feature_names,
         'Total_Effect (ST)': Si['ST'],
         'First_Order (S1)': Si['S1']
-    }).sort_values(by='Total_Effect (ST)', ascending=False)
+    })
 
-    print(results_df)
+    print(results_df.sort_values(by='Total_Effect (ST)', ascending=False))
 
     # [NEW] Save Sobol Indices to CSV
     sobol_csv_path = os.path.join(savepath, f"{data_name}_sobol_indices.csv")
     results_df.to_csv(sobol_csv_path, index=False)
 
     # Plot
-    plt.figure(figsize=(10, 6))
-    plt.title(f"Feature Sensitivity (Total Effect) - {data_name}")
-
-    # Reverse order for horizontal bar chart to show highest at top
-    top_n = 10
-    features_plot = results_df['Feature'][:top_n][::-1]
-    scores_plot = results_df['Total_Effect (ST)'][:top_n][::-1]
-
-    plt.barh(features_plot, scores_plot)
-    plt.xlabel("Total Effect Index (ST)")
-    plt.tight_layout()
-    plt.savefig(os.path.join(savepath, f"{data_name}_sobol_analysis.png"))
-    plt.show()
-    plt.close()
+    plot_custom_bars(
+        names=results_df['Feature'],
+        values=results_df['Total_Effect (ST)'],
+        title=f"Sobol Sensitivity (MLP) - {data_name}",
+        ylabel="Total Effect Index (ST)",
+        savepath=os.path.join(savepath, f"{data_name}_mlp_sobol_plot.png"),
+        color='bisque'
+    )
 
 if __name__ == "__main__":
     main()

@@ -10,6 +10,44 @@ from SALib.analyze import sobol
 from github.workflows.Hyein.toy_analytic_SHAP_Sobol import FUNCTION_ZOO
 
 
+def plot_custom_bars(names, values, title, ylabel, savepath, color="skyblue", show=True):
+    """
+    Helper function to draw vertical bar plots in the specific requested style:
+    - Vertical bars
+    - Skyblue color with black edge
+    - Values printed on top
+    - Rotated x-axis labels
+    """
+    fig, ax = plt.subplots(figsize=(max(6, len(names) * 1.2), 6))
+
+    # Create Vertical Bars
+    bars = ax.bar(names, values, color=color, edgecolor='black', width=0.7)
+
+    # Add number labels on top of bars
+    # padding=3 adds a little space between the bar and the text
+    ax.bar_label(bars, fmt='%.2f', padding=3, fontsize=10)
+
+    # Formatting
+    ax.set_ylabel(ylabel, fontsize=12)
+    ax.set_title(title, fontsize=14)
+
+    # Rotate x-axis labels slightly for readability
+    ax.set_xticks(range(len(names)))
+    ax.set_xticklabels(names, rotation=15, ha='center', fontsize=10)
+
+    # Adjust Y-limit to make room for labels
+    if len(values) > 0:
+        ax.set_ylim(0, max(values) * 1.15)
+
+    plt.tight_layout()
+    plt.savefig(savepath, dpi=300)
+    if show:
+        plt.show()
+    else:
+        plt.close()
+    # print(f"   📊 Plot saved: {savepath}")
+
+
 def main():
     # ==========================================
     # 2. Argument Parsing & Setup
@@ -25,8 +63,6 @@ def main():
     print(f"🚀 Running MLP Analysis for case: '{case_name}'")
 
     # Paths
-    # Note: Adjust 'root_dir' if your saved models are elsewhere.
-    # Currently pointing to: github/workflows/Hyein/analytical_results/<case>/nn_models
     root_dir = os.path.join(os.getcwd(), 'github', 'workflows', 'Hyein', "analytical_results", case_name)
     model_dir = os.path.join(root_dir, "nn_models")
 
@@ -55,18 +91,13 @@ def main():
     # ==========================================
     # 4. Define Prediction Wrapper
     # ==========================================
-    # This wrapper handles the translation between "Physical World" (SHAP/Sobol) and "Neural Net World" (Normalized)
     def mlp_wrapper(X_raw):
         # 1. Scale Input: Physical -> Normalized
         X_norm = scaler_X.transform(X_raw)
-
         # 2. Predict
         y_pred_norm = mlp_model.predict(X_norm)
-
         # 3. Inverse Scale Output: Normalized -> Physical
-        # Reshape is needed because scaler expects 2D array
         y_pred_raw = scaler_y.inverse_transform(y_pred_norm.reshape(-1, 1)).flatten()
-
         return y_pred_raw
 
     # Load Config
@@ -99,24 +130,25 @@ def main():
     # Analyze
     Si = sobol.analyze(problem, Y_sobol, calc_second_order=True)
 
-    # Save & Plot
+    # Create DataFrame (PRESERVE ORDER: Do not sort)
     results_df = pd.DataFrame({
         'Feature': feature_names,
         'Total_Effect (ST)': Si['ST'],
         'First_Order (S1)': Si['S1']
-    }).sort_values(by='Total_Effect (ST)', ascending=False)
+    })
 
     print(results_df)
     results_df.to_csv(os.path.join(analysis_savepath, "mlp_sobol_indices.csv"), index=False)
 
-    plt.figure(figsize=(8, 5))
-    plt.title(f"Sobol Sensitivity (MLP Model) - {case_name}")
-    plt.barh(results_df['Feature'][::-1], results_df['Total_Effect (ST)'][::-1],
-             color='lightcoral')  # Different color to distinguish
-    plt.xlabel("Total Effect Index")
-    plt.tight_layout()
-    plt.savefig(os.path.join(analysis_savepath, "mlp_sobol_plot.png"), dpi=150)
-    plt.close()
+    # Plot using Custom Style
+    plot_custom_bars(
+        names=results_df['Feature'],
+        values=results_df['Total_Effect (ST)'],
+        title=f"Sobol Sensitivity (MLP) - {case_name}",
+        ylabel="Total Effect Index (ST)",
+        savepath=os.path.join(analysis_savepath, "mlp_sobol_plot.png"),
+        color='bisque'
+    )
 
     # ==========================================
     # 6. SHAP Analysis
@@ -146,32 +178,32 @@ def main():
         os.path.join(analysis_savepath, "mlp_shap_raw.csv"), index=False
     )
 
-    # Calculate Mean Absolute SHAP
+    # Calculate Mean Absolute SHAP (Global Importance)
     mean_abs_shap = np.abs(shap_values).mean(axis=0)
+
+    # Create DataFrame (PRESERVE ORDER: Do not sort)
     shap_importance_df = pd.DataFrame({
         'Feature': feature_names,
         'Mean_Abs_SHAP': mean_abs_shap
-    }).sort_values(by='Mean_Abs_SHAP', ascending=False)
+    })
 
     shap_importance_df.to_csv(os.path.join(analysis_savepath, "mlp_shap_mean_abs.csv"), index=False)
 
-    # Plot 1: Dot Plot
+    # Plot 1: Dot Plot (Standard SHAP library plot)
     plt.figure()
     shap.summary_plot(shap_values, X_test, feature_names=feature_names, show=False)
     plt.savefig(os.path.join(analysis_savepath, "mlp_shap_dot_plot.png"), dpi=150, bbox_inches='tight')
     plt.close()
 
-    # Plot 2: Bar Plot
-    plt.figure()
-    shap.summary_plot(
-        shap_values,
-        X_test,
-        feature_names=feature_names,
-        plot_type="bar",
-        show=False
+    # Plot 2: Custom Bar Plot (Replaces shap.summary_plot(plot_type="bar"))
+    plot_custom_bars(
+        names=shap_importance_df['Feature'],
+        values=shap_importance_df['Mean_Abs_SHAP'],
+        title=f"SHAP Global Importance (MLP) - {case_name}",
+        ylabel="mean(|SHAP value|)",
+        savepath=os.path.join(analysis_savepath, "mlp_shap_bar_plot.png"),
+        color='thistle'
     )
-    plt.savefig(os.path.join(analysis_savepath, "mlp_shap_bar_plot.png"), dpi=150, bbox_inches='tight')
-    plt.close()
 
     print(f"✅ Analysis Complete! Results saved in: {analysis_savepath}")
 
