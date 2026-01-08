@@ -163,6 +163,9 @@ def main():
     # plt.savefig(plot_path_tot, dpi=300)
     # plt.show()
 
+    model.plot()
+    plt.savefig(os.path.join(savepath, f"{data_name}_model.png"))
+
     # ==========================================
     # 3. Inflection Point Analysis (Layer 0)
     # ==========================================

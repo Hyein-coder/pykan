@@ -79,8 +79,6 @@ class KANRegressor(BaseEstimator, RegressorMixin):
         self.sym_weight_simple = sym_weight_simple
         self.sym_r2_threshold = sym_r2_threshold
         self.sym_range = sym_range
-        self.sym_a_range = (-sym_range, sym_range)
-        self.sym_b_range = (-sym_range, sym_range)
 
         self.device = device
         self.model = None
@@ -136,8 +134,8 @@ class KANRegressor(BaseEstimator, RegressorMixin):
                                          weight_simple=self.sym_weight_simple,
                                          r2_threshold=self.sym_r2_threshold,
                                          verbose=0,
-                                         a_range=self.sym_a_range,
-                                         b_range=self.sym_b_range)
+                                         a_range=(-self.sym_range, self.sym_range),
+                                         b_range=(-self.sym_range, self.sym_range))
 
                 self.model.fit(dataset, opt='LBFGS', steps=self.steps, lr=self.lr)
             except Exception as e:
@@ -213,7 +211,6 @@ def main():
     df_out = filedata[[name_y]]
     print(f"TARGET: {name_y}")
 
-    # TODO: Data가 너무 많이 지워지긴 함
     df_in_final, df_out_final = remove_outliers_iqr(df_in, df_out)
 
     removed_count = len(df_in) - len(df_in_final)

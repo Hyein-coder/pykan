@@ -79,9 +79,9 @@ def run_analysis_suite(model_func, bounds, feature_names, save_dir, suffix, titl
         # Plot
         plot_custom_bars(
             names=results_df['Feature'],
-            values=results_df['Total_Effect (ST)'],
+            values=results_df['First_Order (S1)'],
             title=f"Sobol Sensitivity {title_suffix}",
-            ylabel="Total Effect Index (ST)",
+            ylabel="First Order Index (S1)",
             savepath=os.path.join(save_dir, f"sobol_plot{suffix}.png"),
             color='bisque'
         )
@@ -170,7 +170,21 @@ STANDARD_ZOO = {
         "names": ["Convex (x0)", "Denominator (x1)"],
         "mask_idx": None,
         "mask_division": []
-    }
+    },
+    "multiplication": {
+        "func": lambda x: x[0] **2 * x[1],
+        "bounds": [[-1, 1], [-1, 1]],
+        "names": ["Square (x0)", "Linear (x1)"],
+        "mask_idx": None,
+        "mask_division": []
+    },
+    "conditional": {
+        "func": lambda x: x[0]*2 + x[1] if x[0] < 0 else x[1],
+        "bounds": [[-1, 1], [-1, 1]],
+        "names": ["Conditional (x0)", "Linear (x1)"],
+        "mask_idx": None,
+        "mask_division": []
+    },
 }
 FUNCTION_ZOO = {**STANDARD_ZOO, **LOG_SUM_ZOO, **CONVEX_ZOO}
 

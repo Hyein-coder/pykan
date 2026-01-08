@@ -11,6 +11,7 @@ from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import MinMaxScaler
 from SALib.sample import sobol as sample_sobol
 from SALib.analyze import sobol as analyze_sobol
+from sklearn.metrics import pairwise_distances_argmin_min
 
 # Assuming this custom module exists in your environment
 from kan.custom_processing import remove_outliers_iqr
@@ -168,7 +169,7 @@ def main():
         'First_Order (S1)': Si['S1']
     })
 
-    print(results_df.sort_values(by='Total_Effect (ST)', ascending=False))
+    print(results_df.sort_values(by='First_Order (S1)', ascending=False))
 
     # [NEW] Save Sobol Indices to CSV
     sobol_csv_path = os.path.join(savepath, f"{data_name}_sobol_indices.csv")
@@ -177,9 +178,9 @@ def main():
     # Plot
     plot_custom_bars(
         names=results_df['Feature'],
-        values=results_df['Total_Effect (ST)'],
+        values=results_df['First_Order (S1)'],
         title=f"Sobol Sensitivity (MLP) - {data_name}",
-        ylabel="Total Effect Index (ST)",
+        ylabel="First Order Index (S1)",
         savepath=os.path.join(savepath, f"{data_name}_mlp_sobol_plot.png"),
         color='bisque'
     )

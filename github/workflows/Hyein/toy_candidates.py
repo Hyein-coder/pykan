@@ -19,8 +19,10 @@ x1, x2= np.meshgrid(x1_grid, x2_grid)
 #%%
 import os
 save_dir = os.path.join(os.getcwd(), "github\workflows\Hyein\example_toys")
-y = x1 * x2
-eqn = "x1x2"
+
+y_fun = lambda _x0, _x1: 2 * _x0 + _x1 if _x0 < 0 else _x1
+y = np.array([[y_fun(xxx1, xxx2) for xxx1, xxx2 in zip(xx1, xx2)] for xx1, xx2 in zip(x1, x2)])
+eqn = "if_fun"
 
 fig = plt.figure(figsize=(10, 8))
 

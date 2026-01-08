@@ -185,9 +185,9 @@ def tune_and_analyze_subset(X_sub, y_sub, feat_names, scaler_X, save_dir, range_
     # Plot (Custom Style)
     plot_custom_bars(
         names=sobol_df['Feature'],
-        values=sobol_df['Total_Effect (ST)'],
+        values=sobol_df['First_Order (S1)'],
         title=f"Sobol Sensitivity ({range_label})",
-        ylabel="Total Effect Index (ST)",
+        ylabel="First Order Index (S1)",
         savepath=os.path.join(save_dir, "sobol_plot.png"),
         color='bisque'
     )

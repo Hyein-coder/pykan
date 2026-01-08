@@ -105,9 +105,9 @@ def main():
     # Plot using Custom Style
     plot_custom_bars(
         names=results_df['Feature'],
-        values=results_df['Total_Effect (ST)'],
+        values=results_df['First_Order (S1)'],
         title=f"Sobol Sensitivity (MLP) - {case_name}",
-        ylabel="Total Effect Index (ST)",
+        ylabel="First Order Index (S1)",
         savepath=os.path.join(analysis_savepath, "mlp_sobol_plot.png"),
         color='bisque'
     )

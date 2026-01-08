@@ -51,8 +51,7 @@ class KANRegressor(BaseEstimator, RegressorMixin):
                  sym_lib=None,
                  sym_weight_simple=0.0,
                  sym_r2_threshold=0.0,
-                 sym_a_range=(-10, 10),
-                 sym_b_range=(-10, 10),
+                 sym_range=10,
                  device='cpu'):
 
         self.dataset = None
@@ -76,8 +75,7 @@ class KANRegressor(BaseEstimator, RegressorMixin):
         self.sym_lib = sym_lib if sym_lib is not None else lib
         self.sym_weight_simple = sym_weight_simple
         self.sym_r2_threshold = sym_r2_threshold
-        self.sym_a_range = sym_a_range
-        self.sym_b_range = sym_b_range
+        self.sym_range = sym_range
 
         self.device = device
         self.model = None
@@ -134,8 +132,8 @@ class KANRegressor(BaseEstimator, RegressorMixin):
                                          weight_simple=self.sym_weight_simple,
                                          r2_threshold=self.sym_r2_threshold,
                                          verbose=0,
-                                         a_range=self.sym_a_range,
-                                         b_range=self.sym_b_range)
+                                         a_range=(-self.sym_range, self.sym_range),
+                                         b_range=(-self.sym_range, self.sym_range))
 
                 self.model.fit(dataset, opt='LBFGS', steps=self.steps, lr=self.lr)
             except Exception as e:
@@ -243,10 +241,11 @@ def main():
         'grid': [3, 5, 10],
         'k': [3],
         'steps': [20, 50],
-        'lamb': [0.001, 0.01, 0.1],
+        'lamb': [0.001, 0.01, 0.1, 1.],
         'lamb_coef': [0, 0.01, 0.1, 1.0],  # Penalize large coefficients (sparsity)
-        'lamb_entropy': [0.1, 2.0, 10.0],  # Penalize complexity (for symbolic)
-        'lr': [0.01, 0.1, 0.5, 1.]  # Learning rate for LBFGS
+        'lamb_entropy': [0.001, 0.01, 0.1, 2.0, 10.0],  # Penalize complexity (for symbolic)
+        'lr': [0.01, 0.1, 0.5, 1.],  # Learning rate for LBFGS
+        'sym_range': [10, 50]
     }
 
     # Pass default symbolic options here if you want to override defaults
@@ -256,7 +255,7 @@ def main():
     search = RandomizedSearchCV(
         estimator=kan_wrapper,
         param_distributions=param_distributions,
-        n_iter=15,  # Increased slightly to cover new params
+        n_iter=100,  # Increased slightly to cover new params
         cv=3,
         scoring='r2',
         n_jobs=1,  # IMPORTANT: Keep 1 for CUDA safety
