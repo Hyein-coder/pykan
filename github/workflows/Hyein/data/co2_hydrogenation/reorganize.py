@@ -8,8 +8,8 @@ INPUT_FILE = 'data_parsed.csv'  # Replace with your actual raw file name
 
 # 2. Target Column Name
 # Enter the exact name of the Y variable in your raw csv
-TARGET_COL = 'minimum_selling_price'    # minimum_selling_price, CO2_emission
-OUTPUT_FILE = f'{TARGET_COL}.csv'  # This is the file you will use in the main code
+TARGET_COL = 'CO2_emission'    # minimum_selling_price, CO2_emission
+OUTPUT_FILE = f'{TARGET_COL}_x10_x15.csv'  # This is the file you will use in the main code
 
 # =================================================
 
@@ -29,6 +29,18 @@ def clean_dataset():
         print(f"   - Rows after filtering 'success': {len(df)}")
     else:
         print("   ⚠️ Warning: 'flag' column not found. Skipping row filtering.")
+
+    if 'x15' in df.columns:
+        df = df[df['x15'].astype(float) < 1]
+        print(f"   - Rows after filtering 'x15' at the bound: {len(df)}")
+    else:
+        print("   ⚠️ Warning: 'x15' column not found. Skipping row filtering.")
+
+    if 'x10' in df.columns:
+        df = df[df['x10'].astype(float) > 1]
+        print(f"   - Rows after filtering 'x10' at the bound: {len(df)}")
+    else:
+        print("   ⚠️ Warning: 'x10' column not found. Skipping row filtering.")
 
     # 2. Select Features (x1 - x16)
     feature_cols = [f'x{i}' for i in range(1, 17)]
