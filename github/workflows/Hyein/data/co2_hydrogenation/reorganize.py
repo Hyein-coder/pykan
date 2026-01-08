@@ -8,8 +8,12 @@ INPUT_FILE = 'data_parsed.csv'  # Replace with your actual raw file name
 
 # 2. Target Column Name
 # Enter the exact name of the Y variable in your raw csv
-TARGET_COL = 'CO2_emission'    # minimum_selling_price, CO2_emission
-OUTPUT_FILE = f'{TARGET_COL}_x10_x15.csv'  # This is the file you will use in the main code
+TARGET_COL = 'minimum_selling_price'    # minimum_selling_price, CO2_emission
+name_to_save = {
+    'CO2_emission': 'CO2HE',
+    'minimum_selling_price': 'CO2HP'
+}
+OUTPUT_FILE = f'{name_to_save[TARGET_COL]}x10x15.csv'  # This is the file you will use in the main code
 
 # =================================================
 

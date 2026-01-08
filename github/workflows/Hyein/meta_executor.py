@@ -17,7 +17,9 @@ def main():
         # 'AutoAM', 'Perovskite',
         # 'P3HT', 'CrossedBarrel',
         # 'CO2RRE', 'CO2RRRC', 'CO2RRUR',
-        'CO2HEx15', 'CO2HPx15', 'CO2HEx10', 'CO2HPx10',
+        'CO2HEx15', 'CO2HPx15',
+        'CO2HEx10', 'CO2HPx10',
+        # 'CO2HEx10x15', 'CO2HPx10x15',
         # 'CO2RRCC', 'CO2RRRA',
         # 'CO2RRMSP', 'CO2RREE', 'CO2RRC', 'CO2RRA',
     ]

@@ -243,7 +243,7 @@ def main():
     # 5. Hyperparameter Tuning
     # ==========================================
     param_distributions = {
-        'n_layers': [1, 2],
+        'n_layers': [1],
         'grid': [5, 10],
         'k': [3],
         'steps': [20, 50],
@@ -262,7 +262,7 @@ def main():
     search = RandomizedSearchCV(
         estimator=kan_wrapper,
         param_distributions=param_distributions,
-        n_iter=30,  # Increased slightly to cover new params
+        n_iter=50,  # Increased slightly to cover new params
         cv=3,
         scoring='r2',
         n_jobs=1,  # IMPORTANT: Keep 1 for CUDA safety
