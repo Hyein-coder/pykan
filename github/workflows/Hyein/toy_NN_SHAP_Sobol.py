@@ -1,5 +1,6 @@
-import argparse
 import os
+os.environ["OMP_NUM_THREADS"] = "1"
+import argparse
 import joblib
 import numpy as np
 import pandas as pd
@@ -117,11 +118,13 @@ def main():
     print("\n[2/2] 🔍 Running SHAP Analysis on MLP...")
 
     # 1. Background (Physical Domain)
-    X_bg = np.random.uniform(
+    X_representative = np.random.uniform(
         low=[b[0] for b in bounds],
         high=[b[1] for b in bounds],
-        size=(100, n_features)
+        size=(2000, n_features)
     )
+    # Summarize to 100 weighted points
+    X_bg = shap.kmeans(X_representative, 100)
 
     # 2. Test Data (Physical Domain)
     X_test = np.random.uniform(

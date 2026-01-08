@@ -1,5 +1,6 @@
-import argparse
 import os
+os.environ["OMP_NUM_THREADS"] = "1"
+import argparse
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
@@ -91,11 +92,13 @@ def run_analysis_suite(model_func, bounds, feature_names, save_dir, suffix, titl
     # 2. SHAP Analysis
     # ------------------------------------------------
     # 1. Background (Random uniform within CURRENT bounds)
-    X_bg = np.random.uniform(
+    X_representative = np.random.uniform(
         low=[b[0] for b in bounds],
         high=[b[1] for b in bounds],
-        size=(100, n_features)
+        size=(2000, n_features)
     )
+    # Summarize to 100 weighted points
+    X_bg = shap.kmeans(X_representative, 100)
 
     # 2. Test Data (Random uniform within CURRENT bounds)
     X_test = np.random.uniform(

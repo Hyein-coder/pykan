@@ -60,10 +60,10 @@ def main():
     y = df_out_final[name_y].values.reshape(-1, 1)
 
     X_temp_denorm, X_test_denorm, y_temp_denorm, y_test_denorm = train_test_split(X, y, test_size=0.2, random_state=42)
-    X_train_denorm, X_val_denorm, y_train_denorm, y_val_denorm = train_test_split(X_temp_denorm, y_temp_denorm,
-                                                                                  test_size=0.2, random_state=42)
+    # X_train_denorm, X_val_denorm, y_train_denorm, y_val_denorm = train_test_split(X_temp_denorm, y_temp_denorm,
+    #                                                                               test_size=0.2, random_state=42)
 
-    print(f"Train/Validation/Test : {len(X_train_denorm)} / {len(X_val_denorm)} / {len(X_test_denorm)}")
+    # print(f"Train/Validation/Test : {len(X_train_denorm)} / {len(X_val_denorm)} / {len(X_test_denorm)}")
 
     feature_names = name_X
 
@@ -81,25 +81,23 @@ def main():
     scaler_y = joblib.load(os.path.join(savepath, f'{data_name}_mlp_scaler_y.pkl'))
 
     # Apply scaling
-    X_train_norm = scaler_X.transform(X_train_denorm)
-    # X_val_norm = scaler_X.transform(X_val_denorm) # Not used below, but good to have
+    X_temp_norm = scaler_X.transform(X_temp_denorm)
     X_test_norm = scaler_X.transform(X_test_denorm)
-    # y_test_norm = scaler_y.transform(y_test_denorm) # Not used below
 
     # ==========================================
     # 3. SHAP Analysis
     # ==========================================
-    num_data = len(X_train_denorm)
-    num_shap_sample = 100
+    num_data = len(X_temp_norm)
+    num_shap_sample = 1000
 
     if num_shap_sample < num_data:
-        X_train_summary = shap.kmeans(X_train_norm, num_shap_sample)
+        X_train_summary = shap.kmeans(X_temp_norm, num_shap_sample)
     else:
-        X_train_summary = X_train_norm
+        X_train_summary = X_temp_norm
 
     explainer = shap.KernelExplainer(loaded_model.predict, X_train_summary)
 
-    shap_values = explainer.shap_values(X_test_norm[:num_shap_sample])
+    shap_values = explainer.shap_values(X_test_norm)
 
     # [NEW] Save SHAP Values to CSV
     # 1. Raw SHAP values (useful for reproducing dot plots)
@@ -130,7 +128,7 @@ def main():
     plt.figure()
     shap.summary_plot(
         shap_values,
-        X_test_norm[:num_shap_sample],
+        X_test_norm,
         feature_names=feature_names,
         show=True
     )
@@ -140,7 +138,7 @@ def main():
     # ==========================================
     # 4. SALib (Sobol) Analysis
     # ==========================================
-    n_features = X_train_norm.shape[1]
+    n_features = X_temp_norm.shape[1]
 
     # [Dynamic Bounds Adjustment]
     # We use the actual feature_range from the loaded scaler.
