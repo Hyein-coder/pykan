@@ -19,8 +19,8 @@ x1, x2= np.meshgrid(x1_grid, x2_grid)
 #%%
 import os
 save_dir = os.path.join(os.getcwd(), "github\workflows\Hyein\example_toys")
-y = np.log(20 * (x1 + 1.2)) + x2
-eqn = "log(20(x0+1.2))+x1"
+y = x1 * x2
+eqn = "x1x2"
 
 fig = plt.figure(figsize=(10, 8))
 
