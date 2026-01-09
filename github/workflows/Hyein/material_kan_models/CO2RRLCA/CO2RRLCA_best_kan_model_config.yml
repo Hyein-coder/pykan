@@ -15,14 +15,14 @@ sb_trainable: true
 sp_trainable: true
 state_id: 1
 symbolic.funs_name.0:
-- - sqrt
+- - 1/x^2
+  - sin
   - tanh
-  - cos
   - tanh
-  - x^2
+  - sin
+  - sqrt
   - tanh
-  - x^2
-  - x^2
+  - sin
 symbolic_enabled: true
 width:
 - - 8
