@@ -6,38 +6,40 @@ import numpy as np
 import torch
 import matplotlib.pyplot as plt
 import pandas as pd
+import itertools  # <--- [IMPORTANT] Added for multi-feature combinations
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import r2_score
-import yaml  # <--- [NEW] Import YAML
+import yaml
 from kan.custom_processing import remove_outliers_iqr
+
 
 # ==========================================
 # [FIX] Register Python Tuple for YAML Loading
 # ==========================================
-# This fixes the "could not determine a constructor for tag:yaml.org,2002:python/tuple" error
 def tuple_constructor(loader, node):
     return tuple(loader.construct_sequence(node))
 
+
 yaml.add_constructor('tag:yaml.org,2002:python/tuple', tuple_constructor, Loader=yaml.SafeLoader)
-# Depending on PyYAML version/method used by KAN, we might need to register it for the default Loader too
 try:
     yaml.add_constructor('tag:yaml.org,2002:python/tuple', tuple_constructor, Loader=yaml.Loader)
 except AttributeError:
-    pass # yaml.Loader might not exist in some setups, safe to ignore if SafeLoader is used
+    pass
 
 # ==========================================
 # Import your wrapper and function ZOO
 from github.workflows.Hyein.toy_KAN_sweep import KANRegressor
-from kan.experiments.analysis import find_index_sign_revert
+from kan.experiments.analysis import find_indices_sign_revert
 
 
 def main():
     parser = argparse.ArgumentParser(description="Run SHAP and Sobol analysis for a specific dataset.")
-    parser.add_argument("data_name", type=str, nargs='?', default="CO2RRLCA",
-                        help="The name of the dataset (default: P3HT)")
+    parser.add_argument("data_name", type=str, nargs='?', default="CO2RRNPV",
+                        help="The name of the dataset")
 
     args = parser.parse_args()
     data_name = args.data_name
+
     # ==========================================
     # 1. Setup Paths & Load Model/Scalers
     # ==========================================
@@ -49,9 +51,8 @@ def main():
     scaler_x_path = os.path.join(savepath, f'{data_name}_mlp_scaler_X.pkl')
     scaler_y_path = os.path.join(savepath, f'{data_name}_mlp_scaler_y.pkl')
 
-    print(f"📂 Loading a dataset: {data_name}")
+    print(f"DATASET: {data_name}")
 
-    # A. Load Scalers
     if not os.path.exists(scaler_x_path) or not os.path.exists(scaler_y_path):
         print("❌ Error: Scalers not found.")
         return
@@ -59,13 +60,12 @@ def main():
     scaler_X = joblib.load(scaler_x_path)
     scaler_y = joblib.load(scaler_y_path)
 
-    # B. Initialize Wrapper & Load Model
     device = 'cuda' if torch.cuda.is_available() else 'cpu'
     model_wrapper = KANRegressor(device=device)
 
     try:
         model_wrapper.load_model(ckpt_path)
-        model = model_wrapper.model  # Access the actual MultKAN object
+        model = model_wrapper.model
         print("✅ KAN Model loaded successfully!")
     except Exception as e:
         print(f"❌ Failed to load model: {e}")
@@ -74,7 +74,6 @@ def main():
     # ==========================================
     # 2. Regenerate Data
     # ==========================================
-    # Check if file exists
     if not os.path.exists(filepath):
         print(f"❌ Error: Data file not found at {filepath}")
         return
@@ -84,7 +83,6 @@ def main():
     name_y = filedata.columns[-1]
     df_in = filedata[name_X]
     df_out = filedata[[name_y]]
-    print(f"TARGET: {name_y}")
 
     df_in_final, df_out_final = remove_outliers_iqr(df_in, df_out)
 
@@ -106,24 +104,20 @@ def main():
     X_test_norm = scaler_X.fit_transform(X_test_denorm)
     y_test_norm = scaler_y.fit_transform(y_test_denorm)
 
-    # Create dataset dict (needed for forward pass logic sometimes)
     dataset = {
         'train_input': torch.tensor(X_train_norm, dtype=torch.float32, device=device),
         'train_label': torch.tensor(y_train_denorm, dtype=torch.float32, device=device).reshape(-1, 1),
         'test_input': torch.tensor(X_test_norm, dtype=torch.float32, device=device),
         'test_label': torch.tensor(y_test_denorm, dtype=torch.float32, device=device).reshape(-1, 1)
-        # Label scaling optional here
     }
 
     # ==========================================
-    # 2.5 [NEW] Plot Input vs Output (Ground Truth vs Prediction)
+    # 2.5 Plot Input vs Output
     # ==========================================
-
     pred_y_norm = model(dataset['train_input']).detach().cpu().numpy()
     try:
         pred_y = scaler_y.inverse_transform(pred_y_norm)
     except ValueError:
-        # Fallback if dimensions mismatch or scaler wasn't fitted on 2D
         pred_y = pred_y_norm
 
     n_features = X_train_denorm.shape[1]
@@ -135,14 +129,8 @@ def main():
 
     for i in range(n_features):
         ax = axs_io[i]
-
-        # Plot Ground Truth (Gray)
-        # X_train is the raw input (before normalization), y_train is raw output
         ax.scatter(X_train_denorm[:, i], y_train_denorm, alpha=0.5, c='gray', s=15, label='Ground Truth')
-
-        # Plot Prediction (Red)
         ax.scatter(X_train_denorm[:, i], pred_y, alpha=0.5, c='red', s=15, label='Prediction')
-
         feature_label = feat_names[i] if feat_names and i < len(feat_names) else f"Feature {i}"
         ax.set_xlabel(feature_label)
         ax.set_ylabel("Output y")
@@ -150,21 +138,14 @@ def main():
         ax.legend(loc='upper left')
         ax.grid(True, alpha=0.3)
 
-    # Hide unused subplots
     for i in range(n_features, len(axs_io)):
         axs_io[i].axis('off')
-
     plt.suptitle(f"Input vs Output Analysis: {data_name}", fontsize=14)
-
-    # Save & Show
-    plot_path_io = os.path.join(savepath, f"{data_name}_input_vs_output.png")
-    plt.savefig(plot_path_io, dpi=300)
+    plt.savefig(os.path.join(savepath, f"{data_name}_input_vs_output.png"), dpi=300)
     plt.show()
 
-    # Run forward pass once to populate internals (splines, activations)
     model.forward(dataset['train_input'])
-    scores_tot = model.feature_score.detach().cpu().numpy()  # Global scores
-
+    scores_tot = model.feature_score.detach().cpu().numpy()
     model.plot()
     plt.savefig(os.path.join(savepath, f"{data_name}_model.png"))
 
@@ -172,43 +153,30 @@ def main():
     # 3. Inflection Point Analysis (Layer 0)
     # ==========================================
     print("\n🔍 Analyzing Inflection Points in Layer 0...")
-
-    l = 0  # Analyze Layer 0
+    l = 0
     act = model.act_fun[l]
     ni, no = act.coef.shape[:2]
     coef = act.coef.tolist()
     depth = len(model.act_fun)
+    inflection_points_per_input = []
 
-    inflection_points_per_input = []  # Store list of inflection points for each input feature
-
-    fig, axs = plt.subplots(nrows=no, ncols=ni, squeeze=False,
-                            figsize=(max(2.5 * ni, 6), max(2.5 * no, 3.5)),
+    fig, axs = plt.subplots(nrows=no, ncols=ni, squeeze=False, figsize=(max(2.5 * ni, 6), max(2.5 * no, 3.5)),
                             constrained_layout=True)
 
-    for i in range(ni):  # For each input feature
-        feature_inflections = []
-        for j in range(no):  # For each output node of the layer
+    for i in range(ni):
+        feature_inflections_all = []
+        for j in range(no):
             ax = axs[j, i]
-
-            # 1. Get Data
             inputs = model.spline_preacts[l][:, j, i].cpu().detach().numpy()
             outputs = model.spline_postacts[l][:, j, i].cpu().detach().numpy()
-
             coef_node = coef[i][j]
             num_knot = act.grid.shape[1]
             spline_radius = int((num_knot - len(coef_node)) / 2)
 
-            # 2. Plot Activations
             rank = np.argsort(inputs)
-            ax.plot(inputs[rank], outputs[rank], marker='o', ms=2, lw=1, label='Activations')
-
-            # 3. Plot Coefficients & Slope
+            ax.plot(inputs[rank], outputs[rank], marker='o', ms=2, lw=1)
             ax2 = ax.twinx()
-            # Plot coefficients (control points)
-            ax2.scatter(act.grid[i, spline_radius:-spline_radius].cpu(), coef_node,
-                        s=20, color='white', edgecolor='k', label='Coefficients')
 
-            # Calculate Slope
             slope = [x - y for x, y in zip(coef_node[1:], coef_node[:-1])]
             slope_2nd = [(x - y)*10 for x, y in zip(slope[1:], slope[:-1])]
             bar_width = (act.grid[i, 1:] - act.grid[i, :-1]).mean().item() / 2  # Approx width
@@ -220,129 +188,136 @@ def main():
                 ax2.bar(act.grid[i, spline_radius+1:-(spline_radius + 1)] + bar_width/3, slope_2nd,
                         width=bar_width, align='edge', color='g', alpha=0.3, label='2nd Slope')
 
-            ax.set_title(f'in {i} -> out {j}', fontsize=9)
-
-            # 4. Find Inflection
             if depth == 1:
-                idx_revert = find_index_sign_revert(slope_2nd)
-                idx_revert = idx_revert + 1 if idx_revert is not None else idx_revert
+                idx_revert = find_indices_sign_revert(slope_2nd)
+                idx_revert = [ir + 1 for ir in idx_revert]
             elif depth == 2:
-                idx_revert = find_index_sign_revert(slope)
+                idx_revert = find_indices_sign_revert(slope)
             else:
-                print("Depth > 2 not supported yet.")
                 idx_revert = None
 
-            if idx_revert is not None:
-                inflection_val = act.grid[i, spline_radius + idx_revert].item()
-                feature_inflections.append(inflection_val)
-                # Mark on plot
-                ax.axvline(x=inflection_val, color='g', linestyle='--', alpha=0.7)
+            if idx_revert:
+                for ir in idx_revert:
+                    inflection_val = act.grid[i, spline_radius + ir].item()
+                    feature_inflections_all.append(inflection_val)
+                    ax.axvline(x=inflection_val, color='g', linestyle='--', alpha=0.7)
 
+            ax.set_title(f'in {i} -> out {j}', fontsize=9)
+
+        feature_inflections = sorted(set(feature_inflections_all))
         inflection_points_per_input.append(feature_inflections)
 
-    plot_path_act = os.path.join(savepath, f"{data_name}_activations_L{l}.png")
-    plt.savefig(plot_path_act)
+    plt.savefig(os.path.join(savepath, f"{data_name}_activations_L{l}.png"))
     plt.show()
 
     # ==========================================
-    # 4. Range-Based Attribution Scoring (Iterative Search)
+    # 4. Multi-Feature Range-Based Slicing
     # ==========================================
+
+    # Settings
+    NUM_FEATURES_TO_COMBINE = 2
+    MIN_NON_EMPTY_INTERVALS = 2
 
     # Sort features by global score (Highest -> Lowest)
     sorted_feat_indices = np.argsort(scores_tot)[::-1]
 
-    selected_mask_idx = None
-    masks = []
-    labels = []
+    selected_features_data = []  # List of dicts: {'index', 'masks', 'labels'}
 
-    print("\n🔍 Searching for a feature that splits data into valid ranges...")
+    print(f"\n🔍 Searching for top {NUM_FEATURES_TO_COMBINE} features that split data into valid ranges...")
 
     for mask_idx in sorted_feat_indices:
-        feat_name = feat_names[mask_idx]
-        print(f"   Checking Feature {mask_idx} ({feat_name})...", end=" ")
+        if len(selected_features_data) >= NUM_FEATURES_TO_COMBINE:
+            break
 
-        # Get valid inflection points for this feature (within 0.1~0.9 range)
+        feat_name = feat_names[mask_idx]
         raw_ips = inflection_points_per_input[mask_idx]
         valid_ips = [ip for ip in raw_ips if ip is not None and 0.1 < ip < 0.9]
-
-        # Remove duplicates and sort
         unique_ips = sorted(list(set([round(ip, 3) for ip in valid_ips])))
 
-        # If no inflection points, we can't split "into both areas"
         if len(unique_ips) == 0:
-            print("Skipping (No inflection points in 0.1-0.9).")
             continue
 
-        # Define Intervals: [0.1, ip1, ip2, ..., 0.9]
         mask_interval = [0.1] + unique_ips + [0.9]
-
-        # Create Candidate Masks
         x_mask_data = dataset['train_input'][:, mask_idx]
-        candidate_masks = [((x_mask_data > lb) & (x_mask_data <= ub))
-                           for lb, ub in zip(mask_interval[:-1], mask_interval[1:])]
 
-        # Check if "mask exists in both areas"
-        # (Meaning: At least 2 intervals have samples)
-        non_empty_count = sum([1 for m in candidate_masks if torch.any(m)])
+        current_feat_masks = []
+        current_feat_labels = []
 
-        if non_empty_count >= 2:
-            print(f"✅ Selected! (Found {non_empty_count} active intervals)")
-            selected_mask_idx = mask_idx
-            masks = candidate_masks
-            labels = [f'{lb:.2f} < x{mask_idx} <= {ub:.2f}' for lb, ub in zip(mask_interval[:-1], mask_interval[1:])]
-            break
-        else:
-            print(f"Skipping (Data only exists in {non_empty_count} interval).")
+        for lb, ub in zip(mask_interval[:-1], mask_interval[1:]):
+            m = ((x_mask_data > lb) & (x_mask_data <= ub))
+            current_feat_masks.append(m)
+            current_feat_labels.append(f'{lb:.2f}<x{mask_idx}<{ub:.2f}')
 
-    # Fallback: If loop finishes without success, pick the top feature anyway (to prevent crash)
-    if selected_mask_idx is None:
-        print("⚠️ Warning: No feature provided a valid split. Defaulting to top feature.")
-        selected_mask_idx = sorted_feat_indices[0]
-        # Re-generate masks for the top feature (even if empty/single)
-        # ... (simplified logic just to ensure variables exist)
-        x_mask_data = dataset['train_input'][:, selected_mask_idx]
-        masks = [(x_mask_data > -np.inf)]  # Dummy mask
-        labels = ["All Range"]
+        non_empty_count = sum([1 for m in current_feat_masks if torch.any(m)])
 
-    # Now calculate scores for the chosen masks
-    print(f"\n✂️ Slicing data based on Feature {selected_mask_idx}...")
+        if non_empty_count >= MIN_NON_EMPTY_INTERVALS:
+            print(f"   ✅ Selected Feature {mask_idx} ({feat_name}): Found {non_empty_count} active intervals")
+            selected_features_data.append({
+                'index': mask_idx,
+                'masks': current_feat_masks,
+                'labels': current_feat_labels
+            })
+
+    # Combine Masks (Cartesian Product)
+    final_masks = []
+    final_labels = []
+
+    if not selected_features_data:
+        print("⚠️ Warning: No valid splitting features found. Defaulting to top feature (All Range).")
+        fallback_idx = sorted_feat_indices[0]
+        x_mask_data = dataset['train_input'][:, fallback_idx]
+        final_masks = [(x_mask_data > -np.inf)]
+        final_labels = [f"All Range"]
+        selected_features_indices = [fallback_idx]
+    else:
+        print(f"\n🔗 Combining intervals from {len(selected_features_data)} features...")
+        selected_features_indices = [d['index'] for d in selected_features_data]
+
+        lists_of_masks = [d['masks'] for d in selected_features_data]
+        lists_of_labels = [d['labels'] for d in selected_features_data]
+
+        for combined_mask_tuple, combined_label_tuple in zip(itertools.product(*lists_of_masks),
+                                                             itertools.product(*lists_of_labels)):
+
+            combined_m = combined_mask_tuple[0]
+            for m in combined_mask_tuple[1:]:
+                combined_m = combined_m & m
+
+            combined_l = " & ".join(combined_label_tuple)
+
+            if torch.any(combined_m):
+                final_masks.append(combined_m)
+                final_labels.append(combined_l)
+
+        print(f"   -> Generated {len(final_masks)} non-empty combined regions.")
+
+    # Calculate scores for final masks
+    print(f"\n✂️ Scoring {len(final_masks)} regions...")
     scores_interval_norm = []
 
-    # Compute Scores per Interval
-    for i, mask in enumerate(masks):
-        if torch.any(mask):
-            x_tensor_masked = dataset['train_input'][mask, :]
+    for i, mask in enumerate(final_masks):
+        x_tensor_masked = dataset['train_input'][mask, :]
+        x_std = torch.std(x_tensor_masked, dim=0).detach().cpu().numpy()
 
-            # Standard deviation of input in this slice (used for normalization)
-            x_std = torch.std(x_tensor_masked, dim=0).detach().cpu().numpy()
-
-            # Forward pass on masked data to get local attribution
-            model.forward(x_tensor_masked)
-            score_masked = model.feature_score.detach().cpu().numpy()
-
-            # Normalize score
-            score_norm = score_masked / (x_std + 1e-6)
-            scores_interval_norm.append(score_norm)
-            print(f"   Interval {labels[i]}: {mask.sum().item()} samples")
-        else:
-            scores_interval_norm.append(np.zeros(scores_tot.shape))
-            print(f"   Interval {labels[i]}: 0 samples (Skipping)")
+        model.forward(x_tensor_masked)
+        score_masked = model.feature_score.detach().cpu().numpy()
+        score_norm = score_masked / (x_std + 1e-6)
+        scores_interval_norm.append(score_norm)
+        print(f"   Region {i + 1}: {mask.sum().item()} samples")
 
     # ==========================================
-    # 4.5 [NEW] Save Range Split Data for NN Training
+    # 4.5 Save Range Split Data
     # ==========================================
     split_data_savepath = os.path.join(savepath, f"{data_name}_range_split_data.pkl")
     print(f"\n💾 Saving range split data to: {split_data_savepath}")
 
-    # Pack everything needed to reproduce these splits for the NN
     split_data = {
-        'dataset': dataset,  # The full dataset (tensors)
-        'masks': masks,  # The boolean masks for each interval
-        'labels': labels,  # The text labels (e.g., "0.1 < x < 0.3")
-        'selected_mask_idx': selected_mask_idx,  # The feature index used for splitting
-        'selected_mask_name': feat_names[selected_mask_idx],  # The feature name
-        'feature_names': feat_names,  # All feature names
-        'scaler_X': scaler_X,  # Scalers (needed for NN inputs)
+        'dataset': dataset,
+        'masks': final_masks,  # UPDATED: Now saving the combined masks
+        'labels': final_labels,  # UPDATED: Combined labels
+        'selected_features_indices': selected_features_indices,  # UPDATED: List of indices
+        'feature_names': feat_names,
+        'scaler_X': scaler_X,
         'scaler_y': scaler_y
     }
 
@@ -352,48 +327,39 @@ def main():
     # 5. Plot Range-Based Scores
     # ==========================================
     width = 0.08
-    n_features = scores_tot.shape[0]
+    n_features_plot = scores_tot.shape[0]
     n_intervals = len(scores_interval_norm)
 
-    fig, ax = plt.subplots(figsize=(max(8, n_intervals * 2), 5))
-
-    # X-axis: Intervals
+    # Dynamic figure size based on number of intervals
+    fig, ax = plt.subplots(figsize=(max(10, n_intervals * 1.5), 6))
     x_positions = np.arange(n_intervals)
-
-    # We want to show bars for EACH feature within each interval group
-    # But usually, we want to see how feature importance changes across intervals.
-    # Let's group by Interval on X-axis.
-
     max_score = max([max(s) for s in scores_interval_norm]) if scores_interval_norm else 1.0
 
-    for feat_idx in range(n_features):
-        # Extract score of this feature across all intervals
+    for feat_idx in range(n_features_plot):
         feat_scores = [s[feat_idx] for s in scores_interval_norm]
-
-        # Offset bars
-        offset = (feat_idx - n_features / 2) * width + width / 2
-        bars = ax.bar(x_positions + offset, feat_scores, width, label=f"{feat_names[feat_idx]}")
-        # ax.bar_label(bars, fmt='%.2f', fontsize=7, padding=3)
+        offset = (feat_idx - n_features_plot / 2) * width + width / 2
+        ax.bar(x_positions + offset, feat_scores, width, label=f"x{feat_idx}: {feat_names[feat_idx]}")
 
     ax.set_xticks(x_positions)
-    ax.set_xticklabels(labels, rotation=15, ha='center', fontsize=9)
+    # Truncate labels if too long for the plot
+    short_labels = [l if len(l) < 30 else l[:15] + "..." + l[-10:] for l in final_labels]
+    ax.set_xticklabels(short_labels, rotation=45, ha='right', fontsize=8)
+
     ax.set_ylabel("Normalized Attribution Score")
-    ax.set_title(f"Feature Importance per Range (sliced by {feat_names[mask_idx]})")
-    ax.legend(loc='upper right', bbox_to_anchor=(1, 1))
+    # Join indices for the filename/title
+    indices_str = "_".join(map(str, selected_features_indices))
+    ax.set_title(f"Feature Importance per Range (Features {indices_str})")
+    ax.legend(loc='upper right', bbox_to_anchor=(1, 1), fontsize='small')
     ax.set_ylim(0, max_score * 1.2)
     plt.tight_layout()
 
-    plot_path_score = os.path.join(savepath, f"{data_name}_scores_interval_x{mask_idx}.png")
+    plot_path_score = os.path.join(savepath, f"{data_name}_scores_interval_combined.png")
     plt.savefig(plot_path_score)
     plt.show()
     print(f"📊 Range-based score plot saved to: {plot_path_score}")
 
-
-    model.forward(dataset['train_input'])
-    scores_tot = model.feature_score.detach().cpu().numpy()  # Global scores
-
     # ==========================================
-    # 6. Plot Global Scores
+    # 6. Global Scores
     # ==========================================
     fig_tot, ax_tot = plt.subplots(figsize=(5,5))
 
@@ -455,20 +421,19 @@ def main():
     # print(f"📊 Parity plot saved to: {plot_path}")
 
     # ==========================================
-    # 8. [UPDATED] Plot Input vs Output (Original Data Colored)
+    # 8. Plot Input vs Output (Colored by Combined Range)
     # ==========================================
     print("\n📈 Plotting Input vs Output (Original Data Colored by Range)...")
 
-    # 1. Get Model Predictions (Full Data)
     pred_y_norm = model(dataset['train_input']).detach().cpu().numpy()
     try:
         pred_y = scaler_y.inverse_transform(pred_y_norm)
     except ValueError:
         pred_y = pred_y_norm
 
-    # 2. Setup Colors
     cmap = plt.get_cmap('tab10')
-    colors = [cmap(k) for k in range(len(masks))]
+    # Use final_masks here
+    colors = [cmap(k % 10) for k in range(len(final_masks))]
 
     n_features = X_train_denorm.shape[1]
     n_cols = 2
@@ -479,54 +444,42 @@ def main():
 
     for i in range(n_features):
         ax = axs_io[i]
+        # Background: Predictions
+        ax.scatter(X_train_denorm[:, i], pred_y, alpha=0.15, c='gray', s=20, label='Prediction')
 
-        # A. Plot Predictions (Neutral Background)
-        # We plot the predicted values in gray to show the model's "fit"
-        ax.scatter(X_train_denorm[:, i], pred_y, alpha=0.2, c='gray', s=20, label='Prediction')
-
-        # B. Plot Original Data (Ground Truth) Colored by Mask
-        # We iterate through the generated masks to color the ACTUAL data points
-        for m_idx, (mask, label) in enumerate(zip(masks, labels)):
-            # Convert torch mask to numpy if needed
+        # Foreground: Original Data Colored by Slice
+        for m_idx, (mask, label) in enumerate(zip(final_masks, final_labels)):
             if torch.is_tensor(mask):
                 mask_np = mask.cpu().numpy().astype(bool)
             else:
                 mask_np = mask
 
-            # Filter data for this range
             if mask_np.sum() > 0:
-                # Select X feature 'i'
                 x_seg = X_train_denorm[mask_np, i]
-
-                # [CHANGED] Use y_train_denorm (Original Data) instead of pred_y
                 y_seg_original = y_train_denorm[mask_np]
 
-                # Plot this segment with a specific color
-                ax.scatter(x_seg, y_seg_original, alpha=0.9, s=15,
-                           color=colors[m_idx % len(colors)],
-                           label=f"{label}")
+                # Truncate label for legend
+                lbl_short = label if len(label) < 20 else label[:8] + "..." + label[-8:]
+                ax.scatter(x_seg, y_seg_original, alpha=0.9, s=25,
+                           color=colors[m_idx], label=lbl_short)
 
-        feature_label = feat_names[i] if feat_names and i < len(feat_names) else f"Feature {i}"
+        feature_label = f"x{i}: {feat_names[i]}" if feat_names and i < len(feat_names) else f"Feature {i}"
         ax.set_xlabel(feature_label)
         ax.set_ylabel("Output y")
-        ax.set_title(f"{feature_label} vs Output")
 
-        # Add legend (only for the first plot to avoid clutter)
         if i == 0:
-            ax.legend(loc='upper left', fontsize=8, markerscale=1.5)
+            ax.legend(loc='upper left', fontsize=6, markerscale=1.5)
         ax.grid(True, alpha=0.3)
 
-    # Hide unused subplots
     for i in range(n_features, len(axs_io)):
         axs_io[i].axis('off')
 
-    plt.suptitle(f"Input vs Output (Data Colored by Range): {data_name}", fontsize=14)
-
-    # Save & Show
-    plot_path_io = os.path.join(savepath, f"{data_name}_in_out_range.png")
+    plt.suptitle(f"Input vs Output (Colored by {indices_str}): {data_name}", fontsize=14)
+    plot_path_io = os.path.join(savepath, f"{data_name}_in_out_range_combined.png")
     plt.savefig(plot_path_io, dpi=300)
     plt.show()
     print(f"📊 Colored Input-Output plots saved to: {plot_path_io}")
+
 
 if __name__ == "__main__":
     main()
