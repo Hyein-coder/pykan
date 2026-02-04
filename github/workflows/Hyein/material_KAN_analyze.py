@@ -34,11 +34,14 @@ from kan.experiments.analysis import find_indices_sign_revert
 
 def main():
     parser = argparse.ArgumentParser(description="Run SHAP and Sobol analysis for a specific dataset.")
-    parser.add_argument("data_name", type=str, nargs='?', default="AgNP",
+    parser.add_argument("data_name", type=str, nargs='?', default="CO2HPx10",
                         help="The name of the dataset")
+    parser.add_argument("data_on_contour", type=bool, nargs='?', default=False,
+                        help="Should draw data on contour plots?")
 
     args = parser.parse_args()
     data_name = args.data_name
+    data_on_contour = args.data_on_contour
 
     # ==========================================
     # 1. Setup Paths & Load Model/Scalers
@@ -517,7 +520,7 @@ def main():
     f1_name, f2_name = feat_names[f1_idx], feat_names[f2_idx]
     other_indices = [i for i in range(n_features) if i not in [f1_idx, f2_idx]]
 
-    grid_res = 50
+    grid_res = 30
     x1_min, x1_max = X_train_denorm[:, f1_idx].min(), X_train_denorm[:, f1_idx].max()
     x2_min, x2_max = X_train_denorm[:, f2_idx].min(), X_train_denorm[:, f2_idx].max()
     x1_lin = np.linspace(x1_min, x1_max, grid_res)
@@ -591,7 +594,26 @@ def main():
 
     Z_opt = scaler_y.inverse_transform(Z_opt_norm.reshape(-1, 1)).reshape(grid_res, grid_res)
 
-    # --- Plotting ---
+    # --- Plotting: Fixed at mean
+    fig, ax = plt.subplots(figsize=(5, 4))
+    cp = ax.contourf(X1_mesh, X2_mesh, Z_mean, levels=30, cmap='RdYlBu_r', alpha=0.8)
+    fig.colorbar(cp, ax=ax, label=name_y)
+    if data_on_contour:
+        ax.scatter(X_train_denorm[:, f1_idx], X_train_denorm[:, f2_idx], c='black', s=8, alpha=0.2)
+
+    # Inflection Overlays
+    for ip in f1_ips: ax.axvline(x=ip, color='green', linestyle='--', alpha=0.5, lw=1.2)
+    for ip in f2_ips: ax.axhline(y=ip, color='green', linestyle='--', alpha=0.5, lw=1.2)
+
+    ax.set_title(f"KAN Prediction Surface")
+    ax.set_xlabel(f1_name)
+    ax.set_ylabel(f2_name)
+
+    plt.tight_layout()
+    triple_plot_path = os.path.join(savepath, f"{data_name}_contour_inflection_map.png")
+    plt.savefig(triple_plot_path, dpi=300)
+
+    # --- Plotting: Three cases
     fig, axs = plt.subplots(1, 3, figsize=(24, 7))
     titles = ["Fixed at Mean", "Data Manifold (NN)", "Optimized (Minima)"]
     z_data_list = [Z_mean, Z_man, Z_opt]
@@ -599,7 +621,8 @@ def main():
     for ax, Z_plot, title in zip(axs, z_data_list, titles):
         cp = ax.contourf(X1_mesh, X2_mesh, Z_plot, levels=30, cmap='RdYlBu_r', alpha=0.8)
         fig.colorbar(cp, ax=ax, label=name_y)
-        ax.scatter(X_train_denorm[:, f1_idx], X_train_denorm[:, f2_idx], c='black', s=8, alpha=0.2)
+        if data_on_contour:
+            ax.scatter(X_train_denorm[:, f1_idx], X_train_denorm[:, f2_idx], c='black', s=8, alpha=0.2)
 
         # Inflection Overlays
         for ip in f1_ips: ax.axvline(x=ip, color='green', linestyle='--', alpha=0.5, lw=1.2)
@@ -669,7 +692,8 @@ def main():
     im = ax_range.pcolormesh(X1_mesh, X2_mesh, Z_attr_range, cmap='YlOrRd', shading='auto', alpha=0.8)
 
     # Overlay original data points
-    ax_range.scatter(X_train_denorm[:, f1_idx], X_train_denorm[:, f2_idx], c='black', s=8, alpha=0.2)
+    if data_on_contour:
+        ax_range.scatter(X_train_denorm[:, f1_idx], X_train_denorm[:, f2_idx], c='black', s=8, alpha=0.2)
 
     # Overlay inflection boundaries
     for ip in f1_ips: ax_range.axvline(x=ip, color='blue', linestyle='--', alpha=0.4, lw=1.5)
@@ -797,7 +821,7 @@ def main():
     Z_log_ratio = Z_log_ratio_flat.reshape(grid_res, grid_res)
 
     # 4. Plotting
-    fig_log, ax_log = plt.subplots(figsize=(12, 8))
+    fig_log, ax_log = plt.subplots(figsize=(5, 4))
 
     # Use a diverging colormap (RdBu_r) centered at 0
     limit = np.max(np.abs(Z_log_ratio))
@@ -809,7 +833,8 @@ def main():
     cbar.set_label(f'$\log_{{10}}$ Ratio: ({g1_name} / {g2_name})', rotation=270, labelpad=20)
 
     # Overlay points and boundaries
-    ax_log.scatter(X_train_denorm[:, f1_idx], X_train_denorm[:, f2_idx],
+    if data_on_contour:
+        ax_log.scatter(X_train_denorm[:, f1_idx], X_train_denorm[:, f2_idx],
                    c='black', s=10, alpha=0.3, label='Data Points')
 
     for ip in f1_ips:
@@ -817,7 +842,7 @@ def main():
     for ip in f2_ips:
         ax_log.axhline(y=ip, color='black', linestyle='--', alpha=0.4, lw=1.2)
 
-    ax_log.set_title(f"Log-Ratio Dominance Map\nRed: {g1_name} Dominant | Blue: {g2_name} Dominant | White: Neutral")
+    ax_log.set_title(f"Log-Ratio Dominance Map\nRed: {g1_name} | Blue: {g2_name}")
     ax_log.set_xlabel(f1_name)
     ax_log.set_ylabel(f2_name)
 
@@ -828,9 +853,6 @@ def main():
     plt.tight_layout()
     log_ratio_path = os.path.join(savepath, f"{data_name}_log_ratio_map.png")
     plt.savefig(log_ratio_path, dpi=300)
-    plt.show()
-
-    print(f"✅ Log-ratio map saved to: {log_ratio_path}")
 
 
 if __name__ == "__main__":
