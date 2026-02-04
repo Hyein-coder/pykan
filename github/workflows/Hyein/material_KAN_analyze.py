@@ -36,7 +36,7 @@ def main():
     parser = argparse.ArgumentParser(description="Run SHAP and Sobol analysis for a specific dataset.")
     parser.add_argument("data_name", type=str, nargs='?', default="CO2HPx10",
                         help="The name of the dataset")
-    parser.add_argument("data_on_contour", type=bool, nargs='?', default=False,
+    parser.add_argument("data_on_contour", type=bool, nargs='?', default=True,
                         help="Should draw data on contour plots?")
 
     args = parser.parse_args()
@@ -507,12 +507,15 @@ def main():
     print(f"📊 Colored Input-Output plots saved to: {plot_path_io}")
 
     # ==========================================
-    # 9. Triple Contour Analysis: Mean vs Manifold vs Optimized
+    # 9. Contour Analysis
     # ==========================================
     from sklearn.neighbors import NearestNeighbors
     import torch.optim as optim
 
-    print("\n🗺️ Generating Triple-Mode Contour Analysis...")
+    # Toggle this to False if you want to skip optimization entirely
+    RUN_ADVANCED_ANALYSIS = True
+
+    print("\n🗺️ Generating Contour Analysis...")
 
     # 1. Setup Features & Grid
     top_2_idx = np.argsort(scores_tot)[-2:][::-1]
@@ -540,7 +543,7 @@ def main():
     f1_ips = get_denorm_ips(f1_idx)
     f2_ips = get_denorm_ips(f2_idx)
 
-    # --- MODE 1: Fixed at Mean ---
+    # --- MODE 1: Fixed at Mean (Always Run) ---
     mean_input_denorm = np.tile(np.mean(X_train_denorm, axis=0), (grid_res ** 2, 1))
     mean_input_denorm[:, f1_idx] = grid_coords_denorm[:, 0]
     mean_input_denorm[:, f2_idx] = grid_coords_denorm[:, 1]
@@ -549,93 +552,96 @@ def main():
         in_norm = torch.tensor(scaler_X.transform(mean_input_denorm), dtype=torch.float32, device=device)
         Z_mean = scaler_y.inverse_transform(model(in_norm).cpu().numpy()).reshape(grid_res, grid_res)
 
-    # --- MODE 2: Data Manifold (Nearest Neighbors) ---
-    nn = NearestNeighbors(n_neighbors=5).fit(X_train_denorm[:, [f1_idx, f2_idx]])
-    _, nn_idx = nn.kneighbors(grid_coords_denorm)
-    others_man = np.mean(X_train_denorm[nn_idx, :][:, :, other_indices], axis=1)
-
-    man_input_denorm = np.zeros((grid_res ** 2, n_features))
-    man_input_denorm[:, f1_idx] = grid_coords_denorm[:, 0]
-    man_input_denorm[:, f2_idx] = grid_coords_denorm[:, 1]
-    man_input_denorm[:, other_indices] = others_man
-
-    with torch.no_grad():
-        in_norm = torch.tensor(scaler_X.transform(man_input_denorm), dtype=torch.float32, device=device)
-        Z_man = scaler_y.inverse_transform(model(in_norm).cpu().numpy()).reshape(grid_res, grid_res)
-
-    # --- MODE 3: L-BFGS Optimization (Minimization) ---
-    Z_opt_norm = np.zeros((grid_res, grid_res))
-    X_med_norm = np.median(scaler_X.transform(X_train_denorm), axis=0)
-
-    for i in range(grid_res):
-        v1_n = (x1_lin - x1_min) / (x1_max - x1_min + 1e-9)
-        v2_n = (x2_lin[i] - x2_min) / (x2_max - x2_min + 1e-9)
-        x_others = torch.tensor(np.tile(X_med_norm[other_indices], (grid_res, 1)),
-                                dtype=torch.float32, device=device, requires_grad=True)
-
-        opt = optim.LBFGS([x_others], lr=0.1, max_iter=20)
-
-        def closure():
-            opt.zero_grad()
-            row_in = torch.zeros((grid_res, n_features), device=device)
-            row_in[:, f1_idx], row_in[:, f2_idx] = torch.tensor(v1_n, device=device).float(), v2_n
-            row_in[:, other_indices] = x_others
-            loss = model(row_in).sum()
-            loss.backward()
-            return loss
-
-        opt.step(closure)
-
-        with torch.no_grad():
-            row_in = torch.zeros((grid_res, n_features), device=device)
-            row_in[:, f1_idx], row_in[:, f2_idx] = torch.tensor(v1_n, device=device).float(), v2_n
-            row_in[:, other_indices] = x_others
-            Z_opt_norm[i, :] = model(row_in).cpu().numpy().flatten()
-
-    Z_opt = scaler_y.inverse_transform(Z_opt_norm.reshape(-1, 1)).reshape(grid_res, grid_res)
-
-    # --- Plotting: Fixed at mean
-    fig, ax = plt.subplots(figsize=(5, 4))
+    # --- Primary Plotting: Single Case (Always saved) ---
+    fig, ax = plt.subplots(figsize=(6, 5))
     cp = ax.contourf(X1_mesh, X2_mesh, Z_mean, levels=30, cmap='RdYlBu_r', alpha=0.8)
     fig.colorbar(cp, ax=ax, label=name_y)
     if data_on_contour:
         ax.scatter(X_train_denorm[:, f1_idx], X_train_denorm[:, f2_idx], c='black', s=8, alpha=0.2)
 
-    # Inflection Overlays
     for ip in f1_ips: ax.axvline(x=ip, color='green', linestyle='--', alpha=0.5, lw=1.2)
     for ip in f2_ips: ax.axhline(y=ip, color='green', linestyle='--', alpha=0.5, lw=1.2)
 
-    ax.set_title(f"KAN Prediction Surface")
+    ax.set_title(f"KAN Prediction Surface (Mean-Fixed)\n{f1_name} vs {f2_name}")
     ax.set_xlabel(f1_name)
     ax.set_ylabel(f2_name)
-
     plt.tight_layout()
-    triple_plot_path = os.path.join(savepath, f"{data_name}_contour_inflection_map.png")
-    plt.savefig(triple_plot_path, dpi=300)
+    single_plot_path = os.path.join(savepath, f"{data_name}_contour_mean_fixed.png")
+    plt.savefig(single_plot_path, dpi=300)
+    print(f"✅ Single contour saved to {single_plot_path}")
 
-    # --- Plotting: Three cases
-    fig, axs = plt.subplots(1, 3, figsize=(24, 7))
-    titles = ["Fixed at Mean", "Data Manifold (NN)", "Optimized (Minima)"]
-    z_data_list = [Z_mean, Z_man, Z_opt]
+    # --- ADVANCED ANALYSIS (Modes 2 & 3) ---
+    if RUN_ADVANCED_ANALYSIS:
+        try:
+            print("🚀 Starting Manifold and Optimization Analysis...")
 
-    for ax, Z_plot, title in zip(axs, z_data_list, titles):
-        cp = ax.contourf(X1_mesh, X2_mesh, Z_plot, levels=30, cmap='RdYlBu_r', alpha=0.8)
-        fig.colorbar(cp, ax=ax, label=name_y)
-        if data_on_contour:
-            ax.scatter(X_train_denorm[:, f1_idx], X_train_denorm[:, f2_idx], c='black', s=8, alpha=0.2)
+            # --- MODE 2: Data Manifold ---
+            nn = NearestNeighbors(n_neighbors=5).fit(X_train_denorm[:, [f1_idx, f2_idx]])
+            _, nn_idx = nn.kneighbors(grid_coords_denorm)
+            others_man = np.mean(X_train_denorm[nn_idx, :][:, :, other_indices], axis=1)
 
-        # Inflection Overlays
-        for ip in f1_ips: ax.axvline(x=ip, color='green', linestyle='--', alpha=0.5, lw=1.2)
-        for ip in f2_ips: ax.axhline(y=ip, color='green', linestyle='--', alpha=0.5, lw=1.2)
+            man_input_denorm = np.zeros((grid_res ** 2, n_features))
+            man_input_denorm[:, f1_idx] = grid_coords_denorm[:, 0]
+            man_input_denorm[:, f2_idx] = grid_coords_denorm[:, 1]
+            man_input_denorm[:, other_indices] = others_man
 
-        ax.set_title(f"{title}\n{f1_name} vs {f2_name}")
-        ax.set_xlabel(f1_name)
-        ax.set_ylabel(f2_name)
+            with torch.no_grad():
+                in_norm_man = torch.tensor(scaler_X.transform(man_input_denorm), dtype=torch.float32, device=device)
+                Z_man = scaler_y.inverse_transform(model(in_norm_man).cpu().numpy()).reshape(grid_res, grid_res)
 
-    plt.tight_layout()
-    triple_plot_path = os.path.join(savepath, f"{data_name}_triple_contour_analysis.png")
-    plt.savefig(triple_plot_path, dpi=300)
-    # plt.show()
+            # --- MODE 3: Optimization ---
+            Z_opt_norm = np.zeros((grid_res, grid_res))
+            X_med_norm = np.median(scaler_X.transform(X_train_denorm), axis=0)
+
+            for i in range(grid_res):
+                v1_n = (x1_lin - x1_min) / (x1_max - x1_min + 1e-9)
+                v2_n = (x2_lin[i] - x2_min) / (x2_max - x2_min + 1e-9)
+                x_others = torch.tensor(np.tile(X_med_norm[other_indices], (grid_res, 1)),
+                                        dtype=torch.float32, device=device, requires_grad=True)
+
+                opt = optim.LBFGS([x_others], lr=0.1, max_iter=20)
+
+                def closure():
+                    opt.zero_grad()
+                    row_in = torch.zeros((grid_res, n_features), device=device)
+                    row_in[:, f1_idx] = torch.tensor(v1_n, device=device).float()
+                    row_in[:, f2_idx] = v2_n
+                    row_in[:, other_indices] = x_others
+                    loss = model(row_in).sum()
+                    loss.backward()
+                    return loss
+
+                opt.step(closure)
+
+                with torch.no_grad():
+                    row_in = torch.zeros((grid_res, n_features), device=device)
+                    row_in[:, f1_idx] = torch.tensor(v1_n, device=device).float()
+                    row_in[:, f2_idx] = v2_n
+                    row_in[:, other_indices] = x_others
+                    Z_opt_norm[i, :] = model(row_in).cpu().numpy().flatten()
+
+            Z_opt = scaler_y.inverse_transform(Z_opt_norm.reshape(-1, 1)).reshape(grid_res, grid_res)
+
+            # --- Triple Plotting ---
+            fig, axs = plt.subplots(1, 3, figsize=(24, 7))
+            titles = ["Fixed at Mean", "Data Manifold (NN)", "Optimized (Minima)"]
+            z_data_list = [Z_mean, Z_man, Z_opt]
+
+            for ax_t, Z_plot, title in zip(axs, z_data_list, titles):
+                cp = ax_t.contourf(X1_mesh, X2_mesh, Z_plot, levels=30, cmap='RdYlBu_r', alpha=0.8)
+                fig.colorbar(cp, ax=ax_t, label=name_y)
+                ax_t.scatter(X_train_denorm[:, f1_idx], X_train_denorm[:, f2_idx], c='black', s=8, alpha=0.2)
+                for ip in f1_ips: ax_t.axvline(x=ip, color='green', linestyle='--', alpha=0.5, lw=1.2)
+                for ip in f2_ips: ax_t.axhline(y=ip, color='green', linestyle='--', alpha=0.5, lw=1.2)
+                ax_t.set_title(f"{title}\n{f1_name} vs {f2_name}")
+
+            plt.tight_layout()
+            plt.savefig(os.path.join(savepath, f"{data_name}_triple_contour_analysis.png"), dpi=300)
+            print("✅ Triple contour analysis complete.")
+
+        except Exception as e:
+            print(f"⚠️ Advanced analysis failed or timed out: {e}")
+            print("⏭️ Skipping to next step with Mode 1 results only.")
 
     # ==========================================
     # 10. Range-Based Attribution Heatmap (Fixed)
@@ -650,7 +656,7 @@ def main():
 
     # We need to classify each grid point into one of your 'final_masks'
     # 1. Prepare the grid in normalized space (same as the model sees)
-    grid_coords_norm = scaler_X.transform(man_input_denorm)
+    grid_coords_norm = scaler_X.transform(mean_input_denorm)
     grid_coords_norm_torch = torch.tensor(grid_coords_norm, dtype=torch.float32, device=device)
 
     # 2. Initialize the heatmap array
@@ -802,7 +808,7 @@ def main():
 
     # 3. Map to Grid
     Z_log_ratio_flat = np.zeros(grid_res ** 2)
-    grid_coords_norm_torch = torch.tensor(scaler_X.transform(man_input_denorm),
+    grid_coords_norm_torch = torch.tensor(scaler_X.transform(mean_input_denorm),
                                           dtype=torch.float32, device=device)
 
     for i, label in enumerate(final_labels):
