@@ -88,8 +88,7 @@ class KANRegressor(BaseEstimator, RegressorMixin):
 
         # [MODIFIED] Determine width based on n_layers (depth)
         # n_layers=2 means [nx, nx, 1]
-        #TODO: 이게 잘 안 되면, nx를 2배로 늘려서 해보기
-        width = [self._n_features] * self.n_layers + [1]
+        width = [self._n_features] + [self._n_features * 2 + 1] * (self.n_layers - 1) + [1]
 
         # Initialize KAN
         self.model = MultKAN(width=width, grid=self.grid, k=self.k,
@@ -239,7 +238,7 @@ def main():
     # 5. Hyperparameter Tuning
     # ==========================================
     param_distributions = {
-        'n_layers': [1, 2],
+        'n_layers': [2],
         'grid': [3, 5, 10],
         'k': [3],
         'steps': [20, 50],
