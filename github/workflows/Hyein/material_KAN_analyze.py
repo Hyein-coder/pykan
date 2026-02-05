@@ -34,7 +34,7 @@ from kan.experiments.analysis import find_indices_sign_revert
 
 def main():
     parser = argparse.ArgumentParser(description="Run SHAP and Sobol analysis for a specific dataset.")
-    parser.add_argument("data_name", type=str, nargs='?', default="AgNP",
+    parser.add_argument("data_name", type=str, nargs='?', default="CO2HEx10",
                         help="The name of the dataset")
     parser.add_argument("data_on_contour", type=bool, nargs='?', default=True,
                         help="Should draw data on contour plots?")
@@ -525,8 +525,14 @@ def main():
     other_indices = [i for i in range(n_features) if i not in [f1_idx, f2_idx]]
 
     grid_res = 30
-    x1_min, x1_max = X_train_denorm[:, f1_idx].min(), X_train_denorm[:, f1_idx].max()
-    x2_min, x2_max = X_train_denorm[:, f2_idx].min(), X_train_denorm[:, f2_idx].max()
+
+    # x1_min, x1_max = X_train_denorm[:, f1_idx].min(), X_train_denorm[:, f1_idx].max()
+    # x2_min, x2_max = X_train_denorm[:, f2_idx].min(), X_train_denorm[:, f2_idx].max()
+    X_train_max_denorm = scaler_X.inverse_transform([[0.9] * ni])
+    X_train_min_denorm = scaler_X.inverse_transform([[0.1] * ni])
+    x1_max, x2_max = X_train_max_denorm[0, f1_idx], X_train_max_denorm[0, f2_idx]
+    x1_min, x2_min = X_train_min_denorm[0, f1_idx], X_train_min_denorm[0, f2_idx]
+
     x1_lin = np.linspace(x1_min, x1_max, grid_res)
     x2_lin = np.linspace(x2_min, x2_max, grid_res)
     X1_mesh, X2_mesh = np.meshgrid(x1_lin, x2_lin)
@@ -554,11 +560,13 @@ def main():
         Z_mean = scaler_y.inverse_transform(model(in_norm).cpu().numpy()).reshape(grid_res, grid_res)
 
     # --- Primary Plotting: Single Case (Always saved) ---
-    fig, ax = plt.subplots(figsize=(6, 5))
+    fig, ax = plt.subplots(figsize=(5, 4))
     cp = ax.contourf(X1_mesh, X2_mesh, Z_mean, levels=30, cmap='RdYlBu_r', alpha=0.8)
     fig.colorbar(cp, ax=ax, label=name_y)
     if data_on_contour:
         ax.scatter(X_train_denorm[:, f1_idx], X_train_denorm[:, f2_idx], c='black', s=8, alpha=0.2)
+        ax.set_xlim([x1_min, x1_max])
+        ax.set_ylim([x2_min, x2_max])
 
     for ip in f1_ips: ax.axvline(x=ip, color='green', linestyle='--', alpha=0.5, lw=1.2)
     for ip in f2_ips: ax.axhline(y=ip, color='green', linestyle='--', alpha=0.5, lw=1.2)
@@ -701,6 +709,8 @@ def main():
     # Overlay original data points
     if data_on_contour:
         ax_range.scatter(X_train_denorm[:, f1_idx], X_train_denorm[:, f2_idx], c='black', s=8, alpha=0.2)
+        ax_range.set_xlim([x1_min, x1_max])
+        ax_range.set_ylim([x2_min, x2_max])
 
     # Overlay inflection boundaries
     for ip in f1_ips: ax_range.axvline(x=ip, color='blue', linestyle='--', alpha=0.4, lw=1.5)
@@ -843,6 +853,8 @@ def main():
     if data_on_contour:
         ax_log.scatter(X_train_denorm[:, f1_idx], X_train_denorm[:, f2_idx],
                    c='black', s=10, alpha=0.3, label='Data Points')
+        ax_log.set_xlim([x1_min, x1_max])
+        ax_log.set_ylim([x2_min, x2_max])
 
     for ip in f1_ips:
         ax_log.axvline(x=ip, color='black', linestyle='--', alpha=0.4, lw=1.2)
