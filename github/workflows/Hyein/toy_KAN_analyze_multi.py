@@ -142,7 +142,7 @@ def main():
     # Save & Show
     plot_path_io = os.path.join(savepath, f"{data_name}_input_vs_output.png")
     plt.savefig(plot_path_io, dpi=300)
-    plt.show()
+    # plt.show()
 
     # Run forward pass once to populate internals (splines, activations)
     model.forward(dataset['train_input'])
@@ -239,7 +239,7 @@ def main():
     plt.suptitle(f"Layer {l} Activation Analysis: {data_name}", fontsize=12)
     plot_path_act = os.path.join(savepath, f"{data_name}_activations_L{l}.png")
     plt.savefig(plot_path_act)
-    plt.show()
+    # plt.show()
     print(f"📊 Activation analysis saved to: {plot_path_act}")
 
     # ==========================================
@@ -383,7 +383,7 @@ def main():
 
     plot_path_score = os.path.join(savepath, f"{data_name}_scores_interval_combined.png")
     plt.savefig(plot_path_score)
-    plt.show()
+    # plt.show()
     print(f"📊 Range-based score plot saved to: {plot_path_score}")
 
 

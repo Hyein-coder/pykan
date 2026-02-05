@@ -172,7 +172,7 @@ STANDARD_ZOO = {
         "mask_division": []
     },
     "multiplication": {
-        "func": lambda x: x[0] **2 * x[1],
+        "func": lambda x: x[0] **4 * x[1],
         "bounds": [[-1, 1], [-1, 1]],
         "names": ["Square (x0)", "Linear (x1)"],
         "mask_idx": None,
