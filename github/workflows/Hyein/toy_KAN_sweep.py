@@ -42,6 +42,7 @@ class KANRegressor(BaseEstimator, RegressorMixin):
                  k=3,
                  lamb=0.01,
                  lamb_coef=0.1,
+                 lamb_coefdiff=0.,
                  lamb_entropy=0.1,
                  lr=0.1,
                  steps=20,
@@ -61,6 +62,7 @@ class KANRegressor(BaseEstimator, RegressorMixin):
         self.k = k
         self.lamb = lamb
         self.lamb_coef = lamb_coef
+        self.lamb_coefdiff = lamb_coefdiff
         self.lamb_entropy = lamb_entropy
         self.lr = lr
         self.steps = steps
@@ -117,7 +119,7 @@ class KANRegressor(BaseEstimator, RegressorMixin):
             self.model = self.model.refine(self.grid)
             self.model.fit(dataset, opt='LBFGS', steps=self.steps,
                            lamb=self.lamb, lamb_coef=self.lamb_coef, lamb_entropy=self.lamb_entropy,
-                           lr=self.lr)
+                           lr=self.lr, lamb_coefdiff=self.lamb_coefdiff)
 
         if self.pruning_enabled:
             try:
@@ -324,7 +326,7 @@ def main():
 
     plot_path = os.path.join(savepath, f"{data_name}_parity_plot.png")
     plt.savefig(plot_path, dpi=300)
-    plt.show()
+    # plt.show()
     print(f"📊 Parity plot saved to: {plot_path}")
 
     best_kan_model.forward(best_estimator.dataset['train_input'])
@@ -344,7 +346,7 @@ def main():
     plot_path_tot = os.path.join(savepath, f"{data_name}_scores_global.png")
     plt.tight_layout()
     plt.savefig(plot_path_tot, dpi=300)
-    plt.show()
+    # plt.show()
 
     # Ensure scores_tot is a flat 1D array
     if len(scores_tot.shape) > 1:
