@@ -34,7 +34,7 @@ from kan.experiments.analysis import find_indices_sign_revert
 
 def main():
     parser = argparse.ArgumentParser(description="Run SHAP and Sobol analysis for a specific dataset.")
-    parser.add_argument("data_name", type=str, nargs='?', default="CO2HPx10",
+    parser.add_argument("data_name", type=str, nargs='?', default="AgNP",
                         help="The name of the dataset")
     parser.add_argument("data_on_contour", type=bool, nargs='?', default=True,
                         help="Should draw data on contour plots?")
@@ -183,12 +183,13 @@ def main():
             slope = [x - y for x, y in zip(coef_node[1:], coef_node[:-1])]
             slope_2nd = [(x - y)*10 for x, y in zip(slope[1:], slope[:-1])]
             bar_width = (act.grid[i, 1:] - act.grid[i, :-1]).mean().item() / 2  # Approx width
+            knot_points = act.grid[i, model.k-1:-2].cpu()
 
             # Plot Slope
-            ax2.bar(act.grid[i, spline_radius:-(spline_radius + 1)].cpu(), slope,
+            ax2.bar(knot_points[:-1], slope,
                     width=bar_width, align='center', color='r', alpha=0.3, label='Slope')
             if depth == 1:
-                ax2.bar(act.grid[i, spline_radius+1:-(spline_radius + 1)] + bar_width/3, slope_2nd,
+                ax2.bar(knot_points[1:-1] + bar_width/3, slope_2nd,
                         width=bar_width, align='edge', color='g', alpha=0.3, label='2nd Slope')
 
             if depth == 1:
@@ -201,7 +202,7 @@ def main():
 
             if idx_revert:
                 for ir in idx_revert:
-                    inflection_val = act.grid[i, spline_radius + ir].item()
+                    inflection_val = knot_points[ir].item()
                     feature_inflections_all.append(inflection_val)
                     ax.axvline(x=inflection_val, color='g', linestyle='--', alpha=0.7)
 
