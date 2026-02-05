@@ -14,11 +14,11 @@ from github.workflows.Hyein.toy_8_convex_factory import CONVEX_ZOO
 # ==========================================
 # 0. Helper Functions
 # ==========================================
-def plot_custom_bars(names, values, title, ylabel, savepath, color="skyblue", show=True):
+def plot_custom_bars(names, values, title, ylabel, savepath, color="skyblue", show=False):
     """
     Helper function to draw vertical bar plots.
     """
-    fig, ax = plt.subplots(figsize=(max(6, len(names) * 1.2), 6))
+    fig, ax = plt.subplots(figsize=(max(4, len(names) * 1.2), 5))
 
     # Create Vertical Bars
     bars = ax.bar(names, values, color=color, edgecolor='black', width=0.7)

@@ -86,13 +86,53 @@ def main():
     X_test_norm = scaler_X.transform(X_test_denorm)
 
     # ==========================================
+    # 2.5 Parity Plot (Actual vs Predicted)
+    # ==========================================
+    from sklearn.metrics import r2_score
+
+    # Predict on test set
+    y_pred_norm = loaded_model.predict(X_test_norm)
+
+    # Inverse transform to original units
+    y_test_orig = scaler_y.inverse_transform(y_test_denorm.reshape(-1, 1)).flatten()
+    y_pred_orig = scaler_y.inverse_transform(y_pred_norm.reshape(-1, 1)).flatten()
+
+    # Calculate R2
+    r2 = r2_score(y_test_orig, y_pred_orig)
+
+    # Plotting
+    plt.figure(figsize=(4, 4))
+    plt.scatter(y_test_orig, y_pred_orig, alpha=0.6, color='skyblue', edgecolors='k', s=30, label='Test Data')
+
+    # Add Identity Line (Perfect Prediction)
+    min_val = min(min(y_test_orig), min(y_pred_orig))
+    max_val = max(max(y_test_orig), max(y_pred_orig))
+    plt.plot([min_val, max_val], [min_val, max_val], 'r--', lw=2, label='Perfect Fit')
+
+    plt.xlabel(f'Actual {name_y}')
+    plt.ylabel(f'Predicted {name_y}')
+    plt.title(f'Parity Plot: {data_name} ($R^2 = {r2:.3f}$)')
+    plt.legend()
+    plt.grid(True, linestyle='--', alpha=0.7)
+
+    # Save the plot
+    parity_path = os.path.join(savepath, f"{data_name}_mlp_parity_plot.png")
+    plt.savefig(parity_path, dpi=300, bbox_inches='tight')
+    plt.close()
+
+    print(f"✅ Parity plot saved to: {parity_path} (R2: {r2:.4f})")
+
+    # ==========================================
     # 3. SHAP Analysis
     # ==========================================
     num_data = len(X_temp_norm)
     num_shap_sample = 1000
 
-    if num_shap_sample < num_data:
-        X_train_summary = shap.kmeans(X_temp_norm, num_shap_sample)
+    num_unique_rows = np.unique(X_temp_norm, axis=0).shape[0]
+    n_clusters = min(num_shap_sample, num_unique_rows)
+
+    if n_clusters < num_data:
+        X_train_summary = shap.kmeans(X_temp_norm, n_clusters)
     else:
         X_train_summary = X_temp_norm
 
@@ -126,14 +166,18 @@ def main():
     )
 
     # Plot 2: Dot Plot
-    plt.figure()
     shap.summary_plot(
         shap_values,
         X_test_norm,
         feature_names=feature_names,
-        show=True
+        show=False  # <--- Crucial change
     )
-    plt.savefig(os.path.join(savepath, f'{data_name}_shap_dot_plot.png'), dpi=300, bbox_inches='tight')
+
+    # 3. Save the figure BEFORE calling plt.show() or plt.close()
+    save_file = os.path.join(savepath, f'{data_name}_shap_dot_plot.png')
+    plt.savefig(save_file, dpi=300, bbox_inches='tight')
+
+    # 4. Now you can close it to free up memory
     plt.close()
 
     # ==========================================

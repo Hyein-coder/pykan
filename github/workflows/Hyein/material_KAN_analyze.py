@@ -34,9 +34,9 @@ from kan.experiments.analysis import find_indices_sign_revert
 
 def main():
     parser = argparse.ArgumentParser(description="Run SHAP and Sobol analysis for a specific dataset.")
-    parser.add_argument("data_name", type=str, nargs='?', default="CO2HEx10",
+    parser.add_argument("data_name", type=str, nargs='?', default="CO2HPx10",
                         help="The name of the dataset")
-    parser.add_argument("data_on_contour", type=bool, nargs='?', default=True,
+    parser.add_argument("data_on_contour", type=bool, nargs='?', default=False,
                         help="Should draw data on contour plots?")
 
     args = parser.parse_args()
@@ -127,7 +127,7 @@ def main():
     n_cols = 2
     n_rows = (n_features + n_cols - 1) // n_cols
 
-    fig_io, axs_io = plt.subplots(n_rows, n_cols, figsize=(6 * n_cols, 5 * n_rows), constrained_layout=True)
+    fig_io, axs_io = plt.subplots(n_rows, n_cols, figsize=(4 * n_cols, 3 * n_rows), constrained_layout=True)
     axs_io = axs_io.flatten()
 
     for i in range(n_features):
@@ -137,7 +137,7 @@ def main():
         feature_label = feat_names[i] if feat_names and i < len(feat_names) else f"Feature {i}"
         ax.set_xlabel(feature_label)
         ax.set_ylabel("Output y")
-        ax.set_title(f"{feature_label} vs Output")
+        # ax.set_title(f"{feature_label} vs Output")
         ax.legend(loc='upper left')
         ax.grid(True, alpha=0.3)
 
@@ -386,21 +386,68 @@ def main():
     print(f"✅ Range-based scores saved to: {range_score_csv_path}")
 
     # ==========================================
+    # 5.9. NEW: Save Individual Plots for Each Range
+    # ==========================================
+    print(f"⏳ Generating {n_intervals} individual range plots...")
+
+    for i in range(n_intervals):
+        # Create a fresh figure for each range
+        fig_sep, ax_sep = plt.subplots(figsize=(4, 4))
+
+        # Get scores for this specific interval
+        current_interval_scores = scores_interval_norm[i]
+        x_pos_sep = np.arange(n_features_plot)
+
+        # Draw bars - using a distinct color map for clarity
+        colors = plt.cm.get_cmap('tab20', n_features_plot)
+        ax_sep.bar(x_pos_sep, current_interval_scores, width=0.6,
+                   color=[colors(j) for j in range(n_features_plot)],
+                   edgecolor='black', alpha=0.8)
+
+        # Formatting
+        ax_sep.set_xticks(x_pos_sep)
+        ax_sep.set_xticklabels(feat_names, rotation=45, ha='right', fontsize=9)
+        ax_sep.set_ylabel("Normalized Attribution Score")
+
+        current_label = final_labels[i]
+        ax_sep.set_title(f"Feature Importance\nRange: {current_label}", fontsize=11)
+
+        # Set Y-axis limit (using the global max for consistency across all plots)
+        ax_sep.set_ylim(0, max_score * 1.2)
+        ax_sep.grid(axis='y', linestyle='--', alpha=0.3)
+
+        plt.tight_layout()
+
+        # Create a safe filename (removes spaces and special characters)
+        clean_label = "".join([c if c.isalnum() else "_" for c in current_label])
+        indiv_plot_name = f"{data_name}_score_range_{i}_{clean_label}.png"
+        indiv_plot_path = os.path.join(savepath, indiv_plot_name)
+
+        plt.savefig(indiv_plot_path, dpi=300)
+        plt.close(fig_sep)  # Close to prevent memory accumulation
+
+    print(f"✅ All individual range plots saved in: {savepath}")
+
+    # ==========================================
     # 6. Global Scores
     # ==========================================
-    fig_tot, ax_tot = plt.subplots(figsize=(5,5))
+    fig_tot, ax_tot = plt.subplots(figsize=(4, 4))
 
     positions = range(len(scores_tot))
     bars = ax_tot.bar(positions, scores_tot, color='skyblue', edgecolor='black')
-    ax_tot.bar_label(bars, fmt='%.2f', padding=3)
+    ax_tot.bar_label(bars, fmt='%.2f', padding=3, fontsize=8)
     ax_tot.set_xticks(list(positions))  # Set positions first
-    ax_tot.set_xticklabels(feat_names, rotation=15, ha='center')  # Then set text labels
-    ax_tot.set_ylabel("Global Attribution Score")
+    ax_tot.set_xticklabels(feat_names, rotation=45, ha='center', fontsize=9)  # Then set text labels
+    ax_tot.set_ylabel("Global Attribution Score", fontsize=12)
     ax_tot.set_title(f"Feature Importance: {data_name}")
+
+    # Adjust Y-limit
+    if len(scores_tot) > 0:
+        ax.set_ylim(0, max(scores_tot) * 1.15)
+    plt.tight_layout()
 
     # Save & Show
     plot_path_tot = os.path.join(savepath, f"{data_name}_scores_global.png")
-    plt.tight_layout()
     plt.savefig(plot_path_tot, dpi=300)
     # plt.show()
 
@@ -424,28 +471,29 @@ def main():
     # 7. Parity Plot
     # ==========================================
 
-    # y_pred_test_norm = model.predict(dataset['test_input'])
-    # r2_test = r2_score(y_test_norm, y_pred_test_norm)
-    #
-    # plt.figure(figsize=(6, 6))
-    # y_pred_test = scaler_y.inverse_transform(y_pred_test_norm.reshape(1, -1))
-    # plt.scatter(y_test_denorm, y_pred_test, alpha=0.6, edgecolors='k', s=30, label='Test Data')
-    #
-    # # Perfect fit line
-    # min_val = min(y_test_denorm.min(), y_pred_test.min())
-    # max_val = max(y_test_denorm.max(), y_pred_test.max())
-    # plt.plot([min_val, max_val], [min_val, max_val], 'r--', lw=2, label='Perfect Fit')
-    #
-    # plt.title(f"Parity Plot: {data_name} (R2={r2_test:.4f})")
-    # plt.xlabel("Actual Value")
-    # plt.ylabel("Predicted Value")
-    # plt.legend()
-    # plt.grid(True, linestyle='--', alpha=0.5)
-    #
-    # plot_path = os.path.join(savepath, f"{data_name}_parity_plot.png")
-    # plt.savefig(plot_path, dpi=300)
+    y_pred_test_norm = model.forward(dataset['test_input']).detach().numpy()
+    r2_test = r2_score(y_test_norm, y_pred_test_norm)
+
+    plt.figure(figsize=(4, 4))
+    y_pred_test = scaler_y.inverse_transform(y_pred_test_norm.reshape(1, -1))
+    plt.scatter(y_test_denorm, y_pred_test, alpha=0.6, color='skyblue', edgecolors='k', s=30, label='Test Data')
+
+    # Perfect fit line
+    min_val = min(y_test_denorm.min(), y_pred_test.min())
+    max_val = max(y_test_denorm.max(), y_pred_test.max())
+    plt.plot([min_val, max_val], [min_val, max_val], 'r--', lw=2, label='Perfect Fit')
+
+    plt.title(f"Parity Plot: {data_name} ($R^2 = {r2_test:.3f}$)")
+    plt.xlabel("Actual Value")
+    plt.ylabel("Predicted Value")
+    plt.legend()
+    plt.grid(True, linestyle='--', alpha=0.5)
+    plt.tight_layout()
+
+    plot_path = os.path.join(savepath, f"{data_name}_parity_plot.png")
+    plt.savefig(plot_path, dpi=300)
     # plt.show()
-    # print(f"📊 Parity plot saved to: {plot_path}")
+    print(f"📊 Parity plot saved to: {plot_path}")
 
     # ==========================================
     # 8. Plot Input vs Output (Colored by Combined Range)
@@ -562,7 +610,8 @@ def main():
     # --- Primary Plotting: Single Case (Always saved) ---
     fig, ax = plt.subplots(figsize=(5, 4))
     cp = ax.contourf(X1_mesh, X2_mesh, Z_mean, levels=30, cmap='RdYlBu_r', alpha=0.8)
-    fig.colorbar(cp, ax=ax, label=name_y)
+    cbar = fig.colorbar(cp, ax=ax, label=name_y)
+    cbar.set_label(name_y, fontsize=12)
     if data_on_contour:
         ax.scatter(X_train_denorm[:, f1_idx], X_train_denorm[:, f2_idx], c='black', s=8, alpha=0.2)
         ax.set_xlim([x1_min, x1_max])
@@ -571,9 +620,9 @@ def main():
     for ip in f1_ips: ax.axvline(x=ip, color='green', linestyle='--', alpha=0.5, lw=1.2)
     for ip in f2_ips: ax.axhline(y=ip, color='green', linestyle='--', alpha=0.5, lw=1.2)
 
-    ax.set_title(f"KAN Prediction Surface (Mean-Fixed)\n{f1_name} vs {f2_name}")
-    ax.set_xlabel(f1_name)
-    ax.set_ylabel(f2_name)
+    # ax.set_title(f"KAN Prediction Surface (Mean-Fixed)\n{f1_name} vs {f2_name}")
+    ax.set_xlabel(f1_name, fontsize=15)
+    ax.set_ylabel(f2_name, fontsize=15)
     plt.tight_layout()
     single_plot_path = os.path.join(savepath, f"{data_name}_contour_mean_fixed.png")
     plt.savefig(single_plot_path, dpi=300)
@@ -651,6 +700,27 @@ def main():
         except Exception as e:
             print(f"⚠️ Advanced analysis failed or timed out: {e}")
             print("⏭️ Skipping to next step with Mode 1 results only.")
+    # ==========================================
+    # [NEW] Save Denormalized IPs to CSV
+    # ==========================================
+    ip_records = []
+
+    # Add IPs for Feature 1
+    for ip in f1_ips:
+        ip_records.append({'Feature': f1_name, 'Inflection_Point': ip, 'Type': 'Primary (f1)'})
+
+    # Add IPs for Feature 2
+    for ip in f2_ips:
+        ip_records.append({'Feature': f2_name, 'Inflection_Point': ip, 'Type': 'Secondary (f2)'})
+
+    # Create DataFrame and Save
+    if ip_records:
+        df_ips = pd.DataFrame(ip_records)
+        ip_csv_path = os.path.join(savepath, f"{data_name}_inflection_points_denorm.csv")
+        df_ips.to_csv(ip_csv_path, index=False)
+        print(f"📄 Denormalized inflection points saved to: {ip_csv_path}")
+    else:
+        print("ℹ️ No valid inflection points found within the 0.05-0.95 range to save.")
 
     # ==========================================
     # 10. Range-Based Attribution Heatmap (Fixed)
@@ -847,7 +917,7 @@ def main():
                            shading='nearest', alpha=0.8)
 
     cbar = plt.colorbar(im, ax=ax_log)
-    cbar.set_label(f'$\log_{{10}}$ Ratio: ({g1_name} / {g2_name})', rotation=270, labelpad=20)
+    cbar.set_label(f'$\log_{{10}}$({g1_name} / {g2_name})', rotation=270, labelpad=20)
 
     # Overlay points and boundaries
     if data_on_contour:
@@ -861,9 +931,9 @@ def main():
     for ip in f2_ips:
         ax_log.axhline(y=ip, color='black', linestyle='--', alpha=0.4, lw=1.2)
 
-    ax_log.set_title(f"Log-Ratio Dominance Map\nRed: {g1_name} | Blue: {g2_name}")
-    ax_log.set_xlabel(f1_name)
-    ax_log.set_ylabel(f2_name)
+    ax_log.set_title(f"Red: {g1_name} | Blue: {g2_name}")
+    ax_log.set_xlabel(f1_name, fontsize=15)
+    ax_log.set_ylabel(f2_name, fontsize=15)
 
     # Fix boundaries
     ax_log.set_xlim(x1_min, x1_max)
