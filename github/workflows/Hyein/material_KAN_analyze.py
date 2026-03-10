@@ -171,6 +171,7 @@ def main():
                             constrained_layout=True)
 
     for i in range(ni):
+        knot_points_actual = act.grid[i, model.k - 1:-2].cpu().detach().numpy()
         feature_inflections_all = []
         for j in range(no):
             ax = axs_eval[j, i]
@@ -178,26 +179,30 @@ def main():
             inputs = model.spline_preacts[l][:, j, i].cpu().detach().numpy()
             outputs = model.spline_postacts[l][:, j, i].cpu().detach().numpy()
             coef_node = coef[i][j]
-            num_knot = act.grid.shape[1]
-            spline_radius = int((num_knot - len(coef_node)) / 2)
+            knot_indices = np.arange(len(coef_node))
 
             rank = np.argsort(inputs)
             ax.plot(inputs[rank], outputs[rank], marker='o', ms=2, lw=1)
 
             slope = [x - y for x, y in zip(coef_node[1:], coef_node[:-1])]
             slope_2nd = [(x - y)*10 for x, y in zip(slope[1:], slope[:-1])]
-            bar_width = (act.grid[i, 1:] - act.grid[i, :-1]).mean().item() / 2  # Approx width
-            knot_points = act.grid[i, model.k-1:-2].cpu()
 
             # Plot Slope
-            ax2.plot(knot_points, coef_node, marker='o', ms=4, lw=1,
+            ax2.plot(knot_indices, coef_node, marker='o', ms=4, lw=1,
                      color='dimgray', markerfacecolor='none', label='Coefficients')
-            ax2.bar(knot_points[:-1], slope,
-                    width=bar_width, align='center', color='r', alpha=0.3, label='Slope')
-            if depth == 1:
-                ax2.bar(knot_points[1:-1] + bar_width/3, slope_2nd,
-                        width=bar_width, align='edge', color='g', alpha=0.3, label='2nd Slope')
 
+            slope = [x - y for x, y in zip(coef_node[1:], coef_node[:-1])]
+            slope_indices = knot_indices[:-1] + 0.5
+            ax2.bar(slope_indices, slope, width=0.6, align='center', color='r', alpha=0.3)
+            if depth == 1:
+                ax2.bar(slope_indices[1:] - 0.2, slope_2nd,
+                        width=0.6, align='center', color='b', alpha=0.3, label='2nd Slope')
+
+            ax2.set_xticks(knot_indices)
+            ax2.set_xticklabels([f"{val:.2f}" for val in knot_points_actual],
+                                rotation=45, fontsize=7)
+
+            # Logic for inflection points
             if depth == 1:
                 idx_revert = find_indices_sign_revert(slope_2nd)
                 idx_revert = [ir + 1 for ir in idx_revert]
@@ -208,9 +213,12 @@ def main():
 
             if idx_revert:
                 for ir in idx_revert:
-                    inflection_val = knot_points[ir].item()
+                    inflection_val = knot_points_actual[ir]
                     feature_inflections_all.append(inflection_val)
-                    ax2.axvline(x=inflection_val, color='g', linestyle='--', alpha=0.7)
+                    # Vlines use the index 'ir' for the sequence plot
+                    ax2.axvline(x=ir, color='g', linestyle='--', alpha=0.5)
+                    # Vlines use the actual value for the activation plot
+                    ax.axvline(x=inflection_val, color='g', linestyle='--', alpha=0.7)
 
             ax.set_title(f'in {i} -> out {j}', fontsize=9)
             ax2.set_title(f'in {i} -> out {j}', fontsize=9)
