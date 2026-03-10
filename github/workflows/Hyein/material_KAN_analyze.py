@@ -34,14 +34,16 @@ from kan.experiments.analysis import find_indices_sign_revert
 
 def main():
     parser = argparse.ArgumentParser(description="Run SHAP and Sobol analysis for a specific dataset.")
-    parser.add_argument("data_name", type=str, nargs='?', default="CO2HPx10",
+    parser.add_argument("data_name", type=str, nargs='?', default="CO2HEx10",
                         help="The name of the dataset")
-    parser.add_argument("data_on_contour", type=bool, nargs='?', default=False,
-                        help="Should draw data on contour plots?")
 
     args = parser.parse_args()
     data_name = args.data_name
-    data_on_contour = args.data_on_contour
+
+    if "CO2RR" in data_name:
+        data_on_contour = False
+    else:
+        data_on_contour = True
 
     # ==========================================
     # 1. Setup Paths & Load Model/Scalers
@@ -163,13 +165,16 @@ def main():
     depth = len(model.act_fun)
     inflection_points_per_input = []
 
-    fig, axs = plt.subplots(nrows=no, ncols=ni, squeeze=False, figsize=(max(2.5 * ni, 6), max(2.5 * no, 3.5)),
+    fig_eval, axs_eval = plt.subplots(nrows=no, ncols=ni, squeeze=False, figsize=(max(2.5 * ni, 6), max(2.5 * no, 3.5)),
+                            constrained_layout=True)
+    fig_spline, axs_spline = plt.subplots(nrows=no, ncols=ni, squeeze=False, figsize=(max(2.5 * ni, 6), max(2.5 * no, 3.5)),
                             constrained_layout=True)
 
     for i in range(ni):
         feature_inflections_all = []
         for j in range(no):
-            ax = axs[j, i]
+            ax = axs_eval[j, i]
+            ax2 = axs_spline[j, i]
             inputs = model.spline_preacts[l][:, j, i].cpu().detach().numpy()
             outputs = model.spline_postacts[l][:, j, i].cpu().detach().numpy()
             coef_node = coef[i][j]
@@ -178,7 +183,6 @@ def main():
 
             rank = np.argsort(inputs)
             ax.plot(inputs[rank], outputs[rank], marker='o', ms=2, lw=1)
-            ax2 = ax.twinx()
 
             slope = [x - y for x, y in zip(coef_node[1:], coef_node[:-1])]
             slope_2nd = [(x - y)*10 for x, y in zip(slope[1:], slope[:-1])]
@@ -186,6 +190,8 @@ def main():
             knot_points = act.grid[i, model.k-1:-2].cpu()
 
             # Plot Slope
+            ax2.plot(knot_points, coef_node, marker='o', ms=4, lw=1,
+                     color='dimgray', markerfacecolor='none', label='Coefficients')
             ax2.bar(knot_points[:-1], slope,
                     width=bar_width, align='center', color='r', alpha=0.3, label='Slope')
             if depth == 1:
@@ -204,15 +210,23 @@ def main():
                 for ir in idx_revert:
                     inflection_val = knot_points[ir].item()
                     feature_inflections_all.append(inflection_val)
-                    ax.axvline(x=inflection_val, color='g', linestyle='--', alpha=0.7)
+                    ax2.axvline(x=inflection_val, color='g', linestyle='--', alpha=0.7)
 
             ax.set_title(f'in {i} -> out {j}', fontsize=9)
+            ax2.set_title(f'in {i} -> out {j}', fontsize=9)
 
         feature_inflections = sorted(set(feature_inflections_all))
         inflection_points_per_input.append(feature_inflections)
 
-    plt.savefig(os.path.join(savepath, f"{data_name}_activations_L{l}.png"))
+    # Save the first figure (activations)
+    fig_eval.savefig(os.path.join(savepath, f"{data_name}_activations_values_L{l}.png"))
+
+    # Save the second figure (spline coefficients/slopes)
+    fig_spline.savefig(os.path.join(savepath, f"{data_name}_activations_L{l}.png"))
+
     # plt.show()
+    plt.close(fig_eval)
+    plt.close(fig_spline)
 
     # ==========================================
     # 4. Multi-Feature Range-Based Slicing
@@ -617,8 +631,8 @@ def main():
         ax.set_xlim([x1_min, x1_max])
         ax.set_ylim([x2_min, x2_max])
 
-    for ip in f1_ips: ax.axvline(x=ip, color='green', linestyle='--', alpha=0.5, lw=1.2)
-    for ip in f2_ips: ax.axhline(y=ip, color='green', linestyle='--', alpha=0.5, lw=1.2)
+    for ip in f1_ips: ax.axvline(x=ip, color='green', linestyle='--', alpha=0.5, lw=2.5)
+    for ip in f2_ips: ax.axhline(y=ip, color='green', linestyle='--', alpha=0.5, lw=2.5)
 
     # ax.set_title(f"KAN Prediction Surface (Mean-Fixed)\n{f1_name} vs {f2_name}")
     ax.set_xlabel(f1_name, fontsize=15)
@@ -927,9 +941,9 @@ def main():
         ax_log.set_ylim([x2_min, x2_max])
 
     for ip in f1_ips:
-        ax_log.axvline(x=ip, color='black', linestyle='--', alpha=0.4, lw=1.2)
+        ax_log.axvline(x=ip, color='black', linestyle='--', alpha=0.4, lw=2.5)
     for ip in f2_ips:
-        ax_log.axhline(y=ip, color='black', linestyle='--', alpha=0.4, lw=1.2)
+        ax_log.axhline(y=ip, color='black', linestyle='--', alpha=0.4, lw=2.5)
 
     ax_log.set_title(f"Red: {g1_name} | Blue: {g2_name}")
     ax_log.set_xlabel(f1_name, fontsize=15)
