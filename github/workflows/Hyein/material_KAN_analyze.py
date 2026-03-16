@@ -165,9 +165,9 @@ def main():
     depth = len(model.act_fun)
     inflection_points_per_input = []
 
-    fig_eval, axs_eval = plt.subplots(nrows=no, ncols=ni, squeeze=False, figsize=(max(2.5 * ni, 6), max(2.5 * no, 3.5)),
+    fig_eval, axs_eval = plt.subplots(nrows=no, ncols=ni, squeeze=False, figsize=(max(3 * ni, 6), max(2.5 * no, 3.5)),
                             constrained_layout=True)
-    fig_spline, axs_spline = plt.subplots(nrows=no, ncols=ni, squeeze=False, figsize=(max(2.5 * ni, 6), max(2.5 * no, 3.5)),
+    fig_spline, axs_spline = plt.subplots(nrows=no, ncols=ni, squeeze=False, figsize=(max(3 * ni, 6), max(2.5 * no, 3.5)),
                             constrained_layout=True)
 
     for i in range(ni):
@@ -182,7 +182,7 @@ def main():
             knot_indices = np.arange(len(coef_node))
 
             rank = np.argsort(inputs)
-            ax.plot(inputs[rank], outputs[rank], marker='o', ms=2, lw=1)
+            ax.plot(inputs[rank], outputs[rank], marker='o', ms=2, lw=1, label='Activation function')
 
             slope = [x - y for x, y in zip(coef_node[1:], coef_node[:-1])]
             slope_2nd = [(x - y)*10 for x, y in zip(slope[1:], slope[:-1])]
@@ -193,10 +193,25 @@ def main():
 
             slope = [x - y for x, y in zip(coef_node[1:], coef_node[:-1])]
             slope_indices = knot_indices[:-1] + 0.5
-            ax2.bar(slope_indices, slope, width=0.6, align='center', color='r', alpha=0.3)
+            ax2.bar(slope_indices, slope,
+                    width=0.3,
+                    align='center',
+                    hatch='xx',  # Red diagonal hatching
+                    edgecolor='r',  # The color of the hatching lines
+                    facecolor='none',  # No solid color fill
+                    linewidth=0.8,  # Outline width
+                    label='Slope')
+
             if depth == 1:
-                ax2.bar(slope_indices[1:] - 0.2, slope_2nd,
-                        width=0.6, align='center', color='b', alpha=0.3, label='2nd Slope')
+                # 3. Plot 2nd Slope with green 'x' hatching
+                ax2.bar(slope_indices[1:] - 0.3, slope_2nd,
+                        width=0.3,  # Making it narrower so they can co-exist
+                        align='center',
+                        hatch='///',  # Green 'x' hatching
+                        edgecolor='b',  # The color of the hatching lines
+                        facecolor='none',  # No solid color fill
+                        linewidth=0.8,  # Outline width
+                        label='2nd Slope')
 
             ax2.set_xticks(knot_indices)
             ax2.set_xticklabels([f"{val:.2f}" for val in knot_points_actual],
@@ -212,25 +227,33 @@ def main():
                 idx_revert = None
 
             if idx_revert:
+                first_vline=True
                 for ir in idx_revert:
                     inflection_val = knot_points_actual[ir]
                     feature_inflections_all.append(inflection_val)
+                    label_to_add = "Inflection" if first_vline else "_"
+
                     # Vlines use the index 'ir' for the sequence plot
-                    ax2.axvline(x=ir, color='g', linestyle='--', alpha=0.5)
+                    ax2.axvline(x=ir, color='g', linestyle='--', alpha=0.7, lw=1.5, label=label_to_add)
                     # Vlines use the actual value for the activation plot
-                    ax.axvline(x=inflection_val, color='g', linestyle='--', alpha=0.7)
+                    ax.axvline(x=inflection_val, color='g', linestyle='--', alpha=0.7, lw=1.5, label=label_to_add)
+
+                    first_vline = False  # Subsequent lines will be ignored by legend
 
             ax.set_title(f'in {i} -> out {j}', fontsize=9)
             ax2.set_title(f'in {i} -> out {j}', fontsize=9)
+            ax2.legend(loc='best', fontsize=7)
 
         feature_inflections = sorted(set(feature_inflections_all))
         inflection_points_per_input.append(feature_inflections)
 
     # Save the first figure (activations)
-    fig_eval.savefig(os.path.join(savepath, f"{data_name}_activations_values_L{l}.png"))
+    fig_eval.savefig(os.path.join(savepath, f"{data_name}_activations_values_L{l}.png"), dpi=300)
+    fig_eval.savefig(os.path.join(savepath, f"{data_name}_activations_values_L{l}.svg"), format='svg')
 
     # Save the second figure (spline coefficients/slopes)
-    fig_spline.savefig(os.path.join(savepath, f"{data_name}_activations_L{l}.png"))
+    fig_spline.savefig(os.path.join(savepath, f"{data_name}_activations_L{l}.png"), dpi=300)
+    fig_spline.savefig(os.path.join(savepath, f"{data_name}_activations_L{l}.svg"), format='svg')
 
     # plt.show()
     plt.close(fig_eval)
