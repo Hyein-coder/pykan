@@ -93,8 +93,9 @@ def main():
         ],
         'activation': ['relu', 'tanh'],  # tanh is often good for smooth analytical functions
         'solver': ['adam', 'lbfgs'],  # lbfgs is great for noise-free/low-noise math functions
-        'alpha': [1.0, 10.],
-        'learning_rate_init': [0.0005, 0.001, 0.01, 0.1]
+        'alpha': [1., 2., 10.],
+        'learning_rate_init': [0.0005, 0.001, 0.01, 0.1],
+        'max_iter': [200, 1000, 10000, 100000],
     }
 
     mlp = MLPRegressor(max_iter=10000, random_state=rand_seed)  # Increased max_iter for convergence

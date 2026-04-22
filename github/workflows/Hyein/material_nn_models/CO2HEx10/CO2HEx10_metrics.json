@@ -1,11 +1,13 @@
 {
     "dataset": "CO2HEx10",
-    "test_r2": 0.974814171906714,
+    "test_r2": 0.9755784535288263,
     "best_params": {
         "solver": "lbfgs",
-        "learning_rate_init": 0.001,
+        "max_iter": 10000,
+        "learning_rate_init": 0.0005,
         "hidden_layer_sizes": [
-            128
+            100,
+            100
         ],
         "alpha": 1.0,
         "activation": "relu"

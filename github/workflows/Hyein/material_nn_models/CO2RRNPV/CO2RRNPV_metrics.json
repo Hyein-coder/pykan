@@ -1,14 +1,15 @@
 {
     "dataset": "CO2RRNPV",
-    "test_r2": 0.9948741351527016,
+    "test_r2": 0.9796649519961754,
     "best_params": {
         "solver": "lbfgs",
+        "max_iter": 200,
         "learning_rate_init": 0.01,
         "hidden_layer_sizes": [
             64,
             64
         ],
-        "alpha": 0.1,
+        "alpha": 1.0,
         "activation": "relu"
     }
 }

@@ -1,15 +1,15 @@
 {
     "dataset": "AgNP",
-    "test_r2": 0.9411268554585435,
+    "test_r2": 0.9194940054839047,
     "best_params": {
         "solver": "lbfgs",
-        "learning_rate_init": 0.001,
+        "max_iter": 10000,
+        "learning_rate_init": 0.0005,
         "hidden_layer_sizes": [
-            64,
-            32,
-            16
+            100,
+            100
         ],
-        "alpha": 0.01,
+        "alpha": 1.0,
         "activation": "relu"
     }
 }

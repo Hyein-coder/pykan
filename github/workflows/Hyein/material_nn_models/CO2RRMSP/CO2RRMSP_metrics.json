@@ -1,14 +1,15 @@
 {
     "dataset": "CO2RRMSP",
-    "test_r2": 0.9891710693338651,
+    "test_r2": 0.9800974382525278,
     "best_params": {
         "solver": "lbfgs",
+        "max_iter": 200,
         "learning_rate_init": 0.01,
         "hidden_layer_sizes": [
-            128,
+            64,
             64
         ],
-        "alpha": 0.01,
+        "alpha": 1.0,
         "activation": "relu"
     }
 }
