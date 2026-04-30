@@ -35,7 +35,7 @@ from kan.experiments.analysis import find_indices_sign_revert
 def main():
     parser = argparse.ArgumentParser(description="Run SHAP and Sobol analysis for a specific dataset.")
     parser.add_argument("data_name", type=str, nargs='?', default="CO2HEx10",
-                        help="The name of the dataset")
+                        help="The name of the dataset (default: CO2HEx10)")
     parser.add_argument("rand_seed", type=int, nargs='?', default=None,
                         help="The random seed (default: None=42)")
 
@@ -72,7 +72,7 @@ def main():
     scaler_X = joblib.load(scaler_x_path)
     scaler_y = joblib.load(scaler_y_path)
 
-    device = 'cuda' if torch.cuda.is_available() else 'cpu'
+    device = 'cpu'
     model_wrapper = KANRegressor(device=device)
 
     try:
@@ -138,6 +138,12 @@ def main():
     except ValueError:
         pred_y = pred_y_norm
 
+    pred_test_y_norm = model(dataset['test_input']).detach().cpu().numpy()
+    try:
+        pred_test_y = scaler_y.inverse_transform(pred_test_y_norm)
+    except ValueError:
+        pred_test_y = pred_test_y_norm
+
     n_features = X_train_denorm.shape[1]
     n_cols = 2
     n_rows = (n_features + n_cols - 1) // n_cols
@@ -147,8 +153,13 @@ def main():
 
     for i in range(n_features):
         ax = axs_io[i]
+
         ax.scatter(X_train_denorm[:, i], y_train_denorm, alpha=0.5, c='gray', s=15, label='Ground Truth')
-        ax.scatter(X_train_denorm[:, i], pred_y, alpha=0.5, c='red', s=15, label='Prediction')
+        ax.scatter(X_train_denorm[:, i], pred_y, alpha=0.5, c='red', s=15, label='Prediction (Train)')
+
+        ax.scatter(X_test_denorm[:, i], y_test_denorm, alpha=0.5, c='gray', s=15)
+        ax.scatter(X_test_denorm[:, i], pred_test_y, alpha=0.5, c='blue', s=15, label='Prediction (Test)')
+        
         feature_label = feat_names[i] if feat_names and i < len(feat_names) else f"Feature {i}"
         ax.set_xlabel(feature_label)
         ax.set_ylabel("Output y")
