@@ -1,4 +1,5 @@
 import argparse
+import sys
 import os
 import joblib
 import json
@@ -12,6 +13,9 @@ from sklearn.model_selection import train_test_split, RandomizedSearchCV
 from sklearn.metrics import r2_score
 from sklearn.preprocessing import MinMaxScaler
 
+script_dir = os.getcwd()
+if script_dir not in sys.path:
+    sys.path.insert(0, script_dir)
 from github.workflows.Hyein.data.co2_hydrogenation.reorganize import EXCLUDE_COLS
 from kan.custom_processing import remove_outliers_iqr
 
@@ -40,6 +44,7 @@ class KANRegressor(BaseEstimator, RegressorMixin):
     """
 
     def __init__(self,
+                 test_dataset=None,
                  n_layers=2,  # [MODIFIED] Replaced hidden_layer (width) with n_layers (depth)
                  grid=3,
                  k=3,
@@ -59,6 +64,7 @@ class KANRegressor(BaseEstimator, RegressorMixin):
                  device='cpu',
                  seed=42):
 
+        self.test_dataset = test_dataset
         self.dataset = None
 
         self.n_layers = n_layers
@@ -101,11 +107,15 @@ class KANRegressor(BaseEstimator, RegressorMixin):
 
         # Create dataset dictionary
         dataset = {
-            'train_input': torch.tensor(X, dtype=torch.float32, device=self.device),
-            'train_label': torch.tensor(y, dtype=torch.float32, device=self.device).reshape(-1, 1),
-            'test_input': torch.tensor(X, dtype=torch.float32, device=self.device),
-            'test_label': torch.tensor(y, dtype=torch.float32, device=self.device).reshape(-1, 1)
-        }
+                'train_input': torch.tensor(X, dtype=torch.float32, device=self.device),
+                'train_label': torch.tensor(y, dtype=torch.float32, device=self.device).reshape(-1, 1),
+                'test_input': None,
+                'test_label': None
+            }
+        #TODO: DUPLICATE OF TEST DATASET SHOULD BE ADDED
+        if self.test_dataset is not None:
+            dataset['test_input'] = self.test_dataset['input']
+            dataset['test_label'] = self.test_dataset['label']
         self.dataset = dataset
 
         # 1. Initialize with BASE Grid
@@ -197,7 +207,8 @@ def main():
 
     print(f"🚀 Starting KAN Tuning for: '{data_name}' with seed={rand_seed}")
 
-    device = 'cuda' if torch.cuda.is_available() else 'cpu'
+    device = 'cpu'
+    # device = 'cuda' if torch.cuda.is_available() else 'cpu'
     print(f"   - Device: {device}")
 
     # Output Directory
@@ -248,9 +259,10 @@ def main():
 
     X_test_norm = scaler_X.transform(X_test_denorm)
     y_test_norm = scaler_y.transform(y_test_denorm)
-
-    X_norm = scaler_X.transform(X)
-    y_norm = scaler_y.transform(y)
+    test_dataset = {
+        'input': torch.tensor(X_test_norm, dtype=torch.float32, device=device),
+        'label': torch.tensor(y_test_norm, dtype=torch.float32, device=device).reshape(-1, 1)
+    }
 
     # ==========================================
     # 5. Hyperparameter Tuning
@@ -270,13 +282,14 @@ def main():
 
     # Pass default symbolic options here if you want to override defaults
     # For now, we rely on the class defaults or you can set fixed values
-    kan_wrapper = KANRegressor(device=device, symbolic_enabled=True, seed=rand_seed)
+    kan_wrapper = KANRegressor(test_dataset=test_dataset, 
+                               device=device, symbolic_enabled=True, seed=rand_seed)
 
     search = RandomizedSearchCV(
         estimator=kan_wrapper,
         param_distributions=param_distributions,
         n_iter=200,
-        cv=5,
+        cv=3,
         scoring='r2',
         n_jobs=1,  # IMPORTANT: Keep 1 for CUDA safety
         verbose=3,
@@ -284,7 +297,7 @@ def main():
     )
 
     print("\n🏎️  Starting Randomized Hyperparameter Search (KAN with Symbolic)...")
-    search.fit(X_norm, y_norm.ravel())
+    search.fit(X_train_norm, y_train_norm.ravel())
     # ==========================================
     # New: Visualize Search Progress
     # ==========================================
