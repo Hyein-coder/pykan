@@ -63,7 +63,7 @@ def run_analysis_suite(model_func, bounds, feature_names, save_dir, suffix, titl
     # Generate samples (Physical Domain)
     # Note: Sobol requires 2^n samples. 1024 is standard base.
     try:
-        X_sobol = saltelli.sample(problem, 1024, calc_second_order=True)
+        X_sobol = saltelli.sample(problem, 2048, calc_second_order=True)
         Y_sobol = model_func(X_sobol)
         Si = sobol.analyze(problem, Y_sobol, calc_second_order=True)
 
@@ -95,7 +95,7 @@ def run_analysis_suite(model_func, bounds, feature_names, save_dir, suffix, titl
     X_representative = np.random.uniform(
         low=[b[0] for b in bounds],
         high=[b[1] for b in bounds],
-        size=(1024, n_features)
+        size=(2048, n_features)
     )
     # Summarize to 100 weighted points
     X_bg = shap.kmeans(X_representative, 100)

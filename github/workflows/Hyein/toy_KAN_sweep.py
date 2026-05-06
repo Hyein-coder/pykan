@@ -213,7 +213,7 @@ def main():
     X_raw = np.random.uniform(
         low=[b[0] for b in bounds],
         high=[b[1] for b in bounds],
-        size=(1280, nx)
+        size=(2304, nx)
     )
 
     y_raw = np.apply_along_axis(target_func, 1, X_raw).reshape(-1, 1)
@@ -246,6 +246,9 @@ def main():
         'lamb': [0.001, 0.01, 0.1, 1.],
         'lamb_coef': [0, 0.01, 0.1, 1.0],  # Penalize large coefficients (sparsity)
         'lamb_entropy': [0.001, 0.01, 0.1, 2.0, 10.0],  # Penalize complexity (for symbolic)
+        # 'lamb': [0.001, 0.002, 0.005, 0.01, 0.02, 0.05, 0.1],
+        # 'lamb_coef': [0, 0.005, 0.01, 0.02, 0.05, 0.1],  # Penalize large coefficients (sparsity)
+        # 'lamb_entropy': [0.01, 0.02, 0.05, 0.1, 0.2, 0.5, 1.0, 2.0],  # Penalize complexity (for symbolic)
         'lr': [0.01, 0.1, 0.5, 1.],  # Learning rate for LBFGS
         'sym_range': [10, 50]
     }
@@ -257,7 +260,7 @@ def main():
     search = RandomizedSearchCV(
         estimator=kan_wrapper,
         param_distributions=param_distributions,
-        n_iter=100,  # Increased slightly to cover new params
+        n_iter=300,  # Increased slightly to cover new params
         cv=3,
         scoring='r2',
         n_jobs=1,  # IMPORTANT: Keep 1 for CUDA safety
