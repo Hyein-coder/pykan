@@ -447,6 +447,151 @@ def main():
         print(f"📊 Contour saved to: {contour_base}.png/svg/eps")
 
     # ==========================================
+    # 3.8 Sectional GSA (AGSM) Comparison
+    # ==========================================
+    print("\n📐 Computing Sectional GSA (AGSM) [equal + quantile + kan]...")
+    try:
+        from github.workflows.Hyein.sectional_gsa import (
+            compute_gradient_agsm, find_agsm_transition_points,
+            plot_agsm_vs_kan, make_batch_func, compute_global_from_sectional
+        )
+
+        n_sections_agsm = int(len(act.grid[0]) - model.k - 1)
+        top2_idx_agsm = np.argsort(scores_tot)[::-1][:2].tolist()
+        i_idx, j_idx = top2_idx_agsm[0], top2_idx_agsm[1]
+
+        batch_func = make_batch_func(target_func)
+
+        def denorm_ips(ips_norm, feat_idx):
+            valid = [ip for ip in (ips_norm or []) if 0.05 < ip < 0.95]
+            if not valid:
+                return []
+            dummy = np.zeros((len(valid), nx))
+            dummy[:, feat_idx] = valid
+            return scaler_X.inverse_transform(dummy)[:, feat_idx].tolist()
+
+        def denorm_knots(knots_norm, feat_idx):
+            """Denormalize KAN grid knots (one feature) to raw input space."""
+            dummy = np.zeros((len(knots_norm), nx))
+            dummy[:, feat_idx] = knots_norm
+            return scaler_X.inverse_transform(dummy)[:, feat_idx]
+
+        kan_ips_raw_agsm = {idx: denorm_ips(inflection_points_per_input[idx], idx)
+                            for idx in top2_idx_agsm}
+
+        agsm_results = {}
+        for mode in ['equal', 'quantile', 'kan']:
+            kwargs = dict(
+                func_batch=batch_func,
+                bounds=bounds,
+                feat_names=feat_names,
+                top2_idx=top2_idx_agsm,
+                n_sections=n_sections_agsm,
+                n_samples_per_section=512,
+                seed=42,
+                section_mode=mode,
+            )
+            if mode == 'quantile':
+                kwargs['data_X'] = X_train  # raw space training data
+            if mode == 'kan':
+                # Use the KAN model's actual grid knot positions (raw space)
+                # as section boundaries, per investigated feature.
+                kan_knots_dict = {}
+                for feat_idx in top2_idx_agsm:
+                    knots_norm = act.grid[feat_idx, model.k - 1:-2].cpu().detach().numpy()
+                    kan_knots_dict[feat_idx] = denorm_knots(knots_norm, feat_idx)
+                kwargs['kan_knots_raw'] = kan_knots_dict
+
+            sc, sh, sa, r = compute_gradient_agsm(**kwargs)
+            tps = find_agsm_transition_points(
+                sc[i_idx], sa[i_idx], sc[j_idx], sa[j_idx],
+                feat_names[i_idx], feat_names[j_idx],
+            )
+            agsm_results[mode] = {
+                'section_centers': sc, 'S_hat': sh, 'S_a': sa, 'R': r, 'tps': tps
+            }
+
+            # Save CSV
+            rows = []
+            for feat_idx in top2_idx_agsm:
+                for k, (center, s_hat, s_a_v, r_v) in enumerate(zip(
+                    sc[feat_idx], sh[feat_idx], sa[feat_idx], r[feat_idx]
+                )):
+                    rows.append({'Feature': feat_names[feat_idx], 'Feature_idx': feat_idx,
+                                 'Section_k': k, 'Section_center': center,
+                                 'S_hat': s_hat, 'S_a': s_a_v, 'R': r_v})
+            pd.DataFrame(rows).to_csv(
+                os.path.join(savepath, f"{data_name}_agsm_sectional_{mode}.csv"), index=False
+            )
+
+        # Combined plot: 2 rows (one per mode)
+        SA_RC_AGSM = {
+            'figure.dpi': 150, 'figure.facecolor': 'white', 'figure.autolayout': True,
+            'axes.facecolor': 'white', 'axes.edgecolor': '#444444', 'axes.linewidth': 0.8,
+            'axes.labelsize': 11, 'axes.labelcolor': 'black', 'axes.grid': False,
+            'xtick.labelsize': 9, 'xtick.color': 'black', 'xtick.direction': 'out',
+            'ytick.labelsize': 9, 'ytick.color': 'black', 'ytick.direction': 'out',
+            'font.family': 'sans-serif', 'font.size': 9, 'font.weight': '300',
+            'axes.labelweight': '500', 'text.color': 'black',
+            'legend.fontsize': 7, 'legend.framealpha': 0.0, 'lines.linewidth': 1.2,
+            'savefig.dpi': 150, 'savefig.bbox': 'tight', 'savefig.facecolor': 'white',
+        }
+
+        feat_colors_agsm = ['#1f77b4', '#d62728']
+        mode_labels = {'equal': 'Equal-distance', 'quantile': 'Quantile',
+                       'kan': 'KAN-grid'}
+        plot_modes = ['equal', 'quantile', 'kan']
+
+        with plt.rc_context(SA_RC_AGSM):
+            fig, axes = plt.subplots(len(plot_modes), 1, figsize=(5, 7.5),
+                                     sharex=False)
+            for ax, mode in zip(axes, plot_modes):
+                res = agsm_results[mode]
+                sc_plot = res['section_centers']
+                sa_plot = res['S_a']
+                tps_plot = res['tps']
+
+                for color, feat_idx in zip(feat_colors_agsm, top2_idx_agsm):
+                    x_centers = sc_plot[feat_idx]
+                    y_vals = sa_plot[feat_idx]
+                    ax.step(x_centers, y_vals, where='mid', color=color,
+                            label=feat_names[feat_idx])
+
+                # KAN inflection points (green dashed)
+                for feat_idx in top2_idx_agsm:
+                    for ip in kan_ips_raw_agsm.get(feat_idx, []):
+                        ax.axvline(x=ip, color='green', linestyle='--', alpha=0.7,
+                                   linewidth=1.0, label='KAN' if feat_idx == top2_idx_agsm[0] else '_')
+
+                # AGSM transition points (orange dotted)
+                first_tp = True
+                for tp in tps_plot:
+                    ax.axvline(x=tp['point'], color='orange', linestyle=':', alpha=0.8,
+                               linewidth=1.2, label='AGSM transition' if first_tp else '_')
+                    first_tp = False
+
+                ax.set_xlabel(feat_names[i_idx])
+                ax.set_ylabel(r'$S^a_{l,[k]}$')
+                n_eff = len(sc_plot[i_idx])
+                ax.set_title(f'{mode_labels[mode]} sections (N={n_eff})')
+                ax.legend(loc='best')
+
+            fig.suptitle(data_name, fontsize=11, fontweight='bold')
+            for ext in ['.png', '.svg', '.eps']:
+                fig.savefig(os.path.join(savepath, f"{data_name}_agsm_modes{ext}"))
+            plt.close(fig)
+
+        print(f"📐 AGSM (equal + quantile + kan) saved: {savepath}")
+        for mode, res in agsm_results.items():
+            tp_vals = [f"{t['point']:.3f}" for t in res['tps']]
+            print(f"   {mode}: AGSM transitions = {tp_vals}")
+
+    except Exception as e:
+        import traceback
+        print(f"⚠️ AGSM section 3.8 failed: {e}")
+        traceback.print_exc()
+
+    # ==========================================
     # 4. Range-Based Attribution Scoring (Iterative Search)
     # ==========================================
 
