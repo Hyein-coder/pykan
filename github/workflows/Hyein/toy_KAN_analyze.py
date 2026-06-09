@@ -456,7 +456,7 @@ def main():
             plot_agsm_vs_kan, make_batch_func, compute_global_from_sectional
         )
 
-        n_sections_agsm = int(len(act.grid[0]) - model.k - 1)
+        n_sections_agsm = len(act.grid[0, model.k - 1:-2]) - 1
         top2_idx_agsm = np.argsort(scores_tot)[::-1][:2].tolist()
         i_idx, j_idx = top2_idx_agsm[0], top2_idx_agsm[1]
 
