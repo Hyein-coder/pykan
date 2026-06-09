@@ -137,7 +137,7 @@ def main():
 
     # ---- Build the 4x2 figure ----
     with plt.rc_context(SA_RC):
-        fig, axes = plt.subplots(len(DATASETS), len(MODES),
+        fig, axes = plt.subplots(len(DATASETS), len(MODES), sharey=True,
                                  figsize=(13, 11), squeeze=False)
         for row, name in enumerate(DATASETS):
             kan_ips = cache[name]["kan_ips"]

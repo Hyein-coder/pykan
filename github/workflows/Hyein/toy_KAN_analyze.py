@@ -536,6 +536,38 @@ def main():
                 os.path.join(savepath, f"{data_name}_agsm_sectional_{mode}.csv"), index=False
             )
 
+            # KAN attribution per section (sections of i_idx, for comparison with AGSM S_a)
+            kan_attr = {}
+            for feat_idx in top2_idx_agsm:
+                centers_f = sc[feat_idx]
+                n_eff = len(centers_f)
+                lo_raw, hi_raw = bounds[feat_idx]
+                edges_raw = np.empty(n_eff + 1)
+                edges_raw[0] = lo_raw
+                edges_raw[-1] = hi_raw
+                if n_eff > 1:
+                    edges_raw[1:-1] = 0.5 * (centers_f[:-1] + centers_f[1:])
+                dummy = np.zeros((n_eff + 1, nx))
+                dummy[:, feat_idx] = edges_raw
+                edges_norm = scaler_X.transform(dummy)[:, feat_idx]
+
+                attr_sections = []
+                for k in range(n_eff):
+                    lo_n = min(edges_norm[k], edges_norm[k + 1])
+                    hi_n = max(edges_norm[k], edges_norm[k + 1])
+                    x_col = dataset['train_input'][:, feat_idx]
+                    mask_k = (x_col >= lo_n) & (x_col < hi_n)
+                    if torch.any(mask_k) and mask_k.sum().item() >= 5:
+                        x_slice = dataset['train_input'][mask_k]
+                        x_std = torch.std(x_slice, dim=0).detach().cpu().numpy()
+                        model.forward(x_slice)
+                        score = model.feature_score.detach().cpu().numpy().copy()
+                        attr_sections.append(score / (x_std + 1e-6))
+                    else:
+                        attr_sections.append(np.full(nx, np.nan))
+                kan_attr[feat_idx] = np.array(attr_sections)  # (n_eff, nx)
+            agsm_results[mode]['kan_attr'] = kan_attr
+
         # Combined plot: 2 rows (one per mode)
         SA_RC_AGSM = {
             'figure.dpi': 150, 'figure.facecolor': 'white', 'figure.autolayout': True,
@@ -555,38 +587,59 @@ def main():
         plot_modes = ['equal', 'quantile', 'kan']
 
         with plt.rc_context(SA_RC_AGSM):
-            fig, axes = plt.subplots(len(plot_modes), 1, figsize=(5, 7.5),
+            fig, axes = plt.subplots(len(plot_modes), 2, figsize=(10, 7.5),
                                      sharex=False)
-            for ax, mode in zip(axes, plot_modes):
+            for row, mode in enumerate(plot_modes):
+                ax_agsm = axes[row, 0]
+                ax_attr = axes[row, 1]
                 res = agsm_results[mode]
                 sc_plot = res['section_centers']
                 sa_plot = res['S_a']
                 tps_plot = res['tps']
+                n_eff = len(sc_plot[i_idx])
 
+                # Left column: AGSM S_a
                 for color, feat_idx in zip(feat_colors_agsm, top2_idx_agsm):
-                    x_centers = sc_plot[feat_idx]
-                    y_vals = sa_plot[feat_idx]
-                    ax.step(x_centers, y_vals, where='mid', color=color,
-                            label=feat_names[feat_idx])
+                    ax_agsm.step(sc_plot[feat_idx], sa_plot[feat_idx], where='mid',
+                                 color=color, label=feat_names[feat_idx])
 
-                # KAN inflection points (green dashed)
                 for feat_idx in top2_idx_agsm:
                     for ip in kan_ips_raw_agsm.get(feat_idx, []):
-                        ax.axvline(x=ip, color='green', linestyle='--', alpha=0.7,
-                                   linewidth=1.0, label='KAN' if feat_idx == top2_idx_agsm[0] else '_')
+                        ax_agsm.axvline(x=ip, color='green', linestyle='--', alpha=0.7,
+                                        linewidth=1.0,
+                                        label='KAN inflection' if feat_idx == top2_idx_agsm[0] else '_')
 
-                # AGSM transition points (orange dotted)
                 first_tp = True
                 for tp in tps_plot:
-                    ax.axvline(x=tp['point'], color='orange', linestyle=':', alpha=0.8,
-                               linewidth=1.2, label='AGSM transition' if first_tp else '_')
+                    ax_agsm.axvline(x=tp['point'], color='orange', linestyle=':', alpha=0.8,
+                                    linewidth=1.2,
+                                    label='AGSM transition' if first_tp else '_')
                     first_tp = False
 
-                ax.set_xlabel(feat_names[i_idx])
-                ax.set_ylabel(r'$S^a_{l,[k]}$')
-                n_eff = len(sc_plot[i_idx])
-                ax.set_title(f'{mode_labels[mode]} sections (N={n_eff})')
-                ax.legend(loc='best')
+                ax_agsm.set_xlabel(feat_names[i_idx])
+                ax_agsm.set_ylabel(r'$S^a_{l,[k]}$')
+                ax_agsm.set_title(f'{mode_labels[mode]} (N={n_eff}) — AGSM')
+                ax_agsm.legend(loc='best')
+
+                # Right column: KAN attribution
+                kan_attr_plot = res.get('kan_attr', {})
+                if kan_attr_plot and i_idx in kan_attr_plot:
+                    attr_mat = kan_attr_plot[i_idx]  # (n_eff, nx)
+                    x_centers_i = sc_plot[i_idx]
+                    for color, feat_idx in zip(feat_colors_agsm, top2_idx_agsm):
+                        ax_attr.step(x_centers_i, attr_mat[:, feat_idx], where='mid',
+                                     color=color, label=feat_names[feat_idx])
+
+                    for feat_idx in top2_idx_agsm:
+                        for ip in kan_ips_raw_agsm.get(feat_idx, []):
+                            ax_attr.axvline(x=ip, color='green', linestyle='--', alpha=0.7,
+                                            linewidth=1.0,
+                                            label='KAN inflection' if feat_idx == top2_idx_agsm[0] else '_')
+
+                ax_attr.set_xlabel(feat_names[i_idx])
+                ax_attr.set_ylabel('KAN Attribution')
+                ax_attr.set_title(f'{mode_labels[mode]} (N={n_eff}) — KAN attr')
+                ax_attr.legend(loc='best')
 
             fig.suptitle(data_name, fontsize=11, fontweight='bold')
             for ext in ['.png', '.svg', '.eps']:
