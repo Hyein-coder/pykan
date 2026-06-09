@@ -460,7 +460,19 @@ def main():
         top2_idx_agsm = np.argsort(scores_tot)[::-1][:2].tolist()
         i_idx, j_idx = top2_idx_agsm[0], top2_idx_agsm[1]
 
-        batch_func = make_batch_func(target_func)
+        def _kan_batch_func(X_raw):
+            X_np = np.atleast_2d(np.asarray(X_raw, dtype=float))
+            X_norm = scaler_X.transform(X_np)
+            X_tensor = torch.tensor(X_norm, dtype=torch.float32, device=device)
+            with torch.no_grad():
+                y_pred = model(X_tensor).cpu().numpy()
+            try:
+                y_inv = scaler_y.inverse_transform(y_pred)
+            except Exception:
+                y_inv = y_pred
+            return y_inv.ravel()
+
+        batch_func = _kan_batch_func
 
         def denorm_ips(ips_norm, feat_idx):
             valid = [ip for ip in (ips_norm or []) if 0.05 < ip < 0.95]
