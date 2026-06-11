@@ -1,0 +1,241 @@
+func,grid,k,feature_idx,feature_name,test_r2,attribution,n_tp,tp_norm,tp_raw,first_tp_norm,first_tp_raw,ckpt_path
+exponential,3,2,0,Exponent (x0),0.9894,0.98165,0,[],[],,,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\exponential\g3_k2
+exponential,3,2,1,Linear (x1),0.9894,0.24336,0,[],[],,,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\exponential\g3_k2
+exponential,3,3,0,Exponent (x0),0.9648,0.94453,1,[0.36063],[-0.3480355898012577],0.36063,-0.3480355898012577,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\exponential\g3_k3
+exponential,3,3,1,Linear (x1),0.9648,0.36678,1,[0.62995],[0.32403909694192884],0.62995,0.32403909694192884,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\exponential\g3_k3
+exponential,3,4,0,Exponent (x0),0.9798,0.9614,1,[0.36063],[-0.3480355898012577],0.36063,-0.3480355898012577,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\exponential\g3_k4
+exponential,3,4,1,Linear (x1),0.9798,0.31952,1,[0.62995],[0.32403909694192884],0.62995,0.32403909694192884,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\exponential\g3_k4
+exponential,3,5,0,Exponent (x0),0.9402,0.96125,1,[0.64591],[0.3643469260699538],0.64591,0.3643469260699538,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\exponential\g3_k5
+exponential,3,5,1,Linear (x1),0.9402,0.3127,0,[],[],,,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\exponential\g3_k5
+exponential,5,2,0,Exponent (x0),0.9902,0.97955,0,[],[],,,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\exponential\g5_k2
+exponential,5,2,1,Linear (x1),0.9902,0.25335,0,[],[],,,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\exponential\g5_k2
+exponential,5,3,0,Exponent (x0),0.9727,0.99024,1,[0.74243],[0.6053703431755671],0.74243,0.6053703431755671,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\exponential\g5_k3
+exponential,5,3,1,Linear (x1),0.9727,0.19014,1,[0.4379],[-0.1554069997344556],0.4379,-0.1554069997344556,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\exponential\g5_k3
+exponential,5,4,0,Exponent (x0),0.9899,0.97674,1,[0.25139],[-0.6208225571097656],0.25139,-0.6208225571097656,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\exponential\g5_k4
+exponential,5,4,1,Linear (x1),0.9899,0.26502,0,[],[],,,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\exponential\g5_k4
+exponential,5,5,0,Exponent (x0),0.9724,0.96123,1,[0.74243],[0.6053703431755671],0.74243,0.6053703431755671,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\exponential\g5_k5
+exponential,5,5,1,Linear (x1),0.9724,0.31997,0,[],[],,,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\exponential\g5_k5
+exponential,7,2,0,Exponent (x0),0.9887,0.9826,0,[],[],,,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\exponential\g7_k2
+exponential,7,2,1,Linear (x1),0.9887,0.2387,0,[],[],,,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\exponential\g7_k2
+exponential,7,3,0,Exponent (x0),0.9799,0.96661,1,[0.44888],[-0.12766347459642594],0.44888,-0.12766347459642594,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\exponential\g7_k3
+exponential,7,3,1,Linear (x1),0.9799,0.30396,0,[],[],,,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\exponential\g7_k3
+exponential,7,4,0,Exponent (x0),0.9834,0.96946,1,[0.78794],[0.7190149319911125],0.78794,0.7190149319911125,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\exponential\g7_k4
+exponential,7,4,1,Linear (x1),0.9834,0.29079,0,[],[],,,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\exponential\g7_k4
+exponential,7,5,0,Exponent (x0),0.9687,0.95728,1,[0.31664],[-0.45788453425293546],0.31664,-0.45788453425293546,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\exponential\g7_k5
+exponential,7,5,1,Linear (x1),0.9687,0.33164,0,[],[],,,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\exponential\g7_k5
+exponential,10,2,0,Exponent (x0),0.9929,0.96292,1,[0.33359],[-0.4155581053269082],0.33359,-0.4155581053269082,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\exponential\g10_k2
+exponential,10,2,1,Linear (x1),0.9929,0.32062,0,[],[],,,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\exponential\g10_k2
+exponential,10,3,0,Exponent (x0),0.9734,0.97493,2,"[0.33359, 0.68356]","[-0.4155581053269082, 0.4583640381091822]",0.33359,-0.4155581053269082,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\exponential\g10_k3
+exponential,10,3,1,Linear (x1),0.9734,0.27323,0,[],[],,,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\exponential\g10_k3
+exponential,10,4,0,Exponent (x0),0.9873,0.95883,1,[0.74243],[0.6053703431755671],0.74243,0.6053703431755671,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\exponential\g10_k4
+exponential,10,4,1,Linear (x1),0.9873,0.33248,0,[],[],,,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\exponential\g10_k4
+exponential,10,5,0,Exponent (x0),0.9657,0.95102,3,"[0.25139, 0.68356, 0.98]","[-0.6208225571097656, 0.4583640381091822, 1.198614574441424]",0.25139,-0.6208225571097656,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\exponential\g10_k5
+exponential,10,5,1,Linear (x1),0.9657,0.35186,1,[0.4379],[-0.1554069997344556],0.4379,-0.1554069997344556,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\exponential\g10_k5
+exponential,15,2,0,Exponent (x0),0.9906,0.98035,0,[],[],,,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\exponential\g15_k2
+exponential,15,2,1,Linear (x1),0.9906,0.24996,0,[],[],,,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\exponential\g15_k2
+exponential,15,3,0,Exponent (x0),0.9584,0.93674,3,"[0.14933, 0.30196, 0.47468]","[-0.8756800990678976, -0.49454246797765977, -0.06323740578866777]",0.14933,-0.8756800990678976,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\exponential\g15_k3
+exponential,15,3,1,Linear (x1),0.9584,0.39542,0,[],[],,,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\exponential\g15_k3
+exponential,15,4,0,Exponent (x0),0.9781,0.96519,2,"[0.42255, 0.70331]","[-0.19341302466263813, 0.5076824434949662]",0.42255,-0.19341302466263813,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\exponential\g15_k4
+exponential,15,4,1,Linear (x1),0.9781,0.30942,0,[],[],,,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\exponential\g15_k4
+exponential,15,5,0,Exponent (x0),0.9511,0.9387,3,"[0.14933, 0.36063, 0.5355]","[-0.8756800990678976, -0.3480355898012577, 0.08863831145504744]",0.14933,-0.8756800990678976,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\exponential\g15_k5
+exponential,15,5,1,Linear (x1),0.9511,0.39126,0,[],[],,,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\exponential\g15_k5
+exponential,20,2,0,Exponent (x0),0.9933,0.96171,3,"[0.29211, 0.50061, 0.68356]","[-0.519139242309304, 0.0015132904975791572, 0.4583640381091822]",0.29211,-0.519139242309304,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\exponential\g20_k2
+exponential,20,2,1,Linear (x1),0.9933,0.32553,0,[],[],,,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\exponential\g20_k2
+exponential,20,3,0,Exponent (x0),0.9592,0.95378,2,"[0.13848, 0.50061]","[-0.9027740078494547, 0.0015132904975791572]",0.13848,-0.9027740078494547,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\exponential\g20_k3
+exponential,20,3,1,Linear (x1),0.9592,0.34783,0,[],[],,,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\exponential\g20_k3
+exponential,20,4,0,Exponent (x0),0.9751,0.95822,4,"[0.33359, 0.59474, 0.68356, 0.78521]","[-0.4155581053269082, 0.23656855626790016, 0.4583640381091822, 0.7121977549428496]",0.33359,-0.4155581053269082,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\exponential\g20_k4
+exponential,20,4,1,Linear (x1),0.9751,0.33387,0,[],[],,,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\exponential\g20_k4
+exponential,20,5,0,Exponent (x0),0.9315,0.91375,5,"[0.13848, 0.29211, 0.42255, 0.54933, 0.9]","[-0.9027740078494547, -0.519139242309304, -0.19341302466263813, 0.12317368089734576, 0.9988438184483756]",0.13848,-0.9027740078494547,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\exponential\g20_k5
+exponential,20,5,1,Linear (x1),0.9315,0.44997,2,"[0.31409, 0.82616]","[-0.4644943271466044, 0.8138704878759221]",0.31409,-0.4644943271466044,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\exponential\g20_k5
+logarithm,3,2,0,Log (x0),0.9997,0.71578,0,[],[],,,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\logarithm\g3_k2
+logarithm,3,2,1,Linear (x1),0.9997,0.66312,0,[],[],,,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\logarithm\g3_k2
+logarithm,3,3,0,Log (x0),1.0,0.71586,0,[],[],,,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\logarithm\g3_k3
+logarithm,3,3,1,Linear (x1),1.0,0.66256,0,[],[],,,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\logarithm\g3_k3
+logarithm,3,4,0,Log (x0),1.0,0.71585,0,[],[],,,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\logarithm\g3_k4
+logarithm,3,4,1,Linear (x1),1.0,0.66246,1,[0.62995],[0.32403909694192884],0.62995,0.32403909694192884,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\logarithm\g3_k4
+logarithm,3,5,0,Log (x0),1.0,0.71591,0,[],[],,,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\logarithm\g3_k5
+logarithm,3,5,1,Linear (x1),1.0,0.66245,0,[],[],,,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\logarithm\g3_k5
+logarithm,5,2,0,Log (x0),1.0,0.71587,0,[],[],,,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\logarithm\g5_k2
+logarithm,5,2,1,Linear (x1),1.0,0.66242,1,[0.2659],[-0.5847989738471249],0.2659,-0.5847989738471249,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\logarithm\g5_k2
+logarithm,5,3,0,Log (x0),1.0,0.71584,0,[],[],,,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\logarithm\g5_k3
+logarithm,5,3,1,Linear (x1),1.0,0.66241,0,[],[],,,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\logarithm\g5_k3
+logarithm,5,4,0,Log (x0),1.0,0.71583,0,[],[],,,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\logarithm\g5_k4
+logarithm,5,4,1,Linear (x1),1.0,0.66244,2,"[0.58166, 0.9]","[0.20348480374483105, 0.9982094609484773]",0.58166,0.20348480374483105,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\logarithm\g5_k4
+logarithm,5,5,0,Log (x0),1.0,0.71583,0,[],[],,,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\logarithm\g5_k5
+logarithm,5,5,1,Linear (x1),1.0,0.66247,1,[0.4379],[-0.1554069997344556],0.4379,-0.1554069997344556,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\logarithm\g5_k5
+logarithm,7,2,0,Log (x0),1.0,0.71583,0,[],[],,,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\logarithm\g7_k2
+logarithm,7,2,1,Linear (x1),1.0,0.66245,2,"[0.4556, 0.68009]","[-0.11121956984030304, 0.4492118503257034]",0.4556,-0.11121956984030304,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\logarithm\g7_k2
+logarithm,7,3,0,Log (x0),1.0,0.71583,0,[],[],,,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\logarithm\g7_k3
+logarithm,7,3,1,Linear (x1),1.0,0.66245,1,[0.78993],[0.7234235621660267],0.78993,0.7234235621660267,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\logarithm\g7_k3
+logarithm,7,4,0,Log (x0),1.0,0.71583,0,[],[],,,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\logarithm\g7_k4
+logarithm,7,4,1,Linear (x1),1.0,0.66245,0,[],[],,,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\logarithm\g7_k4
+logarithm,7,5,0,Log (x0),1.0,0.71583,0,[],[],,,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\logarithm\g7_k5
+logarithm,7,5,1,Linear (x1),1.0,0.66245,1,[0.68009],[0.4492118503257034],0.68009,0.4492118503257034,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\logarithm\g7_k5
+logarithm,10,2,0,Log (x0),1.0,0.71583,0,[],[],,,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\logarithm\g10_k2
+logarithm,10,2,1,Linear (x1),1.0,0.66243,3,"[0.35596, 0.50513, 0.6602]","[-0.35996733902975864, 0.012430339914350986, 0.39955716215651166]",0.35596,-0.35996733902975864,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\logarithm\g10_k2
+logarithm,10,3,0,Log (x0),1.0,0.71584,0,[],[],,,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\logarithm\g10_k3
+logarithm,10,3,1,Linear (x1),1.0,0.66245,2,"[0.2659, 0.6602]","[-0.5847989738471249, 0.39955716215651166]",0.2659,-0.5847989738471249,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\logarithm\g10_k3
+logarithm,10,4,0,Log (x0),1.0,0.71583,0,[],[],,,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\logarithm\g10_k4
+logarithm,10,4,1,Linear (x1),1.0,0.66245,3,"[0.19838, 0.58166, 0.75486]","[-0.7533602883360053, 0.20348480374483105, 0.635872535816426]",0.19838,-0.7533602883360053,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\logarithm\g10_k4
+logarithm,10,5,0,Log (x0),1.0,0.71585,1,[0.98],[1.198614574441424],0.98,1.198614574441424,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\logarithm\g10_k5
+logarithm,10,5,1,Linear (x1),1.0,0.66241,3,"[0.50513, 0.75486, 0.97986]","[0.012430339914350986, 0.635872535816426, 1.1975771531149757]",0.50513,0.012430339914350986,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\logarithm\g10_k5
+logarithm,15,2,0,Log (x0),1.0,0.71584,0,[],[],,,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\logarithm\g15_k2
+logarithm,15,2,1,Linear (x1),1.0,0.66244,4,"[0.22361, 0.33011, 0.48232, 0.69907]","[-0.6903744772495947, -0.42450095839494756, -0.04451402595489297, 0.49659475537604325]",0.22361,-0.6903744772495947,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\logarithm\g15_k2
+logarithm,15,3,0,Log (x0),1.0,0.71583,0,[],[],,,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\logarithm\g15_k3
+logarithm,15,3,1,Linear (x1),1.0,0.66245,4,"[0.33011, 0.48232, 0.69907, 0.85338]","[-0.42450095839494756, -0.04451402595489297, 0.49659475537604325, 0.8818242642442178]",0.33011,-0.42450095839494756,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\logarithm\g15_k3
+logarithm,15,4,0,Log (x0),1.0,0.71583,0,[],[],,,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\logarithm\g15_k4
+logarithm,15,4,1,Linear (x1),1.0,0.66245,5,"[0.22361, 0.33011, 0.52536, 0.80009, 0.9]","[-0.6903744772495947, -0.42450095839494756, 0.06293382617190525, 0.7487876462182633, 0.9982094609484773]",0.22361,-0.6903744772495947,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\logarithm\g15_k4
+logarithm,15,5,0,Log (x0),1.0,0.71584,1,[0.95333],[1.1320159986622416],0.95333,1.1320159986622416,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\logarithm\g15_k5
+logarithm,15,5,1,Linear (x1),1.0,0.66248,3,"[0.4379, 0.58166, 0.95324]","[-0.1554069997344556, 0.20348480374483105, 1.131121255726143]",0.4379,-0.1554069997344556,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\logarithm\g15_k5
+logarithm,20,2,0,Log (x0),1.0,0.71583,2,"[0.71202, 0.82633]","[0.5294324845537094, 0.8148799235232769]",0.71202,0.5294324845537094,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\logarithm\g20_k2
+logarithm,20,2,1,Linear (x1),1.0,0.66245,7,"[0.15635, 0.23533, 0.35596, 0.4379, 0.58166, 0.6602, 0.82616]","[-0.8582867108473744, -0.6611159078507545, -0.35996733902975864, -0.1554069997344556, 0.20348480374483105, 0.39955716215651166, 0.8138704878759221]",0.15635,-0.8582867108473744,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\logarithm\g20_k2
+logarithm,20,3,0,Log (x0),1.0,0.71583,1,[0.74243],[0.6053703431755671],0.74243,0.6053703431755671,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\logarithm\g20_k3
+logarithm,20,3,1,Linear (x1),1.0,0.66245,6,"[0.15635, 0.23533, 0.35596, 0.46882, 0.71507, 0.82616]","[-0.8582867108473744, -0.6611159078507545, -0.35996733902975864, -0.07821630299280599, 0.5365381948283846, 0.8138704878759221]",0.15635,-0.8582867108473744,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\logarithm\g20_k3
+logarithm,20,4,0,Log (x0),1.0,0.71583,1,[0.78521],[0.7121977549428496],0.78521,0.7121977549428496,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\logarithm\g20_k4
+logarithm,20,4,1,Linear (x1),1.0,0.66245,6,"[0.19838, 0.31409, 0.40777, 0.50513, 0.71507, 0.8654]","[-0.7533602883360053, -0.4644943271466044, -0.23062548915314585, 0.012430339914350986, 0.5365381948283846, 0.911831773132789]",0.19838,-0.7533602883360053,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\logarithm\g20_k4
+logarithm,20,5,0,Log (x0),1.0,0.71586,2,"[0.71202, 0.94]","[0.5294324845537094, 1.0987291964448997]",0.71202,0.5294324845537094,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\logarithm\g20_k5
+logarithm,20,5,1,Linear (x1),1.0,0.66242,5,"[0.15635, 0.4379, 0.54249, 0.78573, 0.9]","[-0.8582867108473744, -0.1554069997344556, 0.10569827103556813, 0.7129384093097871, 0.9982094609484773]",0.15635,-0.8582867108473744,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\logarithm\g20_k5
+log2,3,2,0,Log (x0),0.9999,0.72682,1,[0.1],[-0.9988637414821112],0.1,-0.9988637414821112,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\log2\g3_k2
+log2,3,2,1,Linear (x1),0.9999,0.66062,0,[],[],,,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\log2\g3_k2
+log2,3,3,0,Log (x0),1.0,0.72854,2,"[0.36063, 0.64591]","[-0.3480355898012577, 0.3643469260699538]",0.36063,-0.3480355898012577,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\log2\g3_k3
+log2,3,3,1,Linear (x1),1.0,0.65954,1,[0.10143],[-0.995392566767536],0.10143,-0.995392566767536,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\log2\g3_k3
+log2,3,4,0,Log (x0),1.0,0.71425,2,"[0.36063, 0.64591]","[-0.3480355898012577, 0.3643469260699538]",0.36063,-0.3480355898012577,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\log2\g3_k4
+log2,3,4,1,Linear (x1),1.0,0.71749,1,[0.10143],[-0.995392566767536],0.10143,-0.995392566767536,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\log2\g3_k4
+log2,3,5,0,Log (x0),1.0,0.71744,2,"[0.36063, 0.9]","[-0.3480355898012577, 0.9988438184483756]",0.36063,-0.3480355898012577,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\log2\g3_k5
+log2,3,5,1,Linear (x1),1.0,0.74935,2,"[0.39616, 1.16619]","[-0.25960944740575104, 1.6627434701871484]",0.39616,-0.25960944740575104,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\log2\g3_k5
+log2,5,2,0,Log (x0),1.0,0.73193,2,"[0.25139, 0.42255]","[-0.6208225571097656, -0.19341302466263813]",0.25139,-0.6208225571097656,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\log2\g5_k2
+log2,5,2,1,Linear (x1),1.0,0.65909,0,[],[],,,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\log2\g5_k2
+log2,5,3,0,Log (x0),1.0,0.71848,3,"[0.1, 0.42255, 0.74243]","[-0.9988637414821112, -0.19341302466263813, 0.6053703431755671]",0.1,-0.9988637414821112,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\log2\g5_k3
+log2,5,3,1,Linear (x1),1.0,0.65867,1,[0.10143],[-0.995392566767536],0.10143,-0.995392566767536,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\log2\g5_k3
+log2,5,4,0,Log (x0),1.0,0.71092,3,"[0.1, 0.42255, 0.59474]","[-0.9988637414821112, -0.19341302466263813, 0.23656855626790016]",0.1,-0.9988637414821112,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\log2\g5_k4
+log2,5,4,1,Linear (x1),1.0,0.75991,1,[0.10143],[-0.995392566767536],0.10143,-0.995392566767536,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\log2\g5_k4
+log2,5,5,0,Log (x0),1.0,0.71034,1,[0.74243],[0.6053703431755671],0.74243,0.6053703431755671,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\log2\g5_k5
+log2,5,5,1,Linear (x1),1.0,0.78376,1,[0.9],[0.9982094609484773],0.9,0.9982094609484773,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\log2\g5_k5
+log2,7,2,0,Log (x0),1.0,0.731,1,[0.44888],[-0.12766347459642594],0.44888,-0.12766347459642594,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\log2\g7_k2
+log2,7,2,1,Linear (x1),1.0,0.65966,0,[],[],,,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\log2\g7_k2
+log2,7,3,0,Log (x0),1.0,0.7181,2,"[0.44888, 0.69316]","[-0.12766347459642594, 0.48233652882834815]",0.44888,-0.12766347459642594,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\log2\g7_k3
+log2,7,3,1,Linear (x1),1.0,0.65817,2,"[0.10143, 0.78993]","[-0.995392566767536, 0.7234235621660267]",0.10143,-0.995392566767536,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\log2\g7_k3
+log2,7,4,0,Log (x0),1.0,0.71588,2,"[0.31664, 0.78794]","[-0.45788453425293546, 0.7190149319911125]",0.31664,-0.45788453425293546,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\log2\g7_k4
+log2,7,4,1,Linear (x1),1.0,0.70995,1,[0.10143],[-0.995392566767536],0.10143,-0.995392566767536,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\log2\g7_k4
+log2,7,5,0,Log (x0),1.0,0.71248,3,"[0.44888, 0.69316, 0.78794]","[-0.12766347459642594, 0.48233652882834815, 0.7190149319911125]",0.44888,-0.12766347459642594,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\log2\g7_k5
+log2,7,5,1,Linear (x1),1.0,0.79982,2,"[0.9, 1.01408]","[0.9982094609484773, 1.283006184243671]",0.9,0.9982094609484773,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\log2\g7_k5
+log2,10,2,0,Log (x0),1.0,0.73397,1,[0.42255],[-0.19341302466263813],0.42255,-0.19341302466263813,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\log2\g10_k2
+log2,10,2,1,Linear (x1),1.0,0.66013,0,[],[],,,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\log2\g10_k2
+log2,10,3,0,Log (x0),1.0,0.71793,2,"[0.42255, 0.82633]","[-0.19341302466263813, 0.8148799235232769]",0.42255,-0.19341302466263813,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\log2\g10_k3
+log2,10,3,1,Linear (x1),1.0,0.65786,1,[0.10143],[-0.995392566767536],0.10143,-0.995392566767536,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\log2\g10_k3
+log2,10,4,0,Log (x0),1.0,0.80071,2,"[0.25139, 0.59474]","[-0.6208225571097656, 0.23656855626790016]",0.25139,-0.6208225571097656,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\log2\g10_k4
+log2,10,4,1,Linear (x1),1.0,0.66039,0,[],[],,,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\log2\g10_k4
+log2,10,5,0,Log (x0),1.0,0.71034,1,[0.18468],[-0.7874063962634691],0.18468,-0.7874063962634691,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\log2\g10_k5
+log2,10,5,1,Linear (x1),1.0,0.77606,1,[0.97986],[1.1975771531149757],0.97986,1.1975771531149757,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\log2\g10_k5
+log2,15,2,0,Log (x0),1.0,0.71772,1,[0.42255],[-0.19341302466263813],0.42255,-0.19341302466263813,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\log2\g15_k2
+log2,15,2,1,Linear (x1),1.0,0.6595,0,[],[],,,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\log2\g15_k2
+log2,15,3,0,Log (x0),1.0,0.72009,1,[0.42255],[-0.19341302466263813],0.42255,-0.19341302466263813,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\log2\g15_k3
+log2,15,3,1,Linear (x1),1.0,0.65787,1,[0.10143],[-0.995392566767536],0.10143,-0.995392566767536,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\log2\g15_k3
+log2,15,4,0,Log (x0),1.0,0.70968,1,[0.47468],[-0.06323740578866777],0.47468,-0.06323740578866777,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\log2\g15_k4
+log2,15,4,1,Linear (x1),1.0,0.8141,0,[],[],,,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\log2\g15_k4
+log2,15,5,0,Log (x0),1.0,0.69691,3,"[0.14933, 0.59474, 0.95333]","[-0.8756800990678976, 0.23656855626790016, 1.1320159986622416]",0.14933,-0.8756800990678976,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\log2\g15_k5
+log2,15,5,1,Linear (x1),1.0,0.75038,2,"[0.16955, 0.95324]","[-0.8253333732991929, 1.131121255726143]",0.16955,-0.8253333732991929,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\log2\g15_k5
+log2,20,2,0,Log (x0),1.0,0.73646,1,[0.46696],[-0.08251528374199697],0.46696,-0.08251528374199697,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\log2\g20_k2
+log2,20,2,1,Linear (x1),1.0,0.66004,0,[],[],,,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\log2\g20_k2
+log2,20,3,0,Log (x0),1.0,0.72291,1,[0.42255],[-0.19341302466263813],0.42255,-0.19341302466263813,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\log2\g20_k3
+log2,20,3,1,Linear (x1),1.0,0.65809,1,[0.10143],[-0.995392566767536],0.10143,-0.995392566767536,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\log2\g20_k3
+log2,20,4,0,Log (x0),1.0,0.71157,1,[0.42255],[-0.19341302466263813],0.42255,-0.19341302466263813,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\log2\g20_k4
+log2,20,4,1,Linear (x1),1.0,0.76367,0,[],[],,,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\log2\g20_k4
+log2,20,5,0,Log (x0),1.0,0.70887,3,"[0.1, 0.63024, 0.94]","[-0.9988637414821112, 0.32521682923981543, 1.0987291964448997]",0.1,-0.9988637414821112,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\log2\g20_k5
+log2,20,5,1,Linear (x1),1.0,0.68399,2,"[0.10143, 0.93993]","[-0.995392566767536, 1.0978933070317267]",0.10143,-0.995392566767536,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\log2\g20_k5
+conditional,3,2,0,Conditional (x0),0.999,0.73725,0,[],[],,,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\conditional\g3_k2
+conditional,3,2,1,Linear (x1),0.999,0.64381,0,[],[],,,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\conditional\g3_k2
+conditional,3,3,0,Conditional (x0),0.9976,0.73759,1,[0.36063],[-0.3480355898012577],0.36063,-0.3480355898012577,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\conditional\g3_k3
+conditional,3,3,1,Linear (x1),0.9976,0.64258,1,[0.39616],[-0.25960944740575104],0.39616,-0.25960944740575104,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\conditional\g3_k3
+conditional,3,4,0,Conditional (x0),0.9987,0.73762,1,[0.9],[0.9988438184483756],0.9,0.9988438184483756,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\conditional\g3_k4
+conditional,3,4,1,Linear (x1),0.9987,0.64368,2,"[0.39616, 0.9]","[-0.25960944740575104, 0.9982094609484773]",0.39616,-0.25960944740575104,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\conditional\g3_k4
+conditional,3,5,0,Conditional (x0),0.9985,0.73652,1,[0.64591],[0.3643469260699538],0.64591,0.3643469260699538,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\conditional\g3_k5
+conditional,3,5,1,Linear (x1),0.9985,0.6444,1,[0.62995],[0.32403909694192884],0.62995,0.32403909694192884,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\conditional\g3_k5
+conditional,5,2,0,Conditional (x0),0.9996,0.73799,0,[],[],,,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\conditional\g5_k2
+conditional,5,2,1,Linear (x1),0.9996,0.64292,0,[],[],,,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\conditional\g5_k2
+conditional,5,3,0,Conditional (x0),0.999,0.73761,1,[0.42255],[-0.19341302466263813],0.42255,-0.19341302466263813,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\conditional\g5_k3
+conditional,5,3,1,Linear (x1),0.999,0.64302,1,[0.2659],[-0.5847989738471249],0.2659,-0.5847989738471249,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\conditional\g5_k3
+conditional,5,4,0,Conditional (x0),0.9996,0.73807,0,[],[],,,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\conditional\g5_k4
+conditional,5,4,1,Linear (x1),0.9996,0.64254,1,[0.2659],[-0.5847989738471249],0.2659,-0.5847989738471249,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\conditional\g5_k4
+conditional,5,5,0,Conditional (x0),0.9993,0.73769,1,[0.59474],[0.23656855626790016],0.59474,0.23656855626790016,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\conditional\g5_k5
+conditional,5,5,1,Linear (x1),0.9993,0.64293,1,[0.4379],[-0.1554069997344556],0.4379,-0.1554069997344556,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\conditional\g5_k5
+conditional,7,2,0,Conditional (x0),0.9996,0.7379,1,[0.20923],[-0.7261017455181022],0.20923,-0.7261017455181022,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\conditional\g7_k2
+conditional,7,2,1,Linear (x1),0.9996,0.64285,1,[0.23186],[-0.6697786412819811],0.23186,-0.6697786412819811,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\conditional\g7_k2
+conditional,7,3,0,Conditional (x0),0.9995,0.73818,1,[0.44888],[-0.12766347459642594],0.44888,-0.12766347459642594,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\conditional\g7_k3
+conditional,7,3,1,Linear (x1),0.9995,0.64264,1,[0.78993],[0.7234235621660267],0.78993,0.7234235621660267,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\conditional\g7_k3
+conditional,7,4,0,Conditional (x0),0.9997,0.73809,1,[0.9],[0.9988438184483756],0.9,0.9988438184483756,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\conditional\g7_k4
+conditional,7,4,1,Linear (x1),0.9997,0.64267,2,"[0.23186, 0.9]","[-0.6697786412819811, 0.9982094609484773]",0.23186,-0.6697786412819811,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\conditional\g7_k4
+conditional,7,5,0,Conditional (x0),0.9996,0.7381,1,[0.56726],[0.1679473015842878],0.56726,0.1679473015842878,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\conditional\g7_k5
+conditional,7,5,1,Linear (x1),0.9996,0.64266,1,[0.55621],[0.13994977036595072],0.55621,0.13994977036595072,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\conditional\g7_k5
+conditional,10,2,0,Conditional (x0),0.9996,0.73785,2,"[0.42255, 0.68356]","[-0.19341302466263813, 0.4583640381091822]",0.42255,-0.19341302466263813,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\conditional\g10_k2
+conditional,10,2,1,Linear (x1),0.9996,0.64306,1,[0.19838],[-0.7533602883360053],0.19838,-0.7533602883360053,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\conditional\g10_k2
+conditional,10,3,0,Conditional (x0),0.9997,0.73792,0,[],[],,,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\conditional\g10_k3
+conditional,10,3,1,Linear (x1),0.9997,0.64267,2,"[0.50513, 0.75486]","[0.012430339914350986, 0.635872535816426]",0.50513,0.012430339914350986,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\conditional\g10_k3
+conditional,10,4,0,Conditional (x0),0.9997,0.73753,1,[0.50061],[0.0015132904975791572],0.50061,0.0015132904975791572,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\conditional\g10_k4
+conditional,10,4,1,Linear (x1),0.9997,0.64332,1,[0.50513],[0.012430339914350986],0.50513,0.012430339914350986,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\conditional\g10_k4
+conditional,10,5,0,Conditional (x0),0.9997,0.73812,1,[0.98],[1.198614574441424],0.98,1.198614574441424,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\conditional\g10_k5
+conditional,10,5,1,Linear (x1),0.9997,0.64248,0,[],[],,,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\conditional\g10_k5
+conditional,15,2,0,Conditional (x0),0.9998,0.73766,0,[],[],,,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\conditional\g15_k2
+conditional,15,2,1,Linear (x1),0.9998,0.64273,0,[],[],,,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\conditional\g15_k2
+conditional,15,3,0,Conditional (x0),0.9997,0.7382,1,[0.47468],[-0.06323740578866777],0.47468,-0.06323740578866777,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\conditional\g15_k3
+conditional,15,3,1,Linear (x1),0.9997,0.64255,1,[0.69907],[0.49659475537604325],0.69907,0.49659475537604325,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\conditional\g15_k3
+conditional,15,4,0,Conditional (x0),0.9998,0.73858,1,[0.59474],[0.23656855626790016],0.59474,0.23656855626790016,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\conditional\g15_k4
+conditional,15,4,1,Linear (x1),0.9998,0.64215,2,"[0.58166, 0.9]","[0.20348480374483105, 0.9982094609484773]",0.58166,0.20348480374483105,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\conditional\g15_k4
+conditional,15,5,0,Conditional (x0),0.9998,0.7371,3,"[0.5355, 0.70331, 0.95333]","[0.08863831145504744, 0.5076824434949662, 1.1320159986622416]",0.5355,0.08863831145504744,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\conditional\g15_k5
+conditional,15,5,1,Linear (x1),0.9998,0.64362,3,"[0.33011, 0.4379, 0.62995]","[-0.42450095839494756, -0.1554069997344556, 0.32403909694192884]",0.33011,-0.42450095839494756,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\conditional\g15_k5
+conditional,20,2,0,Conditional (x0),0.9998,0.73822,4,"[0.13848, 0.46696, 0.59474, 0.71202]","[-0.9027740078494547, -0.08251528374199697, 0.23656855626790016, 0.5294324845537094]",0.13848,-0.9027740078494547,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\conditional\g20_k2
+conditional,20,2,1,Linear (x1),0.9998,0.64215,3,"[0.15635, 0.46882, 0.6602]","[-0.8582867108473744, -0.07821630299280599, 0.39955716215651166]",0.15635,-0.8582867108473744,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\conditional\g20_k2
+conditional,20,3,0,Conditional (x0),0.9997,0.73818,2,"[0.25139, 0.74243]","[-0.6208225571097656, 0.6053703431755671]",0.25139,-0.6208225571097656,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\conditional\g20_k3
+conditional,20,3,1,Linear (x1),0.9997,0.64252,4,"[0.15635, 0.31409, 0.6602, 0.8654]","[-0.8582867108473744, -0.4644943271466044, 0.39955716215651166, 0.911831773132789]",0.15635,-0.8582867108473744,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\conditional\g20_k3
+conditional,20,4,0,Conditional (x0),0.9997,0.73828,2,"[0.33359, 0.50061]","[-0.4155581053269082, 0.0015132904975791572]",0.33359,-0.4155581053269082,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\conditional\g20_k4
+conditional,20,4,1,Linear (x1),0.9997,0.64233,2,"[0.19838, 0.54249]","[-0.7533602883360053, 0.10569827103556813]",0.19838,-0.7533602883360053,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\conditional\g20_k4
+conditional,20,5,0,Conditional (x0),0.9996,0.73831,2,"[0.29211, 0.68356]","[-0.519139242309304, 0.4583640381091822]",0.29211,-0.519139242309304,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\conditional\g20_k5
+conditional,20,5,1,Linear (x1),0.9996,0.64229,5,"[0.15635, 0.23533, 0.4379, 0.71507, 0.8654]","[-0.8582867108473744, -0.6611159078507545, -0.1554069997344556, 0.5365381948283846, 0.911831773132789]",0.15635,-0.8582867108473744,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\conditional\g20_k5
+rosenbrock,3,2,0,Quadratic (x0),0.9949,3.22688,1,[0.1],[-0.9988637414821112],0.1,-0.9988637414821112,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\rosenbrock\g3_k2
+rosenbrock,3,2,1,Parabolic (x1),0.9949,1.68143,1,[0.10143],[-0.995392566767536],0.10143,-0.995392566767536,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\rosenbrock\g3_k2
+rosenbrock,3,3,0,Quadratic (x0),0.9991,9.86442,1,[0.1],[-0.9988637414821112],0.1,-0.9988637414821112,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\rosenbrock\g3_k3
+rosenbrock,3,3,1,Parabolic (x1),0.9991,2.53121,2,"[0.39616, 0.62995]","[-0.25960944740575104, 0.32403909694192884]",0.39616,-0.25960944740575104,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\rosenbrock\g3_k3
+rosenbrock,3,4,0,Quadratic (x0),0.9959,10.035,2,"[0.1, 0.9]","[-0.9988637414821112, 0.9988438184483756]",0.1,-0.9988637414821112,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\rosenbrock\g3_k4
+rosenbrock,3,4,1,Parabolic (x1),0.9959,3.23266,2,"[0.10143, 0.62995]","[-0.995392566767536, 0.32403909694192884]",0.10143,-0.995392566767536,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\rosenbrock\g3_k4
+rosenbrock,3,5,0,Quadratic (x0),0.9992,9.60235,3,"[0.36063, 0.64591, 1.16667]","[-0.3480355898012577, 0.3643469260699538, 1.6647546622067042]",0.36063,-0.3480355898012577,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\rosenbrock\g3_k5
+rosenbrock,3,5,1,Parabolic (x1),0.9992,2.67034,2,"[0.10143, 0.62995]","[-0.995392566767536, 0.32403909694192884]",0.10143,-0.995392566767536,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\rosenbrock\g3_k5
+rosenbrock,5,2,0,Quadratic (x0),0.9977,9.92259,2,"[0.25139, 0.42255]","[-0.6208225571097656, -0.19341302466263813]",0.25139,-0.6208225571097656,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\rosenbrock\g5_k2
+rosenbrock,5,2,1,Parabolic (x1),0.9977,0.92123,0,[],[],,,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\rosenbrock\g5_k2
+rosenbrock,5,3,0,Quadratic (x0),0.9998,11.77571,3,"[0.1, 0.25139, 0.59474]","[-0.9988637414821112, -0.6208225571097656, 0.23656855626790016]",0.1,-0.9988637414821112,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\rosenbrock\g5_k3
+rosenbrock,5,3,1,Parabolic (x1),0.9998,3.25567,1,[0.4379],[-0.1554069997344556],0.4379,-0.1554069997344556,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\rosenbrock\g5_k3
+rosenbrock,5,4,0,Quadratic (x0),0.9991,11.40659,3,"[0.1, 0.59474, 0.9]","[-0.9988637414821112, 0.23656855626790016, 0.9988438184483756]",0.1,-0.9988637414821112,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\rosenbrock\g5_k4
+rosenbrock,5,4,1,Parabolic (x1),0.9991,3.13555,2,"[0.2659, 0.58166]","[-0.5847989738471249, 0.20348480374483105]",0.2659,-0.5847989738471249,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\rosenbrock\g5_k4
+rosenbrock,5,5,0,Quadratic (x0),0.9999,9.79491,3,"[0.25139, 0.59474, 1.06]","[-0.6208225571097656, 0.23656855626790016, 1.3983853304344729]",0.25139,-0.6208225571097656,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\rosenbrock\g5_k5
+rosenbrock,5,5,1,Parabolic (x1),0.9999,2.64606,2,"[0.4379, 0.75486]","[-0.1554069997344556, 0.635872535816426]",0.4379,-0.1554069997344556,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\rosenbrock\g5_k5
+rosenbrock,7,2,0,Quadratic (x0),0.9995,8.87131,2,"[0.20923, 0.56726]","[-0.7261017455181022, 0.1679473015842878]",0.20923,-0.7261017455181022,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\rosenbrock\g7_k2
+rosenbrock,7,2,1,Parabolic (x1),0.9995,1.88507,0,[],[],,,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\rosenbrock\g7_k2
+rosenbrock,7,3,0,Quadratic (x0),0.9997,7.99619,2,"[0.20923, 0.44888]","[-0.7261017455181022, -0.12766347459642594]",0.20923,-0.7261017455181022,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\rosenbrock\g7_k3
+rosenbrock,7,3,1,Parabolic (x1),0.9997,2.43173,2,"[0.55621, 0.68009]","[0.13994977036595072, 0.4492118503257034]",0.55621,0.13994977036595072,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\rosenbrock\g7_k3
+rosenbrock,7,4,0,Quadratic (x0),0.9995,11.62784,3,"[0.1, 0.56726, 0.9]","[-0.9988637414821112, 0.1679473015842878, 0.9988438184483756]",0.1,-0.9988637414821112,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\rosenbrock\g7_k4
+rosenbrock,7,4,1,Parabolic (x1),0.9995,3.68497,3,"[0.10143, 0.4556, 0.55621]","[-0.995392566767536, -0.11121956984030304, 0.13994977036595072]",0.10143,-0.995392566767536,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\rosenbrock\g7_k4
+rosenbrock,7,5,0,Quadratic (x0),0.9997,13.88939,4,"[0.1, 0.20923, 0.56726, 1.01429]","[-0.9988637414821112, -0.7261017455181022, 0.1679473015842878, 1.2842413147289444]",0.1,-0.9988637414821112,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\rosenbrock\g7_k5
+rosenbrock,7,5,1,Parabolic (x1),0.9997,3.57249,4,"[0.10143, 0.23186, 0.4556, 0.68009]","[-0.995392566767536, -0.6697786412819811, -0.11121956984030304, 0.4492118503257034]",0.10143,-0.995392566767536,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\rosenbrock\g7_k5
+rosenbrock,10,2,0,Quadratic (x0),0.836,0.87464,2,"[0.25139, 0.68356]","[-0.6208225571097656, 0.4583640381091822]",0.25139,-0.6208225571097656,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\rosenbrock\g10_k2
+rosenbrock,10,2,1,Parabolic (x1),0.836,0.69788,1,[0.75486],[0.635872535816426],0.75486,0.635872535816426,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\rosenbrock\g10_k2
+rosenbrock,10,3,0,Quadratic (x0),0.9991,9.18222,4,"[0.1, 0.18468, 0.59474, 0.74243]","[-0.9988637414821112, -0.7874063962634691, 0.23656855626790016, 0.6053703431755671]",0.1,-0.9988637414821112,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\rosenbrock\g10_k3
+rosenbrock,10,3,1,Parabolic (x1),0.9991,2.21404,3,"[0.10143, 0.4379, 0.58166]","[-0.995392566767536, -0.1554069997344556, 0.20348480374483105]",0.10143,-0.995392566767536,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\rosenbrock\g10_k3
+rosenbrock,10,4,0,Quadratic (x0),0.8875,3.64769,3,"[0.18468, 0.50061, 0.74243]","[-0.7874063962634691, 0.0015132904975791572, 0.6053703431755671]",0.18468,-0.7874063962634691,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\rosenbrock\g10_k4
+rosenbrock,10,4,1,Parabolic (x1),0.8875,1.95778,2,"[0.58166, 0.75486]","[0.20348480374483105, 0.635872535816426]",0.58166,0.20348480374483105,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\rosenbrock\g10_k4
+rosenbrock,10,5,0,Quadratic (x0),0.9997,11.91572,5,"[0.1, 0.25139, 0.59474, 0.9, 0.98]","[-0.9988637414821112, -0.6208225571097656, 0.23656855626790016, 0.9988438184483756, 1.198614574441424]",0.1,-0.9988637414821112,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\rosenbrock\g10_k5
+rosenbrock,10,5,1,Parabolic (x1),0.9997,3.14668,3,"[0.19838, 0.58166, 0.6602]","[-0.7533602883360053, 0.20348480374483105, 0.39955716215651166]",0.19838,-0.7533602883360053,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\rosenbrock\g10_k5
+rosenbrock,15,2,0,Quadratic (x0),0.9999,9.40797,4,"[0.14933, 0.30196, 0.47468, 0.79853]","[-0.8756800990678976, -0.49454246797765977, -0.06323740578866777, 0.7454595858156923]",0.14933,-0.8756800990678976,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\rosenbrock\g15_k2
+rosenbrock,15,2,1,Parabolic (x1),0.9999,1.21124,0,[],[],,,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\rosenbrock\g15_k2
+rosenbrock,15,3,0,Quadratic (x0),0.9994,9.79751,4,"[0.1, 0.20366, 0.59474, 0.79853]","[-0.9988637414821112, -0.7400107844041184, 0.23656855626790016, 0.7454595858156923]",0.1,-0.9988637414821112,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\rosenbrock\g15_k3
+rosenbrock,15,3,1,Parabolic (x1),0.9994,2.66374,2,"[0.10143, 0.4379]","[-0.995392566767536, -0.1554069997344556]",0.10143,-0.995392566767536,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\rosenbrock\g15_k3
+rosenbrock,15,4,0,Quadratic (x0),0.9996,10.4015,5,"[0.1, 0.30196, 0.42255, 0.5355, 0.9]","[-0.9988637414821112, -0.49454246797765977, -0.19341302466263813, 0.08863831145504744, 0.9988438184483756]",0.1,-0.9988637414821112,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\rosenbrock\g15_k4
+rosenbrock,15,4,1,Parabolic (x1),0.9996,3.54284,4,"[0.16955, 0.48232, 0.58166, 0.9]","[-0.8253333732991929, -0.04451402595489297, 0.20348480374483105, 0.9982094609484773]",0.16955,-0.8253333732991929,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\rosenbrock\g15_k4
+rosenbrock,15,5,0,Quadratic (x0),0.9998,15.39448,3,"[0.20366, 0.5355, 0.9]","[-0.7400107844041184, 0.08863831145504744, 0.9988438184483756]",0.20366,-0.7400107844041184,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\rosenbrock\g15_k5
+rosenbrock,15,5,1,Parabolic (x1),0.9998,3.43222,3,"[0.22361, 0.4379, 0.58166]","[-0.6903744772495947, -0.1554069997344556, 0.20348480374483105]",0.22361,-0.6903744772495947,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\rosenbrock\g15_k5
+rosenbrock,20,2,0,Quadratic (x0),0.9996,9.75647,4,"[0.18468, 0.50061, 0.59474, 0.74243]","[-0.7874063962634691, 0.0015132904975791572, 0.23656855626790016, 0.6053703431755671]",0.18468,-0.7874063962634691,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\rosenbrock\g20_k2
+rosenbrock,20,2,1,Parabolic (x1),0.9996,1.12788,0,[],[],,,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\rosenbrock\g20_k2
+rosenbrock,20,3,0,Quadratic (x0),0.9997,8.30846,3,"[0.1, 0.21211, 0.42255]","[-0.9988637414821112, -0.7189099983023526, -0.19341302466263813]",0.1,-0.9988637414821112,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\rosenbrock\g20_k3
+rosenbrock,20,3,1,Parabolic (x1),0.9997,2.45988,3,"[0.10143, 0.54249, 0.61626]","[-0.995392566767536, 0.10569827103556813, 0.28986249156051935]",0.10143,-0.995392566767536,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\rosenbrock\g20_k3
+rosenbrock,20,4,0,Quadratic (x0),0.9996,10.05742,3,"[0.29211, 0.54933, 0.85985]","[-0.519139242309304, 0.12317368089734576, 0.8985838702843642]",0.29211,-0.519139242309304,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\rosenbrock\g20_k4
+rosenbrock,20,4,1,Parabolic (x1),0.9996,3.33856,4,"[0.15635, 0.46882, 0.54249, 0.9]","[-0.8582867108473744, -0.07821630299280599, 0.10569827103556813, 0.9982094609484773]",0.15635,-0.8582867108473744,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\rosenbrock\g20_k4
+rosenbrock,20,5,0,Quadratic (x0),0.9998,19.01994,3,"[0.18468, 0.50061, 0.94]","[-0.7874063962634691, 0.0015132904975791572, 1.0987291964448997]",0.18468,-0.7874063962634691,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\rosenbrock\g20_k5
+rosenbrock,20,5,1,Parabolic (x1),0.9998,3.85495,3,"[0.19838, 0.4379, 0.58166]","[-0.7533602883360053, -0.1554069997344556, 0.20348480374483105]",0.19838,-0.7533602883360053,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\rosenbrock\g20_k5
