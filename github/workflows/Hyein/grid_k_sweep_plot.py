@@ -267,6 +267,17 @@ def plot_tp_comparison(df, funcs, out_dir, mode='by_grid'):
             fdf_int = _get_interval_data(df, func)
         else:
             fdf_int = None
+
+        # per-k colors per feature column (sampled from feature colormap)
+        if mode == 'by_grid':
+            n_vary = max(len(vary_vals) - 1, 1)
+            k_feat_colors = {
+                col_i: {
+                    v: FEAT_CMAPS[col_i % len(FEAT_CMAPS)](i / n_vary)
+                    for i, v in enumerate(vary_vals)
+                }
+                for col_i in range(len(feats))
+            }
         attr_cols = (sorted([c for c in fdf_int.columns if c.startswith('attr_')],
                              key=lambda c: int(c.split('_')[1]))
                      if fdf_int is not None else [])
@@ -351,7 +362,7 @@ def plot_tp_comparison(df, funcs, out_dir, mode='by_grid'):
                             continue
 
                         if mode == 'by_grid':
-                            color = feat_col
+                            color = k_feat_colors[col_i][vary_val]
                             lw    = vary_lw[vary_val]
                             ls    = K_STYLES.get(int(vary_val), 'solid')
                         else:
@@ -379,7 +390,7 @@ def plot_tp_comparison(df, funcs, out_dir, mode='by_grid'):
                     if col_i == 0:
                         if mode == 'by_grid':
                             handles = [
-                                mlines.Line2D([], [], color=feat_col,
+                                mlines.Line2D([], [], color=k_feat_colors[col_i][v],
                                               linewidth=1.4,
                                               linestyle=K_STYLES.get(int(v), 'solid'),
                                               label=f'k={v}')
@@ -395,7 +406,8 @@ def plot_tp_comparison(df, funcs, out_dir, mode='by_grid'):
                             ]
                         ax.legend(handles=handles, loc='best', fontsize=7)
 
-            vary_desc = f'coloured by {vary_key}'
+            vary_desc = (f'colour+style by {vary_key}'
+                     if mode == 'by_grid' else f'coloured by {vary_key}')
             fig.suptitle(
                 f'{func}  —  transition points organised by {row_key}  ({vary_desc})',
                 fontsize=10, fontweight='bold',
