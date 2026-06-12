@@ -189,8 +189,8 @@ class KANRegressor(BaseEstimator, RegressorMixin):
 # ==========================================
 def main():
     parser = argparse.ArgumentParser(description="Tune KAN for a specific dataset.")
-    parser.add_argument("data_name", type=str, nargs='?', default="CO2HPx10",
-                        help="The name of the dataset (default: CO2HPx10)")
+    parser.add_argument("data_name", type=str, nargs='?', default="CO2AR4500",
+                        help="The name of the dataset (default: CO2AR4500)")
     parser.add_argument("rand_seed", type=int, nargs='?', default=None,
                         help="The random seed (default: None=42)")
 
@@ -254,15 +254,15 @@ def main():
     # ==========================================
     param_distributions = {
         'n_layers': [1],
-        'grid': [5, 10],
+        'grid': [10],
         'k': [3],
-        'steps': [20, 50],
+        'steps': [50],
         'lamb': [0.01, 0.1, 1.0],
-        'lamb_coef': [0.01, 0.1, 1.0],  # Penalize large coefficients (sparsity)
+        'lamb_coef': [0, 0.01, 0.1, 1.0],  # Penalize large coefficients (sparsity)
         'lamb_coefdiff': [0, 0.01, 0.1],
         'lamb_entropy': [0.001, 0.01, 0.1, 2.0, 10.0],  # Penalize complexity (for symbolic)
         'lr': [0.01, 0.1, 0.5],  # Learning rate for LBFGS
-        'sym_range': [10, 50],
+        'sym_range': [50],
     }
 
     # Pass default symbolic options here if you want to override defaults
@@ -272,7 +272,7 @@ def main():
     search = RandomizedSearchCV(
         estimator=kan_wrapper,
         param_distributions=param_distributions,
-        n_iter=200,
+        n_iter=400,
         cv=3,
         scoring='r2',
         n_jobs=1,  # IMPORTANT: Keep 1 for CUDA safety
