@@ -282,13 +282,19 @@ def plot_tp_comparison(df, funcs, out_dir, mode='by_grid'):
                              key=lambda c: int(c.split('_')[1]))
                      if fdf_int is not None else [])
 
-        # shared y-limit per column: max attribution across all grid rows
-        # so bars are directly comparable up and down each column
+        # shared y-limit per column: robust upper bound across all grid rows
+        # so bars are directly comparable up and down each column. Using the raw
+        # max lets a single extreme interval (e.g. a narrow high-grid slice where
+        # the slicing feature's std collapses) blow up the whole column's axis and
+        # squash every other bar to a sliver. Cap at the 95th percentile instead
+        # so typical bars stay visible; the rare outlier bars simply clip.
         col_ymax = {}
         if fdf_int is not None and attr_cols:
             for col_i, (fidx, _) in enumerate(feats):
-                vals = fdf_int[fdf_int['slicing_feat_idx'] == fidx][attr_cols]
-                col_ymax[col_i] = float(vals.max().max()) * 1.1
+                vals = fdf_int[fdf_int['slicing_feat_idx'] == fidx][attr_cols].values.ravel()
+                vals = vals[~np.isnan(vals)]
+                col_ymax[col_i] = (float(np.percentile(vals, 95)) * 1.1
+                                   if vals.size else 1.0)
 
         with plt.rc_context(RC):
             fig, axes = plt.subplots(
