@@ -3,9 +3,9 @@ import os
 
 def main():
     target_scripts = [
-        "github/workflows/Hyein/material_KAN_sweep.py",
+        # "github/workflows/Hyein/material_KAN_sweep.py",
         "github/workflows/Hyein/material_KAN_analyze.py",
-        # "github/workflows/Hyein/material_KAN_SALib.py",
+        "github/workflows/Hyein/material_KAN_SALib.py",
         # "github/workflows/Hyein/material_KAN_SHAP.py",
         # "github/workflows/Hyein/material_NN_tuning.py",
         # "github/workflows/Hyein/material_NN_SHAP.py",

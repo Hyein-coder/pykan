@@ -1,5 +1,6 @@
 import argparse
 import copy
+import io
 import os
 import joblib
 import json
@@ -132,7 +133,10 @@ class KANRegressor(BaseEstimator, RegressorMixin):
                 print(f"   ⚠️ Prunning failed (ignoring): {e}")
 
         # Snapshot before symbolification
-        self.model_pre_symbolic = copy.deepcopy(self.model)
+        # _buf = io.BytesIO()
+        # torch.save(self.model, _buf)
+        # _buf.seek(0)
+        # self.model_pre_symbolic = torch.load(_buf)
 
         # 4. Phase 3: Symbolic
         if self.symbolic_enabled:
