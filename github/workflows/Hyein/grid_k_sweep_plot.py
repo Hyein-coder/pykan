@@ -297,15 +297,25 @@ def plot_tp_comparison(df, funcs, out_dir, mode='by_grid'):
                                    if vals.size else 1.0)
 
         with plt.rc_context(RC):
-            fig, axes = plt.subplots(
-                n_rows, n_cols,
-                figsize=(4 * n_cols, 2.8 * n_rows),
-                squeeze=False,
-            )
+            # by_grid: grids run horizontally (cols), features stack vertically
+            #          (rows); by_k keeps rows=k, cols=features.
+            if mode == 'by_grid':
+                fig, axes = plt.subplots(
+                    n_cols, n_rows,
+                    figsize=(4 * n_rows, 2.8 * n_cols),
+                    squeeze=False,
+                )
+            else:
+                fig, axes = plt.subplots(
+                    n_rows, n_cols,
+                    figsize=(4 * n_cols, 2.8 * n_rows),
+                    squeeze=False,
+                )
 
             for row_i, row_val in enumerate(row_vals):
                 for col_i, (fidx, fname) in enumerate(feats):
-                    ax       = axes[row_i, col_i]
+                    ax = (axes[col_i, row_i] if mode == 'by_grid'
+                          else axes[row_i, col_i])
                     feat_col = FEAT_COLORS[col_i % len(FEAT_COLORS)]
                     lo, hi   = _feat_bounds(func, fidx)
 
@@ -320,7 +330,12 @@ def plot_tp_comparison(df, funcs, out_dir, mode='by_grid'):
                     ax.set_ylim(0, 1)
                     ax.set_yticks([])
                     ax.set_xlabel(fname, fontsize=9)
-                    ax.set_title(f'{row_key}={row_val}', fontsize=9)
+                    if mode == 'by_grid':
+                        # grid value as column header (top row only)
+                        if col_i == 0:
+                            ax.set_title(f'{row_key}={row_val}', fontsize=9)
+                    else:
+                        ax.set_title(f'{row_key}={row_val}', fontsize=9)
 
                     # ── per-interval attribution bars (sliced by this column's feature) ──
                     if fdf_int is not None and attr_cols:
@@ -392,8 +407,9 @@ def plot_tp_comparison(df, funcs, out_dir, mode='by_grid'):
                             )
                             first = False
 
-                    # ── legend (first column only to avoid clutter) ──
-                    if col_i == 0:
+                    # ── legend (one per feature, left-most panel, to avoid clutter) ──
+                    show_legend = (row_i == 0) if mode == 'by_grid' else (col_i == 0)
+                    if show_legend:
                         if mode == 'by_grid':
                             handles = [
                                 mlines.Line2D([], [], color=k_feat_colors[col_i][v],
