@@ -36,8 +36,8 @@ from kan.experiments.analysis import find_indices_sign_revert
 
 # ── configurable defaults ──────────────────────────────────────────────────
 DEFAULT_FUNCS = ['exponential', 'logarithm', 'log2', 'conditional', 'rosenbrock']
-DEFAULT_GRIDS = [3, 5, 7, 10, 15, 30, 50, 70, 100]
-DEFAULT_KS    = [2, 3, 4, 5]
+DEFAULT_GRIDS = [3, 5, 7, 10, 15, 30]
+DEFAULT_KS    = [2, 3, 4, 5, 6, 7, 8]
 N_SAMPLES     = 1000
 STEPS         = 50          # fallback if no *_kan_metrics.json found
 SEED          = 42
