@@ -261,10 +261,10 @@ def main():
         'grid': [10],
         'k': [3],
         'steps': [50],
-        'lamb': [0.01, 0.1, 1.0],
-        'lamb_coef': [0, 0.01, 0.1, 1.0],  # Penalize large coefficients (sparsity)
+        'lamb': [0.01, 1.0],
+        'lamb_coef': [0, 0.01, 1.0],  # Penalize large coefficients (sparsity)
         'lamb_coefdiff': [0, 0.01, 0.1],
-        'lamb_entropy': [0.001, 0.01, 0.1, 2.0, 10.0],  # Penalize complexity (for symbolic)
+        'lamb_entropy': [0.001, 0.1, 2.0, 10.0],  # Penalize complexity (for symbolic)
         'lr': [0.01, 0.1, 0.5],  # Learning rate for LBFGS
         'sym_range': [50],
     }
@@ -276,7 +276,7 @@ def main():
     search = RandomizedSearchCV(
         estimator=kan_wrapper,
         param_distributions=param_distributions,
-        n_iter=400,
+        n_iter=300,
         cv=3,
         scoring='r2',
         n_jobs=1,  # IMPORTANT: Keep 1 for CUDA safety
