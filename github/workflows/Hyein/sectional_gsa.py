@@ -85,7 +85,7 @@ def make_batch_func(single_func):
 # Section construction
 # ----------------------------------------------------------------------------
 def make_sections(lo, hi, n_sections, mode='equal', data_col=None,
-                  kan_knots_raw=None):
+                  kan_knots_raw=None, custom_edges=None):
     """Build section edges (in raw space) and their midpoints.
 
     Parameters
@@ -94,15 +94,21 @@ def make_sections(lo, hi, n_sections, mode='equal', data_col=None,
         Lower/upper bound of the investigated input's domain.
     n_sections : int
         Requested number of sections ``N``.
-    mode : {'equal', 'quantile', 'kan'}
+    mode : {'equal', 'quantile', 'kan', 'custom'}
         - 'equal'    : ``np.linspace(lo, hi, n_sections+1)``.
         - 'quantile' : data-driven quantile edges from ``data_col``.
         - 'kan'      : use ``kan_knots_raw`` (already denormalized by caller),
                        ends snapped to ``[lo, hi]``.
+        - 'custom'   : use ``custom_edges`` directly (raw space, already
+                       includes the outer ends), sorted/clipped to [lo, hi].
     data_col : np.ndarray, optional
         Raw-space values of the investigated input (required for 'quantile').
     kan_knots_raw : np.ndarray, optional
         Raw-space KAN spline knots (required for 'kan').
+    custom_edges : np.ndarray, optional
+        Raw-space section edges (required for 'custom'). The full edge array
+        (interior transition points plus the outer [lo, hi] ends) is expected;
+        ends are snapped to [lo, hi] and duplicates removed.
 
     Returns
     -------
@@ -162,9 +168,26 @@ def make_sections(lo, hi, n_sections, mode='equal', data_col=None,
                 warnings.warn("kan: degenerate knots; falling back to 'equal'.")
                 edges = np.linspace(lo, hi, n_sections + 1)
 
+    elif mode == 'custom':
+        if custom_edges is None:
+            raise ValueError("mode='custom' requires custom_edges.")
+        edges = np.asarray(custom_edges, dtype=float).ravel()
+        edges = edges[np.isfinite(edges)]
+        edges = np.sort(edges)
+        edges = np.clip(edges, lo, hi)
+        if edges.size < 2:
+            edges = np.array([lo, hi], dtype=float)
+        edges[0] = lo
+        edges[-1] = hi
+        edges = np.unique(edges)
+        if edges.size < 2:
+            warnings.warn("custom: degenerate edges; falling back to 'equal'.")
+            edges = np.linspace(lo, hi, n_sections + 1)
+
     else:
-        raise ValueError("Unknown mode %r; expected 'equal'|'quantile'|'kan'."
-                         % (mode,))
+        raise ValueError(
+            "Unknown mode %r; expected 'equal'|'quantile'|'kan'|'custom'."
+            % (mode,))
 
     centers = 0.5 * (edges[:-1] + edges[1:])
     return edges, centers
@@ -224,7 +247,7 @@ def _section_mean(grad, in_k):
 def compute_gradient_agsm(func_batch, bounds, feat_names, top2_idx,
                           n_sections=10, n_samples_per_section=512, seed=42,
                           section_mode='equal', data_X=None,
-                          kan_knots_raw=None, fd_eps=1e-5):
+                          kan_knots_raw=None, custom_edges=None, fd_eps=1e-5):
     """Compute Sectional GSA (AGSM) for the given target inputs.
 
     Parameters
@@ -250,6 +273,9 @@ def compute_gradient_agsm(func_batch, bounds, feat_names, top2_idx,
     kan_knots_raw : dict, optional
         ``{feat_idx: np.ndarray}`` of raw-space KAN knots
         (required for ``section_mode='kan'``).
+    custom_edges : dict, optional
+        ``{feat_idx: np.ndarray}`` of raw-space section edges (including the
+        outer ends), required for ``section_mode='custom'``.
     fd_eps : float
         Base finite-difference step; scaled per-input by its width.
 
@@ -285,9 +311,10 @@ def compute_gradient_agsm(func_batch, bounds, feat_names, top2_idx,
 
         data_col = data_X[:, l] if data_X is not None else None
         knots_l = kan_knots_raw.get(l) if kan_knots_raw is not None else None
+        custom_l = custom_edges.get(l) if custom_edges is not None else None
         edges, centers = make_sections(
             lo, hi, n_sections, mode=section_mode,
-            data_col=data_col, kan_knots_raw=knots_l)
+            data_col=data_col, kan_knots_raw=knots_l, custom_edges=custom_l)
         n_eff = len(centers)
 
         widths = np.diff(edges)
