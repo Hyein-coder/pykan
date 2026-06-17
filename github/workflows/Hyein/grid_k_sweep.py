@@ -152,15 +152,17 @@ def main():
                 lamb          = bp.get('lamb',          0.01),
                 lamb_coef     = bp.get('lamb_coef',     0.1),
                 lamb_entropy  = bp.get('lamb_entropy',  0.1),
+                sym_range     = bp.get('sym_range',     10),
             )
             print(f"  [{func_name}] best_params loaded — "
                   f"steps={base['steps']}, lr={base['lr']}, "
                   f"lamb={base['lamb']}, lamb_coef={base['lamb_coef']}, "
-                  f"lamb_entropy={base['lamb_entropy']}")
+                  f"lamb_entropy={base['lamb_entropy']}, "
+                  f"sym_range={base['sym_range']}")
         else:
             base = dict(
                 n_layers=1, steps=args.steps, lr=0.1,
-                lamb=0.01, lamb_coef=0.1, lamb_entropy=0.1,
+                lamb=0.01, lamb_coef=0.1, lamb_entropy=0.1, sym_range=10,
             )
             print(f"  [{func_name}] no metrics JSON found — using defaults")
 
@@ -200,7 +202,8 @@ def main():
                         lamb         = base['lamb'],
                         lamb_coef    = base['lamb_coef'],
                         lamb_entropy = base['lamb_entropy'],
-                        symbolic_enabled=False,   # skip — irrelevant for TPs
+                        sym_range    = base['sym_range'],
+                        symbolic_enabled=True,   # skip — irrelevant for TPs
                         pruning_enabled=False,    # skip — would alter arch differently per run
                         device=device,
                     )
