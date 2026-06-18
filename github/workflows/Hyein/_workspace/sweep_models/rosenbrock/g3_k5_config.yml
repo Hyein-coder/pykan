@@ -16,8 +16,8 @@ sp_trainable: true
 state_id: 0
 symbolic.funs_name.0:
 - - log
-  - sin
-- - tanh
+  - cos
+- - cos
   - tanh
 symbolic.funs_name.1:
 - - sin

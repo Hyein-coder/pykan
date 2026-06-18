@@ -15,8 +15,8 @@ sb_trainable: true
 sp_trainable: true
 state_id: 1
 symbolic.funs_name.0:
-- - '0'
-  - '0'
+- - log
+  - cos
 symbolic_enabled: true
 width:
 - - 2

@@ -16,7 +16,7 @@ sp_trainable: true
 state_id: 1
 symbolic.funs_name.0:
 - - sqrt
-  - x^2
+  - sin
 - - log
   - exp
 symbolic.funs_name.1:

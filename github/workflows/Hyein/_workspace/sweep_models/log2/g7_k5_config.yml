@@ -17,7 +17,7 @@ state_id: 1
 symbolic.funs_name.0:
 - - sqrt
   - x^2
-- - log
+- - sqrt
   - exp
 symbolic.funs_name.1:
 - - x^3

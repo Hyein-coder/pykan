@@ -16,7 +16,7 @@ sp_trainable: true
 state_id: 1
 symbolic.funs_name.0:
 - - tanh
-  - x^3
+  - sin
 symbolic_enabled: true
 width:
 - - 2
