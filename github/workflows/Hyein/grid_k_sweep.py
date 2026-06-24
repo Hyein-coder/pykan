@@ -37,7 +37,7 @@ from kan.experiments.analysis import find_indices_sign_revert
 # ── configurable defaults ──────────────────────────────────────────────────
 DEFAULT_FUNCS = ['exponential', 'logarithm', 'log2', 'conditional', 'rosenbrock']
 DEFAULT_GRIDS = [3, 5, 7, 10, 15, 30]
-DEFAULT_KS    = [5]
+DEFAULT_KS    = [0,1,2,3,4,5,6,7,8]
 N_SAMPLES     = 1000
 STEPS         = 50          # fallback if no *_kan_metrics.json found
 SEED          = 42
@@ -66,11 +66,91 @@ def load_best_params(func_name):
     return data.get('best_params')
 
 
-def extract_transition_points(model):
+# Minimum number of data points a segment must contain for its sectional
+# importance rank to be considered reliable (mirrors the >=5 guard in
+# sectional_gsa.py). Candidates whose before/after segment is sparser than this
+# cannot be confirmed by the rank-change criterion.
+MIN_SEG_SAMPLES = 5
+
+
+def _feature_rank(model, X_sub, feat_idx):
+    """Importance rank of ``feat_idx`` over the data subset ``X_sub``.
+
+    Recomputes KAN's own attribution (``model.feature_score``) restricted to the
+    given subset by running a forward pass on it, then returns the rank of
+    ``feat_idx`` in the descending feature_score ordering (0 = most important).
+
+    Returns ``None`` if the subset is too small for a reliable score.
+    """
+    if X_sub.shape[0] < MIN_SEG_SAMPLES:
+        return None
+    with torch.no_grad():
+        model.forward(X_sub)
+    scores = model.feature_score.detach().cpu().numpy()
+    # argsort descending; rank = position of feat_idx in that order.
+    order = np.argsort(-scores, kind='stable')
+    return int(np.where(order == feat_idx)[0][0])
+
+
+def _confirm_by_rank_change(model, X_t, feat_idx, knots, cand_idx, device):
+    """Filter sign-reversal candidates by the importance-rank-change criterion.
+
+    Walks the sorted candidate knot indices left-to-right. For each candidate at
+    knot value ``c``, the *before* segment spans ``[last_confirmed_tp, c)`` and
+    the *after* segment spans ``[c, +inf)`` along ``feat_idx`` (i.e. the ranges
+    are delimited by the previously confirmed transition points). The candidate
+    is confirmed only if feature ``feat_idx``'s importance rank — computed via
+    ``model.feature_score`` over each segment — differs between the two. Once a
+    candidate is confirmed it becomes the left boundary for the next one.
+
+    Returns the list of confirmed knot indices (a subset of ``cand_idx``).
+    """
+    x_col = X_t[:, feat_idx]
+    lo_val = float('-inf')            # left boundary = last confirmed TP
+    confirmed = []
+    for ir in cand_idx:
+        c_val = float(knots[ir])
+        before_mask = (x_col >= lo_val) & (x_col < c_val)
+        after_mask  = (x_col >= c_val)
+
+        rank_before = _feature_rank(model, X_t[before_mask], feat_idx)
+        rank_after  = _feature_rank(model, X_t[after_mask], feat_idx)
+
+        # Need both segments populated enough to judge a rank change.
+        if rank_before is None or rank_after is None:
+            continue
+        if rank_before != rank_after:
+            confirmed.append(ir)
+            lo_val = c_val            # advance left boundary to confirmed TP
+    return confirmed
+
+
+def extract_transition_points(model, X=None, device='cpu'):
     """Return {feat_idx: [tp_norm, ...]} from layer-0 spline coefficients.
 
-    Uses 2nd-derivative sign reversals for depth-1 KANs (single layer),
-    1st-derivative sign reversals for depth-2 KANs, mirroring toy_KAN_analyze.py.
+    Two criteria are applied per feature:
+
+    1. **Sign reversal** — candidate knot indices are those where the spline
+       coefficient difference reverses sign. Uses 2nd-derivative sign reversals
+       for depth-1 KANs (single layer), 1st-derivative sign reversals for
+       depth-2 KANs, mirroring toy_KAN_analyze.py.
+    2. **Importance-rank change** — when ``X`` is provided and the model has >=2
+       inputs, each candidate is confirmed only if feature ``i``'s importance
+       rank (from ``model.feature_score``) changes between the segment before and
+       after it; segments are delimited by already-confirmed transition points
+       (see ``_confirm_by_rank_change``). With a single input, or when ``X`` is
+       None, the rank criterion is skipped and all sign-reversal candidates are
+       kept.
+
+    Parameters
+    ----------
+    model : MultKAN
+        Trained KAN whose layer-0 splines are analyzed.
+    X : np.ndarray, optional
+        ``[N, ni]`` normalized-space input data used to compute sectional
+        importance ranks. If None, only the sign-reversal criterion is applied.
+    device : str
+        Torch device for the forward passes when ``X`` is given.
     """
     l = 0
     act   = model.act_fun[l]
@@ -78,10 +158,16 @@ def extract_transition_points(model):
     coef  = act.coef.tolist()          # (ni, no, n_coef)
     depth = len(model.act_fun)
 
+    use_rank = X is not None and ni >= 2
+    X_t = (torch.as_tensor(X, dtype=torch.float32, device=device)
+           if use_rank else None)
+
     tps = {}
     for i in range(ni):
         knots = act.grid[i, model.k - 1:-2].cpu().detach().numpy()
-        ips_all = []
+
+        # ── criterion 1: collect sign-reversal candidate knot indices ──
+        cand_idx = set()
         for j in range(no):
             coef_node = coef[i][j]
             slope     = [x - y for x, y in zip(coef_node[1:],  coef_node[:-1])]
@@ -97,8 +183,15 @@ def extract_transition_points(model):
 
             for ir in idx_rev:
                 if 0 <= ir < len(knots):
-                    ips_all.append(float(knots[ir]))
+                    cand_idx.add(ir)
+        cand_idx = sorted(cand_idx)
 
+        # ── criterion 2: confirm by importance-rank change ──
+        if use_rank and cand_idx:
+            cand_idx = _confirm_by_rank_change(
+                model, X_t, i, knots, cand_idx, device)
+
+        ips_all = [float(knots[ir]) for ir in cand_idx]
         tps[i] = sorted(set(round(v, 5) for v in ips_all))
     return tps
 
@@ -226,8 +319,9 @@ def main():
                     ckpt_path = os.path.join(func_model_dir, f'g{grid}_k{k}')
                     reg.save_model(ckpt_path)
 
-                    # ── transition points ──
-                    tps_norm = extract_transition_points(model)
+                    # ── transition points (sign reversal + rank change) ──
+                    tps_norm = extract_transition_points(
+                        model, X=X_norm, device=device)
 
                     for i in range(nx):
                         tp_n = tps_norm.get(i, [])
