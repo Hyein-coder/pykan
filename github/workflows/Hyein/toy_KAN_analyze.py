@@ -72,7 +72,7 @@ SA_RC = {
 
 def main():
     parser = argparse.ArgumentParser(description="Tune KAN for Analytical Functions.")
-    parser.add_argument("func_name", type=str, nargs='?', default="log2",
+    parser.add_argument("func_name", type=str, nargs='?', default="exponential",
                         choices=FUNCTION_ZOO.keys(),
                         help="Choose a function from the ZOO.")
 
@@ -234,6 +234,8 @@ def main():
         for j in range(no):
             ax = axs_eval[j, col_pos]
             ax2 = axs_spline[j, col_pos]
+            ax3 = ax2.twinx()
+
             inputs = model.spline_preacts[l][:, j, i].cpu().detach().numpy()
             outputs = model.spline_postacts[l][:, j, i].cpu().detach().numpy()
             coef_node = coef[i][j]
@@ -250,11 +252,11 @@ def main():
                      color=feat_colors[col_pos], label='Coefficients')
 
             slope_indices = knot_indices[:-1] + 0.5
-            ax2.bar(slope_indices, slope, width=0.3, align='center',
+            ax3.bar(slope_indices, slope, width=0.3, align='center',
                     hatch='///', edgecolor='dimgray', facecolor='none', label='Slope')
 
             if depth == 1:
-                ax2.bar(slope_indices[1:] - 0.3, slope_2nd, width=0.3, align='center',
+                ax3.bar(slope_indices[1:] - 0.3, slope_2nd, width=0.3, align='center',
                         hatch='xx', edgecolor='steelblue', facecolor='none', label='2nd Slope')
 
             ax2.set_xticks(knot_indices)
@@ -281,9 +283,12 @@ def main():
             ax.set_xlabel(f"{feat_names[i]}")
             ax.set_ylabel(f"node ({l+1}, {j})")
             ax2.set_xlabel(f"{feat_names[i]}")
-            ax2.set_ylabel(f"node ({l+1}, {j})")
-            ax2.axhline(0, color='dimgray', linestyle='--', alpha=0.4)
-            ax2.legend(loc='best')
+            ax2.set_ylabel(f"$c_i$ at node ({l+1}, {j})")
+            ax3.set_ylabel(f"$\Delta c_i$ & $\Delta^2 c_i$")
+            ax3.axhline(0, color='dimgray', linestyle='--', alpha=0.4)
+            handles2, labels2 = ax2.get_legend_handles_labels()
+            handles3, labels3 = ax3.get_legend_handles_labels()
+            ax3.legend(handles2 + handles3, labels2 + labels3, loc='best')
 
         feature_inflections = sorted(set(feature_inflections_all))
         inflection_points_per_input[i] = feature_inflections
@@ -798,7 +803,7 @@ def main():
     ax.set_xticklabels(labels, rotation=15, ha='center', fontsize=9)
     ax.set_ylabel("Normalized Attribution Score")
     ax.set_title(f"Feature Importance per Range (sliced by {feat_names[mask_idx]})")
-    ax.legend(loc='upper right', bbox_to_anchor=(1.15, 1))
+    ax.legend(loc='upper right', bbox_to_anchor=(1, 1))
     ax.set_ylim(0, max_score * 1.2)
     plt.tight_layout()
 
