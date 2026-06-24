@@ -80,7 +80,7 @@ def find_indices_sign_revert(data_list, epsilon=5e-3):
         if effective_signs[i] != effective_signs[i - 1]:
             # Check if current sign persists in the next element
             if effective_signs[i + 1] == effective_signs[i]:
-                found_indices.append(i)
+                found_indices.append(i + 1)
 
     return found_indices
 
