@@ -73,7 +73,7 @@ STANDARD_ZOO = {
         "names": ["Primary (x0)", "Oscillator (x1)", "Zero-effect (x2)"],
     },
     "damping_sin": {
-        "func": lambda x: np.exp(-3/2 * (x[0] + 1)) * np.sin(12*x[0] + 12) + 0.3*x[1],
+        "func": lambda x: np.exp(-3/2 * (x[0] + 1)) * np.sin(12*x[0] + 12) + 0.8*x[1],
         "bounds": [[-1, 1], [-1, 1]],
         "names": ["Oscillator (x0)", "Linear (x1)"],
     },

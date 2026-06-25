@@ -3,7 +3,7 @@ auto_save: true
 base_fun_name: silu
 ckpt_path: ./model
 device: cpu
-grid: 15
+grid: 10
 grid_eps: 0.02
 grid_range: !!python/tuple
 - 0.1
