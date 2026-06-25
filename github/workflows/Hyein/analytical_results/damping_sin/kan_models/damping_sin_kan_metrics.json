@@ -1,17 +1,17 @@
 {
     "dataset": "damping_sin",
-    "test_r2": 0.9999948706495083,
+    "test_r2": 0.9999993242028715,
     "best_params": {
         "stop_grid_update_step": 20,
         "steps": 50,
         "n_layers": 2,
         "lr": 1.0,
         "lamb_entropy": 2,
-        "lamb_coefdiff": 0.0,
+        "lamb_coefdiff": 0.1,
         "lamb_coef": 0.01,
         "lamb": 0,
         "k": 3,
-        "grid": 10
+        "grid": 15
     },
     "symbolic_formula": "0"
 }
