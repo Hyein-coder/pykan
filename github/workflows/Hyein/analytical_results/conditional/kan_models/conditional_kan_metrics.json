@@ -1,15 +1,17 @@
 {
     "dataset": "conditional",
-    "test_r2": 0.9962009532279182,
+    "test_r2": 0.9999886416081852,
     "best_params": {
+        "stop_grid_update_step": 20,
         "steps": 50,
-        "n_layers": 1,
-        "lr": 0.5,
-        "lamb_entropy": 2.0,
-        "lamb_coef": 0.1,
-        "lamb": 0.001,
+        "n_layers": 2,
+        "lr": 1.0,
+        "lamb_entropy": 2,
+        "lamb_coefdiff": 0.01,
+        "lamb_coef": 1.0,
+        "lamb": 0,
         "k": 3,
-        "grid": 3
+        "grid": 15
     },
-    "symbolic_formula": "-0.671918630599976*sin(0.782823324203491*x_2 - 9.75142192840576) + 0.217698559165001*tanh(5.98362970352173*x_1 - 1.76459777355194) + 0.439787968993187"
+    "symbolic_formula": "0"
 }
