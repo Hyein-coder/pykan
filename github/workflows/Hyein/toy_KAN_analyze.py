@@ -72,7 +72,7 @@ SA_RC = {
 
 def main():
     parser = argparse.ArgumentParser(description="Tune KAN for Analytical Functions.")
-    parser.add_argument("func_name", type=str, nargs='?', default="conditional",
+    parser.add_argument("func_name", type=str, nargs='?', default="damping_sin",
                         choices=FUNCTION_ZOO.keys(),
                         help="Choose a function from the ZOO.")
 

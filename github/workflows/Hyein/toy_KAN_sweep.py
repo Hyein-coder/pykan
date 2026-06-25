@@ -71,7 +71,12 @@ STANDARD_ZOO = {
                           0.05 * (x[2] * np.pi)**4 * np.sin(x[0] * np.pi),
         "bounds": [[-1, 1], [-1, 1], [-1, 1]],
         "names": ["Primary (x0)", "Oscillator (x1)", "Zero-effect (x2)"],
-    }
+    },
+    "damping_sin": {
+        "func": lambda x: np.exp(-3 * (x[0] + 1)) * np.sin(12*x[0] + 12) + 0.3*x[1],
+        "bounds": [[-1, 1], [-1, 1]],
+        "names": ["Oscillator (x0)", "Linear (x1)"],
+    },
 }
 FUNCTION_ZOO = {**STANDARD_ZOO, **LOG_SUM_ZOO, **CONVEX_ZOO}
 
@@ -145,7 +150,6 @@ class KANRegressor(BaseEstimator, RegressorMixin):
 
         # [MODIFIED] Determine width based on n_layers (depth)
         # n_layers=2 means [nx, nx, 1]
-        #TODO: 이게 잘 안 되면, nx를 2배로 늘려서 해보기
         width = [self._n_features] * self.n_layers + [1]
 
         # Initialize KAN
@@ -242,7 +246,7 @@ class KANRegressor(BaseEstimator, RegressorMixin):
 # ==========================================
 def main():
     parser = argparse.ArgumentParser(description="Tune KAN for Analytical Functions.")
-    parser.add_argument("func_name", type=str, nargs='?', default="exponential",
+    parser.add_argument("func_name", type=str, nargs='?', default="damping_sin",
                         choices=FUNCTION_ZOO.keys(),
                         help="Choose a function from the ZOO.")
 
@@ -299,22 +303,22 @@ def main():
     # 5. Hyperparameter Tuning
     # ==========================================
     param_distributions = {
-        'n_layers': [1],
-        'grid': [10],
+        'n_layers': [1, 2],
+        'grid': [10, 15],
         'k': [3],
-        'steps': [20],
+        'steps': [20, 50],
         'stop_grid_update_step': [20],
-        'lamb': [0.01],
-        'lamb_coef': [1.],  # Penalize large coefficients (sparsity)
-        # 'lamb_coefdiff': [0., 0.1],  # Penalize large coefficients (sparsity)
-        'lamb_entropy': [0.1],  # Penalize complexity (for symbolic)
-        'lr': [0.1],  # Learning rate for LBFGS
-        'sym_range': [10, 50]
+        'lamb': [0, 0.01, 0.1],
+        'lamb_coef': [0, 0.01, 0.1, 1.],  # Penalize large coefficients (sparsity)
+        'lamb_coefdiff': [0., 0.01, 0.1],  # Penalize large coefficients (sparsity)
+        'lamb_entropy': [2],  # Penalize complexity (for symbolic)
+        'lr': [0.1, 1.],  # Learning rate for LBFGS
+        # 'sym_range': [10, 50]
     }
 
     # Pass default symbolic options here if you want to override defaults
     # For now, we rely on the class defaults or you can set fixed values
-    kan_wrapper = KANRegressor(device=device, symbolic_enabled=True)
+    kan_wrapper = KANRegressor(device=device, symbolic_enabled=False, pruning_enabled=False)
 
     search = RandomizedSearchCV(
         estimator=kan_wrapper,
