@@ -4,6 +4,9 @@ venv/
 # 모델 데이터 및 캐시 파일
 model/
 
+# Claude agents 
+.claude/**
+
 # Python 설치 정보 폴더
 *.egg-info/
 
