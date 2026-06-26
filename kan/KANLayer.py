@@ -166,19 +166,31 @@ class KANLayer(nn.Module):
         y = torch.sum(y, dim=1)
         return y, preacts, postacts, postspline
 
-    def update_grid_from_samples(self, x, mode='sample'):
+    def update_grid_from_samples(self, x, mode='sample', grid_mode='uniform', alpha=0.1, smooth_window=0):
         '''
         update grid from samples
-        
+
         Args:
         -----
             x : 2D torch.float
                 inputs, shape (number of samples, input dimension)
-            
+            mode : str
+                'sample' (default) or 'grid'. Controls where x_pos/y_eval are sampled.
+            grid_mode : str
+                'uniform' (default) reproduces the original uniform/quantile blend.
+                'curvature' (alias 'adaptive') places knots by curvature equidistribution
+                (de Boor's principle; Li et al., CAD 2005): more knots where |f''| is large.
+            alpha : float
+                curvature sensitivity for grid_mode='curvature'. The monitor is
+                m(x) = sqrt(1 + alpha * f''(x)^2). alpha=0 recovers the uniform grid.
+            smooth_window : int
+                optional odd window for moving-average smoothing of |f''| before
+                integrating (0 disables; mirrors the paper's optional curvature smoothing).
+
         Returns:
         --------
             None
-        
+
         Example
         -------
         >>> model = KANLayer(in_dim=1, out_dim=1, num=5, k=3)
@@ -187,16 +199,59 @@ class KANLayer(nn.Module):
         >>> model.update_grid_from_samples(x)
         >>> print(model.grid.data)
         '''
-        
+
         batch = x.shape[0]
         #x = torch.einsum('ij,k->ikj', x, torch.ones(self.out_dim, ).to(self.device)).reshape(batch, self.size).permute(1, 0)
         x_pos = torch.sort(x, dim=0)[0]
         y_eval = coef2curve(x_pos, self.grid, self.coef, self.k)
         num_interval = self.grid.shape[1] - 1 - 2*self.k
-        
+
+        def _curvature_grid(num_interval):
+            # Curvature-equidistributed knots, one vector per in_dim edge.
+            # x_pos: (batch, in_dim) sorted but NON-uniformly spaced; y_eval: (batch, in_dim, out_dim).
+            device = x_pos.device
+            knots = []
+            for j in range(x_pos.shape[1]):
+                xj = x_pos[:, j]                                   # (batch,)
+                yj = y_eval[:, j, :]                               # (batch, out_dim)
+                uniform_j = torch.linspace(float(xj[0]), float(xj[-1]), num_interval + 1, device=device)
+                # f' and f'' w.r.t. the TRUE non-uniform spacing (spacing is mandatory here)
+                if batch < 3 or float(xj[-1] - xj[0]) <= 0:
+                    knots.append(uniform_j); continue
+                d1 = torch.gradient(yj, spacing=(xj,), dim=0)[0]   # (batch, out_dim)
+                d2 = torch.gradient(d1, spacing=(xj,), dim=0)[0]   # (batch, out_dim)
+                curv = d2.abs().mean(dim=1)                        # reduce over outputs -> (batch,)
+                if smooth_window and smooth_window >= 3:
+                    w = int(smooth_window) | 1                     # force odd
+                    kern = torch.ones(w, device=device) / w
+                    curv = torch.nn.functional.conv1d(curv[None, None, :], kern[None, None, :], padding=w // 2)[0, 0]
+                m = torch.sqrt(1.0 + alpha * curv ** 2)            # monitor; alpha=0 -> m==1 -> uniform
+                dx = xj[1:] - xj[:-1]                              # (batch-1,)
+                seg = 0.5 * (m[1:] + m[:-1]) * dx                  # trapezoid increments
+                M = torch.cat([torch.zeros(1, device=device), torch.cumsum(seg, 0)])
+                total = M[-1]
+                if not torch.isfinite(total) or total <= 0:
+                    knots.append(uniform_j); continue
+                cdf = M / total                                    # non-decreasing, [0,1]
+                targets = torch.linspace(0.0, 1.0, num_interval + 1, device=device)
+                idx = torch.searchsorted(cdf, targets).clamp(1, batch - 1)
+                c0, c1 = cdf[idx - 1], cdf[idx]
+                x0, x1 = xj[idx - 1], xj[idx]
+                denom = c1 - c0
+                frac = torch.where(denom > 0, (targets - c0) / denom, torch.zeros_like(targets))
+                kj = x0 + frac * (x1 - x0)
+                kj[0], kj[-1] = xj[0], xj[-1]                      # exact endpoints
+                kj = torch.cummax(kj, dim=0)[0]                    # enforce non-decreasing
+                if (kj[1:] - kj[:-1] <= 0).any():                  # collapsed -> uniform fallback
+                    kj = uniform_j
+                knots.append(kj)
+            return torch.stack(knots, dim=0)                       # (in_dim, num_interval+1)
+
         def get_grid(num_interval):
             ids = [int(batch / num_interval * i) for i in range(num_interval)] + [-1]
             grid_adaptive = x_pos[ids, :].permute(1,0)
+            if grid_mode in ('curvature', 'adaptive'):
+                grid_adaptive = _curvature_grid(num_interval)
             margin = 0.00
             h = (grid_adaptive[:,[-1]] - grid_adaptive[:,[0]] + 2 * margin)/num_interval
             grid_uniform = grid_adaptive[:,[0]] - margin + h * torch.arange(num_interval+1,)[None, :].to(x.device)

@@ -684,7 +684,7 @@ class MultKAN(nn.Module):
         ''' 
         return MultKAN.loadckpt(path=self.ckpt_path+'/'+str(model_id))
     
-    def update_grid_from_samples(self, x):
+    def update_grid_from_samples(self, x, grid_mode='uniform', alpha=0.1, smooth_window=0):
         '''
         update grid from samples
         
@@ -708,13 +708,13 @@ class MultKAN(nn.Module):
         ''' 
         for l in range(self.depth):
             self.get_act(x)
-            self.act_fun[l].update_grid_from_samples(self.acts[l])
-            
-    def update_grid(self, x):
+            self.act_fun[l].update_grid_from_samples(self.acts[l], grid_mode=grid_mode, alpha=alpha, smooth_window=smooth_window)
+
+    def update_grid(self, x, grid_mode='uniform', alpha=0.1, smooth_window=0):
         '''
         call update_grid_from_samples. This seems unnecessary but we retain it for the sake of classes that might inherit from MultKAN
         '''
-        self.update_grid_from_samples(x)
+        self.update_grid_from_samples(x, grid_mode=grid_mode, alpha=alpha, smooth_window=smooth_window)
 
     def initialize_grid_from_another_model(self, model, x):
         '''
@@ -1409,7 +1409,8 @@ class MultKAN(nn.Module):
         
             
     def fit(self, dataset, opt="LBFGS", steps=100, log=1, lamb=0., lamb_l1=1., lamb_entropy=2., lamb_coef=0., lamb_coefdiff=0., update_grid=True, grid_update_num=10, loss_fn=None, lr=1.,start_grid_update_step=-1, stop_grid_update_step=50, batch=-1,
-              metrics=None, save_fig=False, in_vars=None, out_vars=None, beta=3, save_fig_freq=1, img_folder='./video', singularity_avoiding=False, y_th=1000., reg_metric='edge_forward_spline_n', display_metrics=None):
+              metrics=None, save_fig=False, in_vars=None, out_vars=None, beta=3, save_fig_freq=1, img_folder='./video', singularity_avoiding=False, y_th=1000., reg_metric='edge_forward_spline_n', display_metrics=None,
+              grid_mode='uniform', grid_alpha=0.1, grid_smooth_window=0):
         '''
         training
 
@@ -1549,7 +1550,7 @@ class MultKAN(nn.Module):
             test_id = np.random.choice(dataset['test_input'].shape[0], batch_size_test, replace=False)
 
             if _ % grid_update_freq == 0 and _ < stop_grid_update_step and update_grid and _ >= start_grid_update_step:
-                self.update_grid(dataset['train_input'][train_id])
+                self.update_grid(dataset['train_input'][train_id], grid_mode=grid_mode, alpha=grid_alpha, smooth_window=grid_smooth_window)
 
             if opt == "LBFGS":
                 optimizer.step(closure)
