@@ -17,3 +17,7 @@
 |------|----------|------|------|
 | 2026-06-05 | 초기 구성 | 전체 | Sectional GSA 베이스라인 구현 요청 |
 | 2026-06-27 | curvature-inflection 스킬·오케스트레이터 + curvature-watcher 에이전트 추가 | skills/curvature-inflection(-orchestrator), agents/curvature-watcher, bspline_curvature.py, toy_KAN_analyze.py §3.9 | New KAN analysis(해석적 곡률 변곡점 + 구간별 dual measure) 구현 요청 |
+| 2026-06-27 | 활성함수 φ와 해석적 1차·2차 미분(φ', φ'') 시각화 추가 | bspline_curvature.py(value/1st-deriv/edge_curves), toy_KAN_analyze.py §3.9 | "전체 함수와 해석적 도함수를 분석 스크립트에 그려라" 요청 |
+| 2026-06-27 | symbolic-aware 곡률: symbolify된 엣지(spline mask=0)의 학습함수를 symbolic_fun에서 sympy 해석적 미분으로 반영 + 경고/라벨 | bspline_curvature.py(_symbolic_edge_deriv/_symbolic_branch/symbolic_edge_info), toy_KAN_analyze.py §3.9 | exponential/logarithm 등 단층 모델에서 활성·도함수가 0으로 나오는 버그 |
+| 2026-06-27 | §3 변곡점 탐지를 계수 유한차분 → 해석적(find_inflection_points)으로 교체(단일 소스), 모든 그림이 해석적 변곡점 사용; 계수기반은 비교용 fallback 유지 | toy_KAN_analyze.py §3(+§3.5/3.7/3.8/3.9/4 연동) | 모든 그림이 해석적 변곡점을 표시하도록 요청 |
+| 2026-06-27 | step 함수 그림 수정: 범례 KAN inflection 중복 제거, step 경계를 구간 knot(edge)에 정렬(where='post'), §3.8 attribution 마스킹도 실제 edge 사용 | toy_KAN_analyze.py §3.8/§3.9(_step_over_edges), sectional_gsa.py plot_agsm_vs_kan | agsm_modes 범례 중복·curvature_inflection 불연속·step edge가 grid knot에 안 맞음 |
