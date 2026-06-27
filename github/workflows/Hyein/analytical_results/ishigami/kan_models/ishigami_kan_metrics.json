@@ -1,0 +1,17 @@
+{
+    "dataset": "ishigami",
+    "test_r2": 0.9988156622144233,
+    "best_params": {
+        "stop_grid_update_step": 20,
+        "steps": 50,
+        "n_layers": 2,
+        "lr": 1.0,
+        "lamb_entropy": 2,
+        "lamb_coefdiff": 0.0,
+        "lamb_coef": 0.1,
+        "lamb": 0,
+        "k": 3,
+        "grid": 10
+    },
+    "symbolic_formula": "0"
+}

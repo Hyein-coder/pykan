@@ -33,8 +33,8 @@ def main():
 
 
     target_scripts = [
-        "github/workflows/Hyein/toy_KAN_sweep.py",
-        # "github/workflows/Hyein/toy_KAN_analyze.py",
+        # "github/workflows/Hyein/toy_KAN_sweep.py",
+        "github/workflows/Hyein/toy_KAN_analyze.py",
         # "github/workflows/Hyein/toy_analytic_SHAP_Sobol.py",
         # "github/workflows/Hyein/toy_KAN_analyze_multi.py",
         # DEPRECATED
@@ -42,12 +42,13 @@ def main():
         # "github/workflows/Hyein/toy_NN_SHAP_Sobol.py",
     ]
     target_data = [
-        # 'log2',
-        # 'exponential',
-        # 'logarithm',
-        # 'rosenbrock',
-        'conditional',
-        # 'convolution', 'original', 'mult_periodic', 'ishigami',
+        'log2',
+        'exponential',
+        'logarithm',
+        'rosenbrock',
+        # 'conditional', 'damping_sin',
+        'ishigami',
+        # 'convolution', 'original', 'mult_periodic',
         # 'multiplication',
         # 'log_sum_2d', 'log_sum_5d', 'log_sum_10d', 'log_sum_30d',
     ] # + [f'convex_seed_{i}' for i in range(30)]

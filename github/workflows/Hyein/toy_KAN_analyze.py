@@ -72,7 +72,7 @@ SA_RC = {
 
 def main():
     parser = argparse.ArgumentParser(description="Tune KAN for Analytical Functions.")
-    parser.add_argument("func_name", type=str, nargs='?', default="damping_sin",
+    parser.add_argument("func_name", type=str, nargs='?', default="ishigami",
                         choices=FUNCTION_ZOO.keys(),
                         help="Choose a function from the ZOO.")
 
@@ -659,6 +659,211 @@ def main():
     except Exception as e:
         import traceback
         print(f"⚠️ AGSM section 3.8 failed: {e}")
+        traceback.print_exc()
+
+    # ==========================================
+    # 3.9 Curvature-Based Inflection + Per-Interval Dual Measure (New KAN analysis)
+    # ==========================================
+    # Replaces the coefficient finite-difference inflection detector (section 3)
+    # with the ANALYTICAL 2nd derivative of the full learned activation, then
+    # compares AGSM S_a and KAN attribution over the inflection-segmented domain.
+    print("\n🧭 Computing curvature-based inflection points (analytical 2nd derivative)...")
+    try:
+        from github.workflows.Hyein.bspline_curvature import (
+            find_inflection_points, edge_curves,
+        )
+        from github.workflows.Hyein.sectional_gsa import (
+            compute_gradient_agsm, find_agsm_transition_points,
+        )
+
+        if nx < 2:
+            raise RuntimeError("curvature section 3.9 needs >=2 inputs; skipping.")
+
+        l = 0
+        act = model.act_fun[l]
+        top2_curv = np.argsort(scores_tot)[::-1][:2].tolist()
+        ci_idx, cj_idx = int(top2_curv[0]), int(top2_curv[1])
+
+        # --- 1. Analytical-curvature inflection points (normalized space) ---
+        curv_ips_norm = {idx: find_inflection_points(model, l, idx)
+                         for idx in top2_curv}
+
+        # --- 1b. Figure: activation phi(x) with its analytical phi'(x), phi''(x) ---
+        # Plots the learned activation and its exact 1st/2nd derivatives per edge,
+        # with green vlines at the phi'' zero-crossings (detected inflections).
+        # x-axis is the spline's native NORMALIZED input space.
+        no_l = act.coef.shape[1]
+        with plt.rc_context({'figure.autolayout': True}):
+            fig_d, axs_d = plt.subplots(no_l, len(top2_curv), squeeze=False,
+                                        figsize=(5 * len(top2_curv), 3 * no_l))
+            for col, i_feat in enumerate(top2_curv):
+                knots_i = act.grid[i_feat, model.k - 1:-2].cpu().detach().numpy()
+                x_sweep = np.linspace(float(knots_i.min()), float(knots_i.max()), 400)
+                for j in range(no_l):
+                    ax = axs_d[j, col]
+                    ax2 = ax.twinx()
+                    phi, dphi, d2phi = edge_curves(model, l, i_feat, j, x_sweep)
+                    ln0 = ax.plot(x_sweep, phi, color='#222222', lw=1.6, label=r'$\phi(x)$')
+                    ln1 = ax2.plot(x_sweep, dphi, color='#1f77b4', lw=1.0, ls='--',
+                                   label=r"$\phi'(x)$")
+                    ln2 = ax2.plot(x_sweep, d2phi, color='#d62728', lw=1.0, ls=':',
+                                   label=r"$\phi''(x)$")
+                    ax2.axhline(0, color='gray', lw=0.6, alpha=0.6)
+                    # green vlines at this edge's phi'' zero-crossings (detected inflections)
+                    first = True
+                    for ip in find_inflection_points(model, l, i_feat, j_list=[j]):
+                        ax.axvline(ip, color='green', ls='--', alpha=0.6, lw=1.0,
+                                   label='Inflection' if first else '_')
+                        first = False
+                    ax.set_xlabel(f"normalized {feat_names[i_feat]}")
+                    ax.set_ylabel(r'$\phi$')
+                    ax2.set_ylabel(r"$\phi'\,,\ \phi''$")
+                    ax.set_title(f"edge ({feat_names[i_feat]} -> node {j})")
+                    lns = ln0 + ln1 + ln2
+                    ax.legend(lns, [ln.get_label() for ln in lns], loc='best', fontsize=7)
+            fig_d.suptitle(f"{data_name} — activation & analytical derivatives (L0)",
+                           fontsize=11, fontweight='bold')
+            for ext in ['.png', '.svg', '.eps']:
+                fig_d.savefig(os.path.join(savepath,
+                              f"{data_name}_activation_derivatives_L0{ext}"))
+            plt.close(fig_d)
+        print(f"🧭 Activation+derivatives figure saved: "
+              f"{data_name}_activation_derivatives_L0.(png/svg/eps)")
+
+        # --- 2. Denormalize to raw space (analysis band filter, as in 3.7/3.8) ---
+        def _denorm_feat(vals_norm, feat_idx):
+            vals = [v for v in (vals_norm or []) if 0.05 < v < 0.95]
+            if not vals:
+                return []
+            dummy = np.zeros((len(vals), nx))
+            dummy[:, feat_idx] = vals
+            return scaler_X.inverse_transform(dummy)[:, feat_idx].tolist()
+
+        curv_ips_raw = {idx: _denorm_feat(curv_ips_norm[idx], idx) for idx in top2_curv}
+
+        # --- 3. Single source of truth: inflection-based section edges (raw) ---
+        # custom_edges[feat] = [lo, <interior inflections>, hi]. The interior of
+        # this array is reused verbatim for (a) AGSM custom_edges, (b) KAN
+        # attribution interval masks, and (c) the plotted vlines -> fully traceable.
+        custom_edges = {}
+        for idx in top2_curv:
+            lo_raw, hi_raw = bounds[idx]
+            interior = sorted(v for v in curv_ips_raw[idx] if lo_raw < v < hi_raw)
+            custom_edges[idx] = np.array([lo_raw] + interior + [hi_raw], dtype=float)
+
+        # --- 4. KAN surrogate batch func (raw space), as in section 3.8 ---
+        def _kan_batch_func_curv(X_raw):
+            X_np = np.atleast_2d(np.asarray(X_raw, dtype=float))
+            X_norm = scaler_X.transform(X_np)
+            X_tensor = torch.tensor(X_norm, dtype=torch.float32, device=device)
+            with torch.no_grad():
+                y_pred = model(X_tensor).cpu().numpy()
+            try:
+                y_inv = scaler_y.inverse_transform(y_pred)
+            except Exception:
+                y_inv = y_pred
+            return y_inv.ravel()
+
+        # --- 5. AGSM S_a over the inflection-segmented intervals ---
+        sc, sh, sa, r = compute_gradient_agsm(
+            func_batch=_kan_batch_func_curv, bounds=bounds, feat_names=feat_names,
+            top2_idx=top2_curv, n_sections=10, n_samples_per_section=512, seed=42,
+            section_mode='custom', custom_edges=custom_edges,
+        )
+        curv_tps = find_agsm_transition_points(
+            sc[ci_idx], sa[ci_idx], sc[cj_idx], sa[cj_idx],
+            feat_names[ci_idx], feat_names[cj_idx],
+        )
+
+        # --- 6. Per-interval KAN attribution over the SAME intervals (3.8 pattern) ---
+        curv_kan_attr = {}
+        for feat_idx in top2_curv:
+            edges_raw = custom_edges[feat_idx]
+            n_eff = len(edges_raw) - 1
+            dummy = np.zeros((len(edges_raw), nx))
+            dummy[:, feat_idx] = edges_raw
+            edges_norm = scaler_X.transform(dummy)[:, feat_idx]
+            attr_sections = []
+            for kk in range(n_eff):
+                lo_n = min(edges_norm[kk], edges_norm[kk + 1])
+                hi_n = max(edges_norm[kk], edges_norm[kk + 1])
+                x_col = dataset['train_input'][:, feat_idx]
+                mask_k = (x_col >= lo_n) & (x_col < hi_n)
+                if torch.any(mask_k) and mask_k.sum().item() >= 5:
+                    x_slice = dataset['train_input'][mask_k]
+                    x_std = torch.std(x_slice, dim=0).detach().cpu().numpy()
+                    model.forward(x_slice)
+                    score = model.feature_score.detach().cpu().numpy().copy()
+                    attr_sections.append(score / (x_std + 1e-6))
+                else:
+                    attr_sections.append(np.full(nx, np.nan))
+            curv_kan_attr[feat_idx] = np.array(attr_sections)  # (n_eff, nx)
+
+        # --- 7. CSV ---
+        rows = []
+        for feat_idx in top2_curv:
+            for kk, (center, s_hat, s_a_v, r_v) in enumerate(zip(
+                    sc[feat_idx], sh[feat_idx], sa[feat_idx], r[feat_idx])):
+                rows.append({'Feature': feat_names[feat_idx], 'Feature_idx': feat_idx,
+                             'Section_k': kk, 'Section_center': center,
+                             'S_hat': s_hat, 'S_a': s_a_v, 'R': r_v})
+        pd.DataFrame(rows).to_csv(
+            os.path.join(savepath, f"{data_name}_curvature_inflection.csv"), index=False)
+
+        # --- 8. Dual-panel figure: AGSM S_a (left) | KAN attribution (right) ---
+        # vlines come from custom_edges[ci_idx] interior (the same array driving
+        # AGSM sectioning and the ci_idx attribution masks).
+        ip_lines = list(custom_edges[ci_idx][1:-1])
+        feat_colors_curv = ['#1f77b4', '#d62728']
+        with plt.rc_context({'figure.autolayout': True}):
+            fig_cv, (ax_l, ax_rt) = plt.subplots(1, 2, figsize=(10, 3.4))
+
+            for color, feat_idx in zip(feat_colors_curv, top2_curv):
+                ax_l.step(sc[feat_idx], sa[feat_idx], where='mid', color=color,
+                          label=feat_names[feat_idx])
+            first = True
+            for ip in ip_lines:
+                ax_l.axvline(ip, color='green', linestyle='--', alpha=0.7, linewidth=1.0,
+                             label='Curvature inflection' if first else '_')
+                first = False
+            first = True
+            for tp in curv_tps:
+                ax_l.axvline(tp['point'], color='orange', linestyle=':', alpha=0.8,
+                             linewidth=1.2, label='AGSM transition' if first else '_')
+                first = False
+            ax_l.set_xlabel(feat_names[ci_idx])
+            ax_l.set_ylabel(r'$S^a_{l,[k]}$')
+            ax_l.set_title('AGSM (inflection-segmented)')
+            ax_l.legend(loc='best')
+
+            attr_mat = curv_kan_attr[ci_idx]
+            x_centers_i = sc[ci_idx]
+            for color, feat_idx in zip(feat_colors_curv, top2_curv):
+                ax_rt.step(x_centers_i, attr_mat[:, feat_idx], where='mid', color=color,
+                           label=feat_names[feat_idx])
+            first = True
+            for ip in ip_lines:
+                ax_rt.axvline(ip, color='green', linestyle='--', alpha=0.7, linewidth=1.0,
+                              label='Curvature inflection' if first else '_')
+                first = False
+            ax_rt.set_xlabel(feat_names[ci_idx])
+            ax_rt.set_ylabel('KAN Attribution')
+            ax_rt.set_title('KAN attribution (inflection-segmented)')
+            ax_rt.legend(loc='best')
+
+            fig_cv.suptitle(f"{data_name} — curvature inflection", fontsize=11, fontweight='bold')
+            for ext in ['.png', '.svg', '.eps']:
+                fig_cv.savefig(os.path.join(savepath, f"{data_name}_curvature_inflection{ext}"))
+            plt.close(fig_cv)
+
+        print(f"🧭 Curvature inflection (normalized): {curv_ips_norm}")
+        print(f"🧭 Curvature inflection (raw): {curv_ips_raw}")
+        print(f"🧭 AGSM transitions: {[round(t['point'], 3) for t in curv_tps]}")
+        print(f"🧭 Saved: {data_name}_curvature_inflection.(png/svg/eps/csv)")
+
+    except Exception as e:
+        import traceback
+        print(f"⚠️ Curvature section 3.9 failed: {e}")
         traceback.print_exc()
 
     # ==========================================

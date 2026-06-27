@@ -69,6 +69,8 @@ STANDARD_ZOO = {
     "ishigami": {
         "func": lambda x: np.sin(x[0] * np.pi) + 7 * np.sin(x[1] * np.pi) ** 2 + \
                           0.05 * (x[2] * np.pi)**4 * np.sin(x[0] * np.pi),
+        # "func": lambda x: np.sin(x[0] * np.pi) + 7 * np.sin(x[1] * np.pi) ** 2 + \
+        #                   0.01 * (x[2] * np.pi)**4 * np.sin(x[0] * np.pi),    # original format
         "bounds": [[-1, 1], [-1, 1], [-1, 1]],
         "names": ["Primary (x0)", "Oscillator (x1)", "Zero-effect (x2)"],
     },
