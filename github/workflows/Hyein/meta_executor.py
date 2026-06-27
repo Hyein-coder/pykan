@@ -42,11 +42,11 @@ def main():
         # "github/workflows/Hyein/toy_NN_SHAP_Sobol.py",
     ]
     target_data = [
+        'conditional', 'damping_sin',
         'log2',
         'exponential',
         'logarithm',
         'rosenbrock',
-        'conditional', 'damping_sin',
         'ishigami',
         # 'convolution', 'original', 'mult_periodic',
         # 'multiplication',

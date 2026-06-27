@@ -520,9 +520,29 @@ def find_agsm_transition_points(section_centers_i, S_a_i,
 # ----------------------------------------------------------------------------
 # Plotting
 # ----------------------------------------------------------------------------
+def _edges_from_centers(centers):
+    """Reconstruct section edges from centers when explicit edges are absent."""
+    centers = np.asarray(centers, dtype=float)
+    if centers.size == 0:
+        return centers
+    if centers.size == 1:
+        return np.array([centers[0] - 0.5, centers[0] + 0.5])
+    mid = 0.5 * (centers[:-1] + centers[1:])
+    first = centers[0] - (mid[0] - centers[0])
+    last = centers[-1] + (centers[-1] - mid[-1])
+    return np.concatenate([[first], mid, [last]])
+
+
+def _step_edges(ax, edges, vals, **kwargs):
+    """Piecewise-constant step transitioning exactly on ``edges`` (len = len(vals)+1)."""
+    vals = np.asarray(vals, dtype=float)
+    edges = np.asarray(edges, dtype=float)
+    ax.step(edges, np.append(vals, vals[-1]), where='post', **kwargs)
+
+
 def plot_agsm_vs_kan(section_centers, S_a, top2_idx, feat_names,
                      kan_inflection_points, agsm_transition_points,
-                     save_path, title=''):
+                     save_path, title='', section_edges=None):
     """Plot AGSM sectional sensitivity vs KAN inflection / AGSM transitions.
 
     Parameters
@@ -553,6 +573,13 @@ def plot_agsm_vs_kan(section_centers, S_a, top2_idx, feat_names,
     """
     idxs = list(top2_idx)
 
+    def _edges_for_feat(feat, centers):
+        if section_edges is not None and feat in section_edges:
+            e = np.asarray(section_edges[feat], dtype=float)
+            if e.size == np.asarray(centers).size + 1:
+                return e
+        return _edges_from_centers(centers)
+
     def _inflect_for(feat):
         if kan_inflection_points is None:
             return []
@@ -580,9 +607,9 @@ def plot_agsm_vs_kan(section_centers, S_a, top2_idx, feat_names,
             for n, feat in enumerate(idxs):
                 centers = np.asarray(section_centers[feat], dtype=float)
                 vals = np.asarray(S_a[feat], dtype=float)
-                ax.plot(centers, vals, drawstyle='steps-mid',
-                        color=colors[n % len(colors)],
-                        label=str(feat_names[feat]))
+                _step_edges(ax, _edges_for_feat(feat, centers), vals,
+                            color=colors[n % len(colors)],
+                            label=str(feat_names[feat]))
             _overlay(ax, _flat_inflect(kan_inflection_points, idxs),
                      [t['point'] for t in transitions])
             ax.set_xlabel('Feature value (raw)')
@@ -597,9 +624,9 @@ def plot_agsm_vs_kan(section_centers, S_a, top2_idx, feat_names,
                 ax = axes[n]
                 centers = np.asarray(section_centers[feat], dtype=float)
                 vals = np.asarray(S_a[feat], dtype=float)
-                ax.plot(centers, vals, drawstyle='steps-mid',
-                        color=colors[n % len(colors)],
-                        label=str(feat_names[feat]))
+                _step_edges(ax, _edges_for_feat(feat, centers), vals,
+                            color=colors[n % len(colors)],
+                            label=str(feat_names[feat]))
                 _overlay(ax, _inflect_for(feat),
                          [t['point'] for t in transitions])
                 ax.set_ylabel(r'$S^{a}_{l,[k]}$')

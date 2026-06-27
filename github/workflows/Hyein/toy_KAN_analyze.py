@@ -73,6 +73,19 @@ SA_RC = {
 }
 
 
+def _step_over_edges(ax, edges, vals, **kwargs):
+    """Plot a piecewise-constant step whose transitions fall exactly on ``edges``
+    (the section boundary knots), not at midpoints between section centers.
+
+    ``edges`` has one more element than ``vals``. NaN sections render as a gap at
+    that section only. Use this for every sectional step plot so the steps line
+    up with the section boundaries / grid knots.
+    """
+    vals = np.asarray(vals, dtype=float)
+    edges = np.asarray(edges, dtype=float)
+    ax.step(edges, np.append(vals, vals[-1]), where='post', **kwargs)
+
+
 def main():
     parser = argparse.ArgumentParser(description="Tune KAN for Analytical Functions.")
     parser.add_argument("func_name", type=str, nargs='?', default="ishigami",
@@ -490,7 +503,8 @@ def main():
     try:
         from github.workflows.Hyein.sectional_gsa import (
             compute_gradient_agsm, find_agsm_transition_points,
-            plot_agsm_vs_kan, make_batch_func, compute_global_from_sectional
+            plot_agsm_vs_kan, make_batch_func, compute_global_from_sectional,
+            make_sections,
         )
 
         n_sections_agsm = len(act.grid[0, model.k - 1:-2]) - 1
@@ -556,8 +570,22 @@ def main():
                 sc[i_idx], sa[i_idx], sc[j_idx], sa[j_idx],
                 feat_names[i_idx], feat_names[j_idx],
             )
+            # True section edges (boundary knots) for this mode, per feature.
+            # Reuses make_sections with the same args so the edges match exactly
+            # what compute_gradient_agsm sectioned on (grid knots for 'kan' mode).
+            section_edges_mode = {}
+            for feat_idx in top2_idx_agsm:
+                lo_f, hi_f = bounds[feat_idx]
+                edges_f, _ = make_sections(
+                    lo_f, hi_f, n_sections_agsm, mode=mode,
+                    data_col=(X_train[:, feat_idx] if mode == 'quantile' else None),
+                    kan_knots_raw=(kan_knots_dict[feat_idx] if mode == 'kan' else None),
+                )
+                section_edges_mode[feat_idx] = edges_f
+
             agsm_results[mode] = {
-                'section_centers': sc, 'S_hat': sh, 'S_a': sa, 'R': r, 'tps': tps
+                'section_centers': sc, 'S_hat': sh, 'S_a': sa, 'R': r, 'tps': tps,
+                'edges': section_edges_mode,
             }
 
             # Save CSV
@@ -576,14 +604,10 @@ def main():
             # KAN attribution per section (sections of i_idx, for comparison with AGSM S_a)
             kan_attr = {}
             for feat_idx in top2_idx_agsm:
-                centers_f = sc[feat_idx]
-                n_eff = len(centers_f)
-                lo_raw, hi_raw = bounds[feat_idx]
-                edges_raw = np.empty(n_eff + 1)
-                edges_raw[0] = lo_raw
-                edges_raw[-1] = hi_raw
-                if n_eff > 1:
-                    edges_raw[1:-1] = 0.5 * (centers_f[:-1] + centers_f[1:])
+                # Mask over the TRUE section edges (boundary knots), not midpoints
+                # between centers, so attribution intervals match the sections.
+                edges_raw = np.asarray(section_edges_mode[feat_idx], dtype=float)
+                n_eff = len(edges_raw) - 1
                 dummy = np.zeros((n_eff + 1, nx))
                 dummy[:, feat_idx] = edges_raw
                 edges_norm = scaler_X.transform(dummy)[:, feat_idx]
@@ -633,12 +657,13 @@ def main():
                 sc_plot = res['section_centers']
                 sa_plot = res['S_a']
                 tps_plot = res['tps']
+                edges_mode = res['edges']
                 n_eff = len(sc_plot[i_idx])
 
-                # Left column: AGSM S_a
+                # Left column: AGSM S_a (steps transition at the section edges)
                 for color, feat_idx in zip(feat_colors_agsm, top2_idx_agsm):
-                    ax_agsm.step(sc_plot[feat_idx], sa_plot[feat_idx], where='mid',
-                                 color=color, label=feat_names[feat_idx])
+                    _step_over_edges(ax_agsm, edges_mode[feat_idx], sa_plot[feat_idx],
+                                     color=color, label=feat_names[feat_idx])
 
                 first_inflect = True
                 for feat_idx in top2_idx_agsm:
@@ -664,10 +689,9 @@ def main():
                 kan_attr_plot = res.get('kan_attr', {})
                 if kan_attr_plot and i_idx in kan_attr_plot:
                     attr_mat = kan_attr_plot[i_idx]  # (n_eff, nx)
-                    x_centers_i = sc_plot[i_idx]
                     for color, feat_idx in zip(feat_colors_agsm, top2_idx_agsm):
-                        ax_attr.step(x_centers_i, attr_mat[:, feat_idx], where='mid',
-                                     color=color, label=feat_names[feat_idx])
+                        _step_over_edges(ax_attr, edges_mode[i_idx], attr_mat[:, feat_idx],
+                                         color=color, label=feat_names[feat_idx])
 
                     first_inflect = True
                     for feat_idx in top2_idx_agsm:
@@ -860,12 +884,26 @@ def main():
         # AGSM sectioning and the ci_idx attribution masks).
         ip_lines = list(custom_edges[ci_idx][1:-1])
         feat_colors_curv = ['#1f77b4', '#d62728']
+
+        def _seg_edges(feat_idx, centers):
+            """Section edges for piecewise-constant plotting (the inflection edges)."""
+            ce = np.asarray(custom_edges[feat_idx], dtype=float)
+            centers = np.asarray(centers, dtype=float)
+            if ce.size == centers.size + 1:
+                return ce
+            lo, hi = float(bounds[feat_idx][0]), float(bounds[feat_idx][1])
+            e = np.empty(centers.size + 1)
+            e[0], e[-1] = lo, hi
+            if centers.size > 1:
+                e[1:-1] = 0.5 * (centers[:-1] + centers[1:])
+            return e
+
         with plt.rc_context({'figure.autolayout': True}):
             fig_cv, (ax_l, ax_rt) = plt.subplots(1, 2, figsize=(10, 3.4))
 
             for color, feat_idx in zip(feat_colors_curv, top2_curv):
-                ax_l.step(sc[feat_idx], sa[feat_idx], where='mid', color=color,
-                          label=feat_names[feat_idx])
+                _step_over_edges(ax_l, _seg_edges(feat_idx, sc[feat_idx]),
+                                 sa[feat_idx], color=color, label=feat_names[feat_idx])
             first = True
             for ip in ip_lines:
                 ax_l.axvline(ip, color='green', linestyle='--', alpha=0.7, linewidth=1.0,
@@ -882,14 +920,12 @@ def main():
             ax_l.legend(loc='best')
 
             attr_mat = curv_kan_attr[ci_idx]
-            x_centers_i = np.asarray(sc[ci_idx], dtype=float)
+            edges_i = _seg_edges(ci_idx, sc[ci_idx])
             for color, feat_idx in zip(feat_colors_curv, top2_curv):
-                vals = attr_mat[:, feat_idx]
-                # Under-sampled sections (<5 pts) are NaN; drop them so the curve
-                # stays continuous instead of breaking at tiny empty intervals.
-                finite = np.isfinite(vals)
-                ax_rt.step(x_centers_i[finite], vals[finite], where='mid', color=color,
-                           label=feat_names[feat_idx])
+                # Piecewise-constant over the SAME inflection edges, so the steps
+                # change exactly at the inflection vlines.
+                _step_over_edges(ax_rt, edges_i, attr_mat[:, feat_idx],
+                                 color=color, label=feat_names[feat_idx])
             first = True
             for ip in ip_lines:
                 ax_rt.axvline(ip, color='green', linestyle='--', alpha=0.7, linewidth=1.0,
