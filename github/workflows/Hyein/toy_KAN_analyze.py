@@ -28,6 +28,9 @@ except AttributeError:
 from SALib.sample import sobol as saltelli
 from github.workflows.Hyein.toy_KAN_sweep import KANRegressor, FUNCTION_ZOO
 from kan.experiments.analysis import find_indices_sign_revert
+from github.workflows.Hyein.bspline_curvature import (
+    find_inflection_points, edge_curves, symbolic_edge_info,
+)
 
 
 SA_RC = {
@@ -230,6 +233,8 @@ def main():
 
     for col_pos, i in enumerate(sort_order_act):
         knot_points_actual = act.grid[i, model.k - 1:-2].cpu().detach().numpy()
+        x_sweep = np.linspace(float(knot_points_actual.min()),
+                              float(knot_points_actual.max()), 400)
         feature_inflections_all = []
         for j in range(no):
             ax = axs_eval[j, col_pos]
@@ -245,6 +250,7 @@ def main():
             ax.plot(inputs[rank], outputs[rank], marker='o',
                     color=feat_colors[col_pos], label='Activation')
 
+            # --- coef-based detector (kept as fallback / comparison only) ---
             slope = [x - y for x, y in zip(coef_node[1:], coef_node[:-1])]
             slope_2nd = [(x - y) * 10 for x, y in zip(slope[1:], slope[:-1])]
 
@@ -270,15 +276,38 @@ def main():
             else:
                 idx_revert = []
 
-            if idx_revert:
-                first_vline = True
-                for ir in idx_revert:
-                    inflection_val = knot_points_actual[ir]
-                    feature_inflections_all.append(inflection_val)
-                    label_to_add = "Inflection" if first_vline else "_"
-                    ax2.axvline(x=ir, color='green', linestyle='--', alpha=0.7, label=label_to_add)
-                    ax.axvline(x=inflection_val, color='green', linestyle='--', alpha=0.7, label=label_to_add)
-                    first_vline = False
+            # --- analytic detector (source of truth for inflection_points_per_input) ---
+            ips_ij = find_inflection_points(model, l, i, j_list=[j])
+            feature_inflections_all.extend(ips_ij)
+
+            # analytic phi' / phi'' overlay on the activation plot
+            _, dphi, d2phi = edge_curves(model, l, i, j, x_sweep)
+            ax_d = ax.twinx()
+            ax_d.plot(x_sweep, dphi, color='#1f77b4', lw=0.9, ls='--', label=r"$\phi'$")
+            ax_d.plot(x_sweep, d2phi, color='#d62728', lw=0.9, ls=':', label=r"$\phi''$")
+            ax_d.axhline(0, color='gray', lw=0.5, alpha=0.5)
+            ax_d.set_ylabel(r"$\phi'\,,\ \phi''$")
+
+            # coef-based inflection vlines (green dashed) — fallback comparison
+            first_c = True
+            for ir in idx_revert:
+                lab = 'coef-based' if first_c else '_'
+                ax2.axvline(x=ir, color='green', linestyle='--', alpha=0.6, label=lab)
+                if ir < len(knot_points_actual):
+                    ax.axvline(x=knot_points_actual[ir], color='green', linestyle='--',
+                               alpha=0.6, label=lab)
+                first_c = False
+
+            # analytic inflection vlines (purple solid) — the actual detection
+            if ips_ij:
+                frac_idx = np.interp(ips_ij, knot_points_actual,
+                                     np.arange(len(knot_points_actual)))
+                first_a = True
+                for xinf, fi in zip(ips_ij, frac_idx):
+                    lab = 'analytic' if first_a else '_'
+                    ax.axvline(x=xinf, color='purple', linestyle='-', alpha=0.7, label=lab)
+                    ax2.axvline(x=fi, color='purple', linestyle='-', alpha=0.7, label=lab)
+                    first_a = False
 
             ax.set_xlabel(f"{feat_names[i]}")
             ax.set_ylabel(f"node ({l+1}, {j})")
@@ -286,9 +315,12 @@ def main():
             ax2.set_ylabel(f"$c_i$ at node ({l+1}, {j})")
             ax3.set_ylabel(f"$\Delta c_i$ & $\Delta^2 c_i$")
             ax3.axhline(0, color='dimgray', linestyle='--', alpha=0.4)
+            h_ax, l_ax = ax.get_legend_handles_labels()
+            h_d, l_d = ax_d.get_legend_handles_labels()
+            ax.legend(h_ax + h_d, l_ax + l_d, loc='best', fontsize=7)
             handles2, labels2 = ax2.get_legend_handles_labels()
             handles3, labels3 = ax3.get_legend_handles_labels()
-            ax3.legend(handles2 + handles3, labels2 + labels3, loc='best')
+            ax3.legend(handles2 + handles3, labels2 + labels3, loc='best', fontsize=7)
 
         feature_inflections = sorted(set(feature_inflections_all))
         inflection_points_per_input[i] = feature_inflections
@@ -608,11 +640,13 @@ def main():
                     ax_agsm.step(sc_plot[feat_idx], sa_plot[feat_idx], where='mid',
                                  color=color, label=feat_names[feat_idx])
 
+                first_inflect = True
                 for feat_idx in top2_idx_agsm:
                     for ip in kan_ips_raw_agsm.get(feat_idx, []):
                         ax_agsm.axvline(x=ip, color='green', linestyle='--', alpha=0.7,
                                         linewidth=1.0,
-                                        label='KAN inflection' if feat_idx == top2_idx_agsm[0] else '_')
+                                        label='KAN inflection' if first_inflect else '_')
+                        first_inflect = False
 
                 first_tp = True
                 for tp in tps_plot:
@@ -635,11 +669,13 @@ def main():
                         ax_attr.step(x_centers_i, attr_mat[:, feat_idx], where='mid',
                                      color=color, label=feat_names[feat_idx])
 
+                    first_inflect = True
                     for feat_idx in top2_idx_agsm:
                         for ip in kan_ips_raw_agsm.get(feat_idx, []):
                             ax_attr.axvline(x=ip, color='green', linestyle='--', alpha=0.7,
                                             linewidth=1.0,
-                                            label='KAN inflection' if feat_idx == top2_idx_agsm[0] else '_')
+                                            label='KAN inflection' if first_inflect else '_')
+                            first_inflect = False
 
                 ax_attr.set_xlabel(feat_names[i_idx])
                 ax_attr.set_ylabel('KAN Attribution')
@@ -669,9 +705,6 @@ def main():
     # compares AGSM S_a and KAN attribution over the inflection-segmented domain.
     print("\n🧭 Computing curvature-based inflection points (analytical 2nd derivative)...")
     try:
-        from github.workflows.Hyein.bspline_curvature import (
-            find_inflection_points, edge_curves,
-        )
         from github.workflows.Hyein.sectional_gsa import (
             compute_gradient_agsm, find_agsm_transition_points,
         )
@@ -684,8 +717,18 @@ def main():
         top2_curv = np.argsort(scores_tot)[::-1][:2].tolist()
         ci_idx, cj_idx = int(top2_curv[0]), int(top2_curv[1])
 
+        # Symbolified edges route through model.symbolic_fun (spline disabled);
+        # the curvature/derivatives below use the symbolic function for those edges.
+        sym_info = symbolic_edge_info(model, l)
+        if sym_info:
+            print("⚠️ Symbolic edges detected (spline branch disabled) — curvature "
+                  "uses the symbolic function for these edges:")
+            for (ei, ej), nm in sorted(sym_info.items()):
+                print(f"     edge ({feat_names[ei]} -> node {ej}): {nm}")
+
         # --- 1. Analytical-curvature inflection points (normalized space) ---
-        curv_ips_norm = {idx: find_inflection_points(model, l, idx)
+        # Reuse the single analytic source computed in section 3 (no recompute).
+        curv_ips_norm = {idx: (inflection_points_per_input[idx] or [])
                          for idx in top2_curv}
 
         # --- 1b. Figure: activation phi(x) with its analytical phi'(x), phi''(x) ---
@@ -718,7 +761,9 @@ def main():
                     ax.set_xlabel(f"normalized {feat_names[i_feat]}")
                     ax.set_ylabel(r'$\phi$')
                     ax2.set_ylabel(r"$\phi'\,,\ \phi''$")
-                    ax.set_title(f"edge ({feat_names[i_feat]} -> node {j})")
+                    sym_tag = (f"  [symbolic: {sym_info[(i_feat, j)]}]"
+                               if (i_feat, j) in sym_info else "")
+                    ax.set_title(f"edge ({feat_names[i_feat]} -> node {j}){sym_tag}")
                     lns = ln0 + ln1 + ln2
                     ax.legend(lns, [ln.get_label() for ln in lns], loc='best', fontsize=7)
             fig_d.suptitle(f"{data_name} — activation & analytical derivatives (L0)",
@@ -837,9 +882,13 @@ def main():
             ax_l.legend(loc='best')
 
             attr_mat = curv_kan_attr[ci_idx]
-            x_centers_i = sc[ci_idx]
+            x_centers_i = np.asarray(sc[ci_idx], dtype=float)
             for color, feat_idx in zip(feat_colors_curv, top2_curv):
-                ax_rt.step(x_centers_i, attr_mat[:, feat_idx], where='mid', color=color,
+                vals = attr_mat[:, feat_idx]
+                # Under-sampled sections (<5 pts) are NaN; drop them so the curve
+                # stays continuous instead of breaking at tiny empty intervals.
+                finite = np.isfinite(vals)
+                ax_rt.step(x_centers_i[finite], vals[finite], where='mid', color=color,
                            label=feat_names[feat_idx])
             first = True
             for ip in ip_lines:

@@ -46,7 +46,7 @@ def main():
         'exponential',
         'logarithm',
         'rosenbrock',
-        # 'conditional', 'damping_sin',
+        'conditional', 'damping_sin',
         'ishigami',
         # 'convolution', 'original', 'mult_periodic',
         # 'multiplication',

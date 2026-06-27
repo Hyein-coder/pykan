@@ -52,12 +52,17 @@ Public API
 """
 
 import numpy as np
+import sympy
 import torch
 
 from kan.spline import B_batch, coef2curve
 from kan.experiments.analysis import find_indices_sign_revert
+from kan.utils import SYMBOLIC_LIB
 
 _EPS = 1e-12
+
+# Cache of lambdified analytic derivatives, keyed by (id(sym_layer), i, j, order).
+_SYM_DERIV_CACHE = {}
 
 
 # ----------------------------------------------------------------------------
@@ -193,7 +198,7 @@ def activation_second_derivative(model, l, x_eval):
     y = (act.scale_base[None, :, :] * base2[:, :, None]
          + act.scale_sp[None, :, :] * sp2)
     y = act.mask[None, :, :] * y
-    return y
+    return y + _symbolic_branch(model, l, x_eval, order=2)
 
 
 def edge_second_derivative(model, l, i, j, x_sweep):
@@ -221,6 +226,112 @@ def edge_second_derivative(model, l, i, j, x_sweep):
     with torch.no_grad():
         d2 = activation_second_derivative(model, l, x_eval)[:, i, j]
     return d2.detach().cpu().numpy()
+
+
+# ----------------------------------------------------------------------------
+# Symbolic branch (analytic, closed-form derivatives)
+# ----------------------------------------------------------------------------
+# When an edge is symbolified, pykan disables its spline branch (act_fun mask 0)
+# and the learned function lives in model.symbolic_fun as g(x) = c*f(a*x+b)+d
+# (Symbolic_KANLayer.forward). Its derivatives are closed form:
+#     g'(x)  = c*a   * f'(a*x+b)
+#     g''(x) = c*a^2 * f''(a*x+b)
+# We obtain f', f'' analytically via sympy (the spline path is analytic too;
+# autograd is reserved for verification). funs_sympy / SYMBOLIC_LIB index by
+# [out=j][in=i] -- transposed relative to act_fun's [in, out].
+def _symbolic_edge_deriv(sym_layer, i, j, order):
+    """Numeric callable for the closed-form order-th derivative of edge (i->j).
+
+    Differentiates ``c*f(a*x+b)+d`` symbolically with sympy and lambdifies it.
+    Falls back to autograd on the torch fun only if the sympy path fails.
+    """
+    key = (id(sym_layer), i, j, order)
+    cached = _SYM_DERIV_CACHE.get(key)
+    if cached is not None:
+        return cached
+
+    a = float(sym_layer.affine[j, i, 0]); b = float(sym_layer.affine[j, i, 1])
+    c = float(sym_layer.affine[j, i, 2]); d = float(sym_layer.affine[j, i, 3])
+    name = sym_layer.funs_name[j][i]
+
+    try:
+        f_sympy = (SYMBOLIC_LIB[name][1] if name in SYMBOLIC_LIB
+                   else sym_layer.funs_sympy[j][i])
+        X = sympy.symbols('x')
+        expr = c * f_sympy(a * X + b) + d
+        if order > 0:
+            expr = sympy.diff(expr, X, order)
+        fn = sympy.lambdify(X, expr, 'numpy')
+
+        def _evaluated(x_np, _fn=fn):
+            out = np.asarray(_fn(x_np), dtype=float)
+            if out.shape != np.shape(x_np):     # constant expr -> scalar; broadcast
+                out = np.broadcast_to(out, np.shape(x_np)).copy()
+            return out
+    except Exception:
+        # Last-resort: autograd on the torch fun (still exact, just not symbolic).
+        torch_f = sym_layer.funs[j][i]
+
+        def _evaluated(x_np, _f=torch_f, _a=a, _b=b, _c=c, _d=d, _order=order):
+            xt = torch.as_tensor(np.asarray(x_np, dtype=float), dtype=torch.float64,
+                                 requires_grad=True)
+            y = _c * _f(_a * xt + _b) + _d
+            if _order == 0:
+                return y.detach().cpu().numpy()
+            g1, = torch.autograd.grad(y.sum(), xt, create_graph=_order > 1)
+            if _order == 2:
+                g1, = torch.autograd.grad(g1.sum(), xt)
+            return g1.detach().cpu().numpy()
+
+    _SYM_DERIV_CACHE[key] = _evaluated
+    return _evaluated
+
+
+def _symbolic_branch(model, l, x_eval, order=0):
+    """Symbolic branch contribution (value or derivative) of layer ``l``.
+
+    Returns (batch, in_dim, out_dim); zeros when the model has no active symbolic
+    layer. Only edges with ``symbolic_fun[l].mask[j,i] != 0`` contribute.
+    """
+    act = model.act_fun[l]
+    in_dim, out_dim = act.coef.shape[:2]
+    out = torch.zeros(x_eval.shape[0], in_dim, out_dim,
+                      dtype=x_eval.dtype, device=x_eval.device)
+    if not getattr(model, 'symbolic_enabled', False):
+        return out
+    sym_list = getattr(model, 'symbolic_fun', None)
+    if sym_list is None or l >= len(sym_list):
+        return out
+    sym = sym_list[l]
+
+    x_np_all = x_eval.detach().cpu().numpy()
+    for i in range(in_dim):
+        xi_np = x_np_all[:, i]
+        for j in range(out_dim):
+            if float(sym.mask[j, i].detach().cpu()) == 0.0:
+                continue
+            vals = _symbolic_edge_deriv(sym, i, j, order)(xi_np)
+            vals = np.nan_to_num(vals, nan=0.0, posinf=0.0, neginf=0.0)
+            out[:, i, j] = torch.as_tensor(vals, dtype=x_eval.dtype,
+                                           device=x_eval.device)
+    return out
+
+
+def symbolic_edge_info(model, l):
+    """Map ``{(i, j): funs_name}`` for active symbolic edges of layer ``l``."""
+    info = {}
+    if not getattr(model, 'symbolic_enabled', False):
+        return info
+    sym_list = getattr(model, 'symbolic_fun', None)
+    if sym_list is None or l >= len(sym_list):
+        return info
+    sym = sym_list[l]
+    in_dim, out_dim = model.act_fun[l].coef.shape[:2]
+    for i in range(in_dim):
+        for j in range(out_dim):
+            if float(sym.mask[j, i].detach().cpu()) != 0.0:
+                info[(i, j)] = sym.funs_name[j][i]
+    return info
 
 
 # ----------------------------------------------------------------------------
@@ -266,7 +377,8 @@ def activation_value(model, l, x_eval):
     spl = coef2curve(x_eval, act.grid, act.coef, act.k)              # (b,in,out)
     base = act.base_fun(x_eval)                                      # (b,in)
     y = act.scale_base[None, :, :] * base[:, :, None] + act.scale_sp[None, :, :] * spl
-    return act.mask[None, :, :] * y
+    y = act.mask[None, :, :] * y
+    return y + _symbolic_branch(model, l, x_eval, order=0)
 
 
 def activation_first_derivative(model, l, x_eval):
@@ -280,7 +392,8 @@ def activation_first_derivative(model, l, x_eval):
     sp1 = eval_spline_first_derivative(act.grid, act.coef, act.k, x_eval)  # (b,in,out)
     base1 = _base_first_derivative(act.base_fun, x_eval)                   # (b,in)
     y = act.scale_base[None, :, :] * base1[:, :, None] + act.scale_sp[None, :, :] * sp1
-    return act.mask[None, :, :] * y
+    y = act.mask[None, :, :] * y
+    return y + _symbolic_branch(model, l, x_eval, order=1)
 
 
 def edge_curves(model, l, i, j, x_sweep):
@@ -354,11 +467,15 @@ def find_inflection_points(model, l, i, x_grid=None, n_eval=400,
 
     no = act.coef.shape[1]
     js = range(no) if j_list is None else j_list
+    sym_info = symbolic_edge_info(model, l)  # edges active via the symbolic branch
 
     inflections = []
     for j in js:
-        if float(act.mask[i, j].detach().cpu()) == 0.0:
-            continue  # pruned edge contributes no activation
+        # Skip only edges that are inactive in BOTH branches. Symbolified edges
+        # have a zero spline mask but carry the function via symbolic_fun, so the
+        # spline mask alone must not gate them out.
+        if float(act.mask[i, j].detach().cpu()) == 0.0 and (i, j) not in sym_info:
+            continue
         d2 = edge_second_derivative(model, l, i, j, x_grid)
         if not np.any(np.isfinite(d2)):
             continue
@@ -395,6 +512,15 @@ def autograd_edge_second_derivative(model, l, i, j, x_sweep):
          + act.scale_sp[None, :, :] * yspl)
     y = act.mask[None, :, :] * y
     yij = y[:, i, j]
+
+    # Include the symbolic branch so the reference equals the FULL edge activation.
+    if getattr(model, 'symbolic_enabled', False):
+        sym_list = getattr(model, 'symbolic_fun', None)
+        if sym_list is not None and l < len(sym_list):
+            sym = sym_list[l]
+            if float(sym.mask[j, i].detach().cpu()) != 0.0:
+                a, b, c, d = (sym.affine[j, i, t] for t in range(4))
+                yij = yij + (c * sym.funs[j][i](a * x[:, i] + b) + d)
 
     g1, = torch.autograd.grad(yij.sum(), x, create_graph=True)
     g2, = torch.autograd.grad(g1[:, i].sum(), x)
