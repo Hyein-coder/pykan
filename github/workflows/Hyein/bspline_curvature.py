@@ -560,3 +560,185 @@ def verify_against_autograd(model, l, edges=None, n_eval=200, margin=0.05):
         scale = float(np.max(np.abs(ref[finite]))) + 1e-12
         report[(i, j)] = {'max_abs_err': err, 'scale': scale, 'rel_err': err / scale}
     return report
+
+
+# ----------------------------------------------------------------------------
+# Full-model input derivatives (chain rule across layers)
+# ----------------------------------------------------------------------------
+# These compose the per-edge analytic derivatives across all layers (summation
+# nodes) to get the derivative of the whole KAN output f w.r.t. each input x_i.
+# Forward recipe (MultKAN.forward): a^{(l+1)}_j = s^{(l)}_j * sum_i phi_{ij}(acts[l][:,i]) + const,
+# with combined diagonal scale s^{(l)}_j = node_scale[l][j] * subnode_scale[l][j].
+
+def _as_model_input(model, x):
+    """Coerce x (numpy or tensor) to a float tensor on the model's device."""
+    device = model.act_fun[0].coef.device
+    dtype = model.act_fun[0].coef.dtype
+    if isinstance(x, torch.Tensor):
+        return x.to(device=device, dtype=dtype)
+    return torch.as_tensor(np.asarray(x, dtype=float), device=device, dtype=dtype)
+
+
+def _combined_node_scale(model, l):
+    """Combined diagonal node scale s^{(l)} = node_scale[l] * subnode_scale[l].
+
+    Raises for layers with multiplication nodes (this composition assumes pure
+    summation nodes, matching the current models).
+    """
+    w_next = model.width[l + 1]
+    n_mult = w_next[1] if isinstance(w_next, (list, tuple)) else 0
+    if n_mult and n_mult > 0:
+        raise ValueError(
+            "model derivatives support summation-only models; layer %d has %d mult node(s)."
+            % (l + 1, n_mult))
+    ns = model.node_scale[l].detach()
+    ss = model.subnode_scale[l].detach()
+    return (ns * ss)
+
+
+def _layer_acts(model, x_eval):
+    """Forward x_eval and return the cached per-layer node activations acts[l]."""
+    x_t = _as_model_input(model, x_eval)
+    with torch.no_grad():
+        model(x_t)              # populates model.acts (acts[l] = input to layer l)
+    return [a.detach() for a in model.acts]
+
+
+def  model_directional_derivatives(model, x_eval, feat_idx):
+    """Full-model value f, ∂f/∂x_i and ∂²f/∂x_i² at points ``x_eval``.
+
+    Differentiates the whole KAN output w.r.t. input column ``feat_idx`` via
+    forward-mode 2nd-order AD along e_i, composing the symbolic-aware per-edge
+    analytic derivatives across layers. Scalar output assumed.
+
+    Returns (f, df, d2f) as numpy arrays of shape (batch,).
+    """
+    if int(model.width_in[-1]) != 1:
+        raise ValueError("model_directional_derivatives expects a scalar output "
+                         "(width_in[-1]==1); got %s." % (model.width_in[-1],))
+    acts = _layer_acts(model, x_eval)
+    L = len(model.act_fun)
+    device = model.act_fun[0].coef.device
+    dtype = model.act_fun[0].coef.dtype
+    batch, n0 = acts[0].shape
+
+    d = torch.zeros(batch, n0, device=device, dtype=dtype)
+    d[:, feat_idx] = 1.0
+    h = torch.zeros(batch, n0, device=device, dtype=dtype)
+
+    with torch.no_grad():
+        for l in range(L):
+            phi1 = activation_first_derivative(model, l, acts[l])   # (b, n_l, n_{l+1})
+            phi2 = activation_second_derivative(model, l, acts[l])  # (b, n_l, n_{l+1})
+            s = _combined_node_scale(model, l).to(device=device, dtype=dtype)  # (n_{l+1},)
+            d_new = s[None, :] * torch.einsum('bp,bpj->bj', d, phi1)
+            h_new = s[None, :] * (torch.einsum('bp,bpj->bj', d * d, phi2)
+                                  + torch.einsum('bp,bpj->bj', h, phi1))
+            d, h = d_new, h_new
+
+    f = acts[L][:, 0]
+    out = []
+    for t in (f, d[:, 0], h[:, 0]):
+        a = t.detach().cpu().numpy()
+        out.append(np.nan_to_num(a, nan=0.0, posinf=0.0, neginf=0.0))
+    return out[0], out[1], out[2]
+
+
+def model_gradient(model, x_eval):
+    """Full-model gradient ∂f/∂x for all input features at ``x_eval``.
+
+    Jacobian chain ``D[l+1] = J[l] @ D[l]`` with ``J[l][:,j,i] = s^{(l)}_j φ'_{ij}``.
+    Returns numpy array shape (batch, n_inputs). Scalar output assumed.
+    """
+    if int(model.width_in[-1]) != 1:
+        raise ValueError("model_gradient expects a scalar output.")
+    acts = _layer_acts(model, x_eval)
+    L = len(model.act_fun)
+    device = model.act_fun[0].coef.device
+    dtype = model.act_fun[0].coef.dtype
+    batch, n0 = acts[0].shape
+
+    D = torch.eye(n0, device=device, dtype=dtype)[None].expand(batch, n0, n0).clone()
+    with torch.no_grad():
+        for l in range(L):
+            phi1 = activation_first_derivative(model, l, acts[l])      # (b, n_l, n_{l+1})
+            s = _combined_node_scale(model, l).to(device=device, dtype=dtype)
+            J = s[None, None, :] * phi1                                # (b, n_l, n_{l+1})
+            D = torch.einsum('bij,bik->bjk', J, D)                     # (b, n_{l+1}, n0)
+    grad = D[:, 0, :].detach().cpu().numpy()
+    return np.nan_to_num(grad, nan=0.0, posinf=0.0, neginf=0.0)
+
+
+def model_gradient_autograd(model, x_eval):
+    """Reference ∂f/∂x for all features via autograd. Shape (batch, n_inputs)."""
+    x = _as_model_input(model, x_eval).clone().requires_grad_(True)
+    y = model(x)
+    g, = torch.autograd.grad(y.sum(), x, create_graph=False)
+    return g.detach().cpu().numpy()
+
+
+def model_directional_autograd(model, x_eval, feat_idx):
+    """Reference (∂f/∂x_i, ∂²f/∂x_i²) via autograd double-grad. Shapes (batch,)."""
+    x = _as_model_input(model, x_eval).clone().requires_grad_(True)
+    y = model(x)
+    g, = torch.autograd.grad(y.sum(), x, create_graph=True)
+    gi = g[:, feat_idx]
+    h, = torch.autograd.grad(gi.sum(), x)
+    return (g[:, feat_idx].detach().cpu().numpy(),
+            h[:, feat_idx].detach().cpu().numpy())
+
+
+def find_model_inflection_points(model, feat_idx, x_grid=None, x_fixed=None,
+                                 n_eval=400, eps=None, rel_eps=1e-2):
+    """Full-model inflection x-values for input ``feat_idx`` (normalized space).
+
+    Sweeps ``feat_idx`` over its grid interior with the other inputs held at
+    ``x_fixed`` (default: per-feature grid-interior midpoint ~ band mean),
+    computes ∂²f/∂x_i² via ``model_directional_derivatives``, and detects sign
+    changes with ``find_indices_sign_revert``. Returns sorted normalized x-values.
+    """
+    act0 = model.act_fun[0]
+    k = act0.k
+    n0 = act0.coef.shape[0]
+
+    def _interior(p):
+        return act0.grid[p, k - 1:-2].detach().cpu().numpy()
+
+    if x_grid is None:
+        kn = _interior(feat_idx)
+        x_grid = np.linspace(float(kn.min()), float(kn.max()), n_eval)
+    x_grid = np.asarray(x_grid, dtype=float)
+
+    if x_fixed is None:
+        x_fixed = np.array([0.5 * (float(_interior(p).min()) + float(_interior(p).max()))
+                            for p in range(n0)], dtype=float)
+    x_fixed = np.asarray(x_fixed, dtype=float).ravel()
+
+    X = np.tile(x_fixed, (len(x_grid), 1))
+    X[:, feat_idx] = x_grid
+    _, _, d2 = model_directional_derivatives(model, X, feat_idx)
+    if not np.any(np.isfinite(d2)):
+        return []
+    peak = float(np.nanmax(np.abs(d2)))
+    ep = eps if eps is not None else max(1e-9, rel_eps * peak)
+    idx_revert = find_indices_sign_revert(list(d2), epsilon=ep)
+    return sorted(set(float(x_grid[i]) for i in idx_revert))
+
+
+def verify_model_derivatives(model, x_eval, feat_indices=None):
+    """Max abs error of analytic full-model derivatives vs autograd.
+
+    Returns {'grad_max_abs_err': float, 'curv': {i: {'df_max_abs_err','d2f_max_abs_err'}}}.
+    """
+    g_ana = model_gradient(model, x_eval)
+    g_ref = model_gradient_autograd(model, x_eval)
+    rep = {'grad_max_abs_err': float(np.max(np.abs(g_ana - g_ref))), 'curv': {}}
+    feats = range(g_ana.shape[1]) if feat_indices is None else feat_indices
+    for i in feats:
+        _, df_i, d2f_i = model_directional_derivatives(model, x_eval, i)
+        df_ref, d2_ref = model_directional_autograd(model, x_eval, i)
+        rep['curv'][int(i)] = {
+            'df_max_abs_err': float(np.max(np.abs(df_i - df_ref))),
+            'd2f_max_abs_err': float(np.max(np.abs(d2f_i - d2_ref))),
+        }
+    return rep

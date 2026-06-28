@@ -29,7 +29,9 @@ from SALib.sample import sobol as saltelli
 from github.workflows.Hyein.toy_KAN_sweep import KANRegressor, FUNCTION_ZOO
 from kan.experiments.analysis import find_indices_sign_revert
 from github.workflows.Hyein.bspline_curvature import (
-    find_inflection_points, edge_curves, symbolic_edge_info,
+    symbolic_edge_info,
+    find_model_inflection_points, model_directional_derivatives,
+    model_directional_autograd,
 )
 
 
@@ -244,11 +246,19 @@ def main():
                                           figsize=(4 * ni, 3 * no),
                                           constrained_layout=True)
 
+    # Inflection points are now the full-model curvature zero-crossings
+    # (∂²f/∂x_i² with other inputs fixed at their mean) — the single source
+    # consumed by sections 3.5/3.7/3.8/3.9/4. Computed once per feature below.
+    x_fixed_mean = dataset['train_input'].mean(dim=0).detach().cpu().numpy()
+
     for col_pos, i in enumerate(sort_order_act):
         knot_points_actual = act.grid[i, model.k - 1:-2].cpu().detach().numpy()
-        x_sweep = np.linspace(float(knot_points_actual.min()),
-                              float(knot_points_actual.max()), 400)
-        feature_inflections_all = []
+
+        feat_ips = find_model_inflection_points(model, i, x_fixed=x_fixed_mean)
+        inflection_points_per_input[i] = feat_ips
+        frac_idx = (np.interp(feat_ips, knot_points_actual,
+                              np.arange(len(knot_points_actual))) if feat_ips else [])
+
         for j in range(no):
             ax = axs_eval[j, col_pos]
             ax2 = axs_spline[j, col_pos]
@@ -289,18 +299,6 @@ def main():
             else:
                 idx_revert = []
 
-            # --- analytic detector (source of truth for inflection_points_per_input) ---
-            ips_ij = find_inflection_points(model, l, i, j_list=[j])
-            feature_inflections_all.extend(ips_ij)
-
-            # analytic phi' / phi'' overlay on the activation plot
-            _, dphi, d2phi = edge_curves(model, l, i, j, x_sweep)
-            ax_d = ax.twinx()
-            ax_d.plot(x_sweep, dphi, color='#1f77b4', lw=0.9, ls='--', label=r"$\phi'$")
-            ax_d.plot(x_sweep, d2phi, color='#d62728', lw=0.9, ls=':', label=r"$\phi''$")
-            ax_d.axhline(0, color='gray', lw=0.5, alpha=0.5)
-            ax_d.set_ylabel(r"$\phi'\,,\ \phi''$")
-
             # coef-based inflection vlines (green dashed) — fallback comparison
             first_c = True
             for ir in idx_revert:
@@ -311,16 +309,13 @@ def main():
                                alpha=0.6, label=lab)
                 first_c = False
 
-            # analytic inflection vlines (purple solid) — the actual detection
-            if ips_ij:
-                frac_idx = np.interp(ips_ij, knot_points_actual,
-                                     np.arange(len(knot_points_actual)))
-                first_a = True
-                for xinf, fi in zip(ips_ij, frac_idx):
-                    lab = 'analytic' if first_a else '_'
-                    ax.axvline(x=xinf, color='purple', linestyle='-', alpha=0.7, label=lab)
-                    ax2.axvline(x=fi, color='purple', linestyle='-', alpha=0.7, label=lab)
-                    first_a = False
+            # full-model inflection vlines (purple solid) — ∂²f/∂x_i² zero-crossings
+            first_a = True
+            for xinf, fi in zip(feat_ips, frac_idx):
+                lab = 'model inflection' if first_a else '_'
+                ax.axvline(x=xinf, color='purple', linestyle='-', alpha=0.7, label=lab)
+                ax2.axvline(x=fi, color='purple', linestyle='-', alpha=0.7, label=lab)
+                first_a = False
 
             ax.set_xlabel(f"{feat_names[i]}")
             ax.set_ylabel(f"node ({l+1}, {j})")
@@ -328,15 +323,10 @@ def main():
             ax2.set_ylabel(f"$c_i$ at node ({l+1}, {j})")
             ax3.set_ylabel(f"$\Delta c_i$ & $\Delta^2 c_i$")
             ax3.axhline(0, color='dimgray', linestyle='--', alpha=0.4)
-            h_ax, l_ax = ax.get_legend_handles_labels()
-            h_d, l_d = ax_d.get_legend_handles_labels()
-            ax.legend(h_ax + h_d, l_ax + l_d, loc='best', fontsize=7)
+            ax.legend(loc='best', fontsize=7)
             handles2, labels2 = ax2.get_legend_handles_labels()
             handles3, labels3 = ax3.get_legend_handles_labels()
             ax3.legend(handles2 + handles3, labels2 + labels3, loc='best', fontsize=7)
-
-        feature_inflections = sorted(set(feature_inflections_all))
-        inflection_points_per_input[i] = feature_inflections
 
     fig_eval.savefig(os.path.join(savepath, f"{data_name}_activations_values_L{l}.png"), dpi=300)
     fig_eval.savefig(os.path.join(savepath, f"{data_name}_activations_values_L{l}.svg"), format='svg')
@@ -347,6 +337,69 @@ def main():
     plt.close(fig_eval)
     plt.close(fig_spline)
     print(f"📊 Activation analysis saved to: {savepath}")
+
+    # ==========================================
+    # 3.6 Full-model input derivatives  ∂f/∂x_i and ∂²f/∂x_i²
+    # ==========================================
+    # Chain-rule derivatives of the whole KAN output w.r.t. each input feature
+    # (others fixed at their mean). Analytic (lines) vs autograd (markers); the
+    # ∂²f/∂x_i² zero-crossings are the model inflection points used elsewhere.
+    print("\n🧮 Computing full-model input derivatives (∂f/∂x, ∂²f/∂x²)...")
+    try:
+        n_cols_d = min(ni, 3)
+        n_rows_d = (ni + n_cols_d - 1) // n_cols_d
+        fig_md, axs_md = plt.subplots(n_rows_d, n_cols_d, squeeze=False,
+                                      figsize=(5 * n_cols_d, 3.2 * n_rows_d),
+                                      constrained_layout=True)
+        axs_md_flat = axs_md.flatten()
+        for i in range(ni):
+            ax = axs_md_flat[i]
+            ax2 = ax.twinx()
+            kn = act.grid[i, model.k - 1:-2].cpu().detach().numpy()
+            x_sweep = np.linspace(float(kn.min()), float(kn.max()), 400)
+            X = np.tile(x_fixed_mean, (len(x_sweep), 1))
+            X[:, i] = x_sweep
+            _, df_i, d2f_i = model_directional_derivatives(model, X, i)
+
+            # autograd check on a subsample of the sweep
+            sub = np.linspace(0, len(x_sweep) - 1, 25).astype(int)
+            df_ref, d2_ref = model_directional_autograd(model, X[sub], i)
+
+            ax.plot(x_sweep, df_i, color='#1f77b4', lw=1.3, label=r"$\partial f/\partial x$")
+            ax.plot(x_sweep[sub], df_ref, ls='none', marker='o', ms=3,
+                    color='#1f77b4', alpha=0.6, label='autograd')
+            ax2.plot(x_sweep, d2f_i, color='#d62728', lw=1.1, ls=':',
+                     label=r"$\partial^2 f/\partial x^2$")
+            ax2.plot(x_sweep[sub], d2_ref, ls='none', marker='s', ms=3,
+                     color='#d62728', alpha=0.6, label='_')
+            ax2.axhline(0, color='gray', lw=0.6, alpha=0.5)
+
+            first = True
+            for ip in (inflection_points_per_input[i] or []):
+                ax.axvline(ip, color='purple', ls='-', alpha=0.7, lw=1.0,
+                           label='inflection' if first else '_')
+                first = False
+
+            ax.set_xlabel(f"normalized {feat_names[i]}")
+            ax.set_ylabel(r"$\partial f/\partial x$")
+            ax2.set_ylabel(r"$\partial^2 f/\partial x^2$")
+            ax.set_title(f"{feat_names[i]}")
+            h1, l1 = ax.get_legend_handles_labels()
+            h2, l2 = ax2.get_legend_handles_labels()
+            ax.legend(h1 + h2, l1 + l2, loc='best', fontsize=7)
+
+        for c in range(ni, len(axs_md_flat)):
+            axs_md_flat[c].set_visible(False)
+        fig_md.suptitle(f"{data_name} — model derivatives (others fixed at mean)",
+                        fontsize=11, fontweight='bold')
+        for ext in ['.png', '.svg', '.eps']:
+            fig_md.savefig(os.path.join(savepath, f"{data_name}_model_derivatives{ext}"))
+        plt.close(fig_md)
+        print(f"🧮 Model-derivatives figure saved: {data_name}_model_derivatives.(png/svg/eps)")
+    except Exception as e:
+        import traceback
+        print(f"⚠️ Model-derivatives section 3.6 failed: {e}")
+        traceback.print_exc()
 
     # ==========================================
     # 3.5 Attribution Trajectory across Grid Intervals
@@ -755,49 +808,9 @@ def main():
         curv_ips_norm = {idx: (inflection_points_per_input[idx] or [])
                          for idx in top2_curv}
 
-        # --- 1b. Figure: activation phi(x) with its analytical phi'(x), phi''(x) ---
-        # Plots the learned activation and its exact 1st/2nd derivatives per edge,
-        # with green vlines at the phi'' zero-crossings (detected inflections).
-        # x-axis is the spline's native NORMALIZED input space.
-        no_l = act.coef.shape[1]
-        with plt.rc_context({'figure.autolayout': True}):
-            fig_d, axs_d = plt.subplots(no_l, len(top2_curv), squeeze=False,
-                                        figsize=(5 * len(top2_curv), 3 * no_l))
-            for col, i_feat in enumerate(top2_curv):
-                knots_i = act.grid[i_feat, model.k - 1:-2].cpu().detach().numpy()
-                x_sweep = np.linspace(float(knots_i.min()), float(knots_i.max()), 400)
-                for j in range(no_l):
-                    ax = axs_d[j, col]
-                    ax2 = ax.twinx()
-                    phi, dphi, d2phi = edge_curves(model, l, i_feat, j, x_sweep)
-                    ln0 = ax.plot(x_sweep, phi, color='#222222', lw=1.6, label=r'$\phi(x)$')
-                    ln1 = ax2.plot(x_sweep, dphi, color='#1f77b4', lw=1.0, ls='--',
-                                   label=r"$\phi'(x)$")
-                    ln2 = ax2.plot(x_sweep, d2phi, color='#d62728', lw=1.0, ls=':',
-                                   label=r"$\phi''(x)$")
-                    ax2.axhline(0, color='gray', lw=0.6, alpha=0.6)
-                    # green vlines at this edge's phi'' zero-crossings (detected inflections)
-                    first = True
-                    for ip in find_inflection_points(model, l, i_feat, j_list=[j]):
-                        ax.axvline(ip, color='green', ls='--', alpha=0.6, lw=1.0,
-                                   label='Inflection' if first else '_')
-                        first = False
-                    ax.set_xlabel(f"normalized {feat_names[i_feat]}")
-                    ax.set_ylabel(r'$\phi$')
-                    ax2.set_ylabel(r"$\phi'\,,\ \phi''$")
-                    sym_tag = (f"  [symbolic: {sym_info[(i_feat, j)]}]"
-                               if (i_feat, j) in sym_info else "")
-                    ax.set_title(f"edge ({feat_names[i_feat]} -> node {j}){sym_tag}")
-                    lns = ln0 + ln1 + ln2
-                    ax.legend(lns, [ln.get_label() for ln in lns], loc='best', fontsize=7)
-            fig_d.suptitle(f"{data_name} — activation & analytical derivatives (L0)",
-                           fontsize=11, fontweight='bold')
-            for ext in ['.png', '.svg', '.eps']:
-                fig_d.savefig(os.path.join(savepath,
-                              f"{data_name}_activation_derivatives_L0{ext}"))
-            plt.close(fig_d)
-        print(f"🧭 Activation+derivatives figure saved: "
-              f"{data_name}_activation_derivatives_L0.(png/svg/eps)")
+        # (Per-edge φ/φ'/φ'' figure removed — the full-model derivative view is
+        #  now section 3.6; §3.9 keeps the AGSM S_a + KAN attribution dual measure
+        #  segmented by the full-model inflection points.)
 
         # --- 2. Denormalize to raw space (analysis band filter, as in 3.7/3.8) ---
         def _denorm_feat(vals_norm, feat_idx):
