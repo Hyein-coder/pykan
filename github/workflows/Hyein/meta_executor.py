@@ -57,5 +57,7 @@ def main():
         for data in target_data:
             subprocess.run(['python', s, data])
 
+    subprocess.run(['python', 'github/workflows/Hyein/aggregate_ranking_transitions.py'])
+
 if __name__ == '__main__':
     main()

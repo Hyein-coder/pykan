@@ -30,6 +30,7 @@ from github.workflows.Hyein.toy_KAN_sweep import KANRegressor, FUNCTION_ZOO
 from kan.experiments.analysis import find_indices_sign_revert
 from github.workflows.Hyein.bspline_curvature import (
     find_inflection_points, edge_curves, symbolic_edge_info,
+    feature_sensitivity, find_ranking_transitions,
 )
 
 
@@ -349,6 +350,83 @@ def main():
     print(f"📊 Activation analysis saved to: {savepath}")
 
     # ==========================================
+    # 3.6 Ranking transition by small 1st-derivative |φ'|
+    # ==========================================
+    # Per-feature bottom-layer local sensitivity s_i(x) = Σ_j |φ'_{i,j}(x)| (exact,
+    # feature-separable). A ranking transition = where the dominant feature's s_i
+    # drops below a small threshold τ (it becomes locally negligible).
+    print("\n🏁 Computing ranking transitions (small |φ'|)...")
+    # Transition points used by all downstream analysis (§3.5/3.7/3.8/3.9/4):
+    # the RANKING-TRANSITION points (τ-crossings of |φ'_i|), replacing the
+    # inflection points. Falls back to inflection points if §3.6 fails.
+    transition_points_per_input = [list(p or []) for p in inflection_points_per_input]
+    try:
+        rel_thresh = 0.1  # τ = rel_thresh · max_i max_x |φ'_i|  (tunable / exploratory)
+        l0 = 0
+        knots_all = act.grid[:, model.k - 1:-2].cpu().detach().numpy()
+        x_grid_rt = np.linspace(float(knots_all.min()), float(knots_all.max()), 400)
+        transitions, info = find_ranking_transitions(
+            model, x_grid=x_grid_rt, rel_thresh=rel_thresh, layer=l0)
+        tau = info['tau']
+        S = info['S']
+        # Per-feature ranking-transition points (all τ-crossings) -> downstream source.
+        transition_points_per_input = [
+            sorted(t['point'] for t in transitions if t['feat_idx'] == i)
+            for i in range(ni)
+        ]
+
+        feat_colors_rt = [plt.get_cmap('tab10')(c) for c in range(ni)]
+        with plt.rc_context({'figure.autolayout': True}):
+            fig_rt, ax_rt = plt.subplots(figsize=(7, 4))
+            for i in range(ni):
+                ax_rt.plot(x_grid_rt, S[i], color=feat_colors_rt[i], lw=1.4,
+                           label=rf"$|\phi'|$ {feat_names[i]}")
+            ax_rt.axhline(tau, color='black', ls='--', lw=1.0, alpha=0.7,
+                          label=rf"$\tau={rel_thresh:g}\cdot$max")
+
+            # All τ-crossings, every feature: solid = down (→negligible),
+            # dotted = up (→active); colored by the crossing feature.
+            first_d, first_u = True, True
+            for t in transitions:
+                c = feat_colors_rt[t['feat_idx']]
+                if t['direction'] == 'down':
+                    ax_rt.axvline(t['point'], color=c, ls='-', alpha=0.85, lw=1.3,
+                                  label='transition (down)' if first_d else '_')
+                    first_d = False
+                else:
+                    ax_rt.axvline(t['point'], color=c, ls=':', alpha=0.7, lw=1.1,
+                                  label='transition (up)' if first_u else '_')
+                    first_u = False
+
+            # overlay KAN inflection points (normalized) for comparison
+            first_inf = True
+            for i in range(ni):
+                for ip in (inflection_points_per_input[i] or []):
+                    ax_rt.axvline(ip, color='green', ls='--', alpha=0.5, lw=0.9,
+                                  label='KAN inflection' if first_inf else '_')
+                    first_inf = False
+
+            ax_rt.set_xlabel("normalized input value")
+            ax_rt.set_ylabel(r"local sensitivity  $\sum_j|\phi'_{ij}|$")
+            ax_rt.set_title(rf"{data_name} — ranking transition (small $|\phi'|$)")
+            ax_rt.legend(loc='best', fontsize=7)
+            for ext in ['.png', '.svg', '.eps']:
+                fig_rt.savefig(os.path.join(savepath, f"{data_name}_ranking_transition{ext}"))
+            plt.close(fig_rt)
+
+        pd.DataFrame(transitions).to_csv(
+            os.path.join(savepath, f"{data_name}_ranking_transition.csv"), index=False)
+        down_pts = [round(t['point'], 3) for t in transitions if t['direction'] == 'down']
+        up_pts = [round(t['point'], 3) for t in transitions if t['direction'] == 'up']
+        print(f"🏁 τ = {tau:.4g}; down-crossings (→negligible) = {down_pts}; "
+              f"up-crossings (→active) = {up_pts}")
+        print(f"🏁 Saved: {data_name}_ranking_transition.(png/svg/eps/csv)")
+    except Exception as e:
+        import traceback
+        print(f"⚠️ Ranking-transition section 3.6 failed: {e}")
+        traceback.print_exc()
+
+    # ==========================================
     # 3.5 Attribution Trajectory across Grid Intervals
     # ==========================================
     print("\n📈 Computing Attribution Trajectory across grid intervals...")
@@ -398,8 +476,8 @@ def main():
                     color=feat_colors[rank],
                     label=f"x{rank}: {feat_names[orig_idx]}")
 
-        for ip in (inflection_points_per_input[split_feat_idx] or []):
-            ax.axvline(x=ip, color='green', linestyle='--', alpha=0.7, linewidth=1.2)
+        for ip in (transition_points_per_input[split_feat_idx] or []):
+            ax.axvline(x=ip, color='purple', linestyle='-', alpha=0.7, linewidth=1.2)
 
         ax.set_xlabel(f"{feat_names[split_feat_idx]}")
         ax.set_ylabel("Normalized Attribution Score")
@@ -461,9 +539,9 @@ def main():
 
         Z = np.apply_along_axis(target_func, 1, grid_input).reshape(grid_res, grid_res)
 
-        # Denormalize KAN inflection points from [0.1, 0.9] → raw space
+        # Denormalize ranking-transition points from [0.1, 0.9] → raw space
         def get_denorm_ips(feat_idx):
-            raw_ips = inflection_points_per_input[feat_idx] or []
+            raw_ips = transition_points_per_input[feat_idx] or []
             valid_ips = [ip for ip in raw_ips if 0.05 < ip < 0.95]
             if not valid_ips:
                 return []
@@ -539,7 +617,9 @@ def main():
             dummy[:, feat_idx] = knots_norm
             return scaler_X.inverse_transform(dummy)[:, feat_idx]
 
-        kan_ips_raw_agsm = {idx: denorm_ips(inflection_points_per_input[idx], idx)
+        # Ranking-transition points (raw space) per top-2 feature — used as the
+        # KAN-side transition markers in the AGSM comparison (replaces inflection).
+        kan_ips_raw_agsm = {idx: denorm_ips(transition_points_per_input[idx], idx)
                             for idx in top2_idx_agsm}
 
         agsm_results = {}
@@ -670,7 +750,7 @@ def main():
                     for ip in kan_ips_raw_agsm.get(feat_idx, []):
                         ax_agsm.axvline(x=ip, color='green', linestyle='--', alpha=0.7,
                                         linewidth=1.0,
-                                        label='KAN inflection' if first_inflect else '_')
+                                        label='ranking transition' if first_inflect else '_')
                         first_inflect = False
 
                 first_tp = True
@@ -698,7 +778,7 @@ def main():
                         for ip in kan_ips_raw_agsm.get(feat_idx, []):
                             ax_attr.axvline(x=ip, color='green', linestyle='--', alpha=0.7,
                                             linewidth=1.0,
-                                            label='KAN inflection' if first_inflect else '_')
+                                            label='ranking transition' if first_inflect else '_')
                             first_inflect = False
 
                 ax_attr.set_xlabel(feat_names[i_idx])
@@ -750,9 +830,9 @@ def main():
             for (ei, ej), nm in sorted(sym_info.items()):
                 print(f"     edge ({feat_names[ei]} -> node {ej}): {nm}")
 
-        # --- 1. Analytical-curvature inflection points (normalized space) ---
-        # Reuse the single analytic source computed in section 3 (no recompute).
-        curv_ips_norm = {idx: (inflection_points_per_input[idx] or [])
+        # --- 1. Ranking-transition points (normalized space) used as the KAN-side
+        #        transition points for the dual measure (replaces inflection). ---
+        curv_ips_norm = {idx: (transition_points_per_input[idx] or [])
                          for idx in top2_curv}
 
         # --- 1b. Figure: activation phi(x) with its analytical phi'(x), phi''(x) ---
@@ -907,7 +987,7 @@ def main():
             first = True
             for ip in ip_lines:
                 ax_l.axvline(ip, color='green', linestyle='--', alpha=0.7, linewidth=1.0,
-                             label='Curvature inflection' if first else '_')
+                             label='ranking transition' if first else '_')
                 first = False
             first = True
             for tp in curv_tps:
@@ -916,7 +996,7 @@ def main():
                 first = False
             ax_l.set_xlabel(feat_names[ci_idx])
             ax_l.set_ylabel(r'$S^a_{l,[k]}$')
-            ax_l.set_title('AGSM (inflection-segmented)')
+            ax_l.set_title('AGSM (transition-segmented)')
             ax_l.legend(loc='best')
 
             attr_mat = curv_kan_attr[ci_idx]
@@ -929,20 +1009,20 @@ def main():
             first = True
             for ip in ip_lines:
                 ax_rt.axvline(ip, color='green', linestyle='--', alpha=0.7, linewidth=1.0,
-                              label='Curvature inflection' if first else '_')
+                              label='ranking transition' if first else '_')
                 first = False
             ax_rt.set_xlabel(feat_names[ci_idx])
             ax_rt.set_ylabel('KAN Attribution')
-            ax_rt.set_title('KAN attribution (inflection-segmented)')
+            ax_rt.set_title('KAN attribution (transition-segmented)')
             ax_rt.legend(loc='best')
 
-            fig_cv.suptitle(f"{data_name} — curvature inflection", fontsize=11, fontweight='bold')
+            fig_cv.suptitle(f"{data_name} — ranking-transition dual measure", fontsize=11, fontweight='bold')
             for ext in ['.png', '.svg', '.eps']:
                 fig_cv.savefig(os.path.join(savepath, f"{data_name}_curvature_inflection{ext}"))
             plt.close(fig_cv)
 
-        print(f"🧭 Curvature inflection (normalized): {curv_ips_norm}")
-        print(f"🧭 Curvature inflection (raw): {curv_ips_raw}")
+        print(f"🧭 Ranking-transition pts (normalized): {curv_ips_norm}")
+        print(f"🧭 Ranking-transition pts (raw): {curv_ips_raw}")
         print(f"🧭 AGSM transitions: {[round(t['point'], 3) for t in curv_tps]}")
         print(f"🧭 Saved: {data_name}_curvature_inflection.(png/svg/eps/csv)")
 
@@ -969,8 +1049,8 @@ def main():
         feat_name = feat_names[mask_idx]
         print(f"   Checking Feature {mask_idx} ({feat_name})...", end=" ")
 
-        # Get valid inflection points for this feature (within 0.1~0.9 range)
-        raw_ips = inflection_points_per_input[mask_idx]
+        # Get valid ranking-transition points for this feature (within 0.1~0.9 range)
+        raw_ips = transition_points_per_input[mask_idx]
         valid_ips = [ip for ip in raw_ips if ip is not None and 0.1 < ip < 0.9]
 
         # Remove duplicates and sort
@@ -1049,7 +1129,8 @@ def main():
         'selected_mask_idx': selected_mask_idx,
         'selected_mask_name': feat_names[selected_mask_idx],
         'split_points': selected_split_points,  # interval boundaries in [0.1, 0.9] space
-        'inflection_points_per_input': inflection_points_per_input,  # per-feature inflection points
+        'inflection_points_per_input': inflection_points_per_input,  # per-feature inflection points (original)
+        'transition_points_per_input': transition_points_per_input,  # ranking-transition points (used downstream)
         'feature_names': feat_names,
         'scaler_X': scaler_X,
         'scaler_y': scaler_y

@@ -560,3 +560,76 @@ def verify_against_autograd(model, l, edges=None, n_eval=200, margin=0.05):
         scale = float(np.max(np.abs(ref[finite]))) + 1e-12
         report[(i, j)] = {'max_abs_err': err, 'scale': scale, 'rel_err': err / scale}
     return report
+
+
+# ----------------------------------------------------------------------------
+# Ranking transition via small 1st-derivative (bottom-layer, feature-separable)
+# ----------------------------------------------------------------------------
+# Each layer-0 edge activation is univariate in its own input, so the per-feature
+# local sensitivity s_i(x_i) = sum_j |phi'_{i,j}(x_i)| is exact and depends only
+# on x_i. A "ranking transition" is where the (currently dominant) feature's
+# sensitivity falls below a small threshold tau -> it becomes locally negligible.
+
+def feature_sensitivity(model, i, x_grid, layer=0):
+    """Bottom-layer local sensitivity ``s_i(x) = sum_j |phi'_{i,j}(x)|``.
+
+    Depends only on input ``i`` (each edge is univariate). ``x_grid`` is in the
+    model's normalized input space. Returns a numpy array of shape (len(x_grid),).
+    """
+    act = model.act_fun[layer]
+    in_dim = act.coef.shape[0]
+    device = act.coef.device
+    xs = torch.as_tensor(np.asarray(x_grid, dtype=float), dtype=act.coef.dtype,
+                         device=device)
+    x_eval = torch.zeros(xs.shape[0], in_dim, dtype=act.coef.dtype, device=device)
+    x_eval[:, i] = xs
+    with torch.no_grad():
+        phi1 = activation_first_derivative(model, layer, x_eval)[:, i, :]  # (batch, out)
+        s = phi1.abs().sum(dim=1)                                          # sum over output edges
+    s = s.detach().cpu().numpy()
+    return np.nan_to_num(s, nan=0.0, posinf=0.0, neginf=0.0)
+
+
+def find_ranking_transitions(model, x_grid=None, rel_thresh=0.1, n_eval=400, layer=0):
+    """Ranking transitions where a feature's local sensitivity drops below tau.
+
+    For every input feature, ``s_i = feature_sensitivity`` over a shared sweep of
+    the layer's grid interior. With ``tau = rel_thresh * max_i max_t s_i`` (a
+    cross-feature-comparable "small"), find where each ``s_i`` crosses ``tau``
+    (persistent sign change of ``s_i - tau``). The per-position dominant feature
+    is ``argmax_i s_i``; its downward crossings are flagged ``dominant=True``.
+
+    Returns ``(transitions, info)`` where transitions is a list of dicts
+    ``{'point', 'feat_idx', 'direction' ('down'|'up'), 'dominant'}`` (normalized
+    x), and info is ``{'x_grid', 'S' (dict feat->curve), 'tau'}``.
+    """
+    act = model.act_fun[layer]
+    k = act.k
+    in_dim = act.coef.shape[0]
+
+    if x_grid is None:
+        knots = act.grid[:, k - 1:-2].detach().cpu().numpy()
+        lo, hi = float(np.min(knots)), float(np.max(knots))
+        x_grid = np.linspace(lo, hi, n_eval)
+    x_grid = np.asarray(x_grid, dtype=float)
+
+    S = {i: feature_sensitivity(model, i, x_grid, layer=layer) for i in range(in_dim)}
+    stack = np.vstack([S[i] for i in range(in_dim)])          # (in_dim, T)
+    scale = float(np.nanmax(stack)) if np.any(np.isfinite(stack)) else 0.0
+    tau = rel_thresh * scale
+    dominant = np.argmax(stack, axis=0)                       # (T,)
+
+    transitions = []
+    for i in range(in_dim):
+        diff = S[i] - tau
+        for idx in find_indices_sign_revert(list(diff), epsilon=0.0):
+            direction = 'down' if diff[idx] < diff[idx - 1] else 'up'
+            transitions.append({
+                'point': float(x_grid[idx]),
+                'feat_idx': i,
+                'direction': direction,
+                # dominant just before this index and going negligible
+                'dominant': bool(dominant[idx - 1] == i and direction == 'down'),
+            })
+    transitions.sort(key=lambda t: t['point'])
+    return transitions, {'x_grid': x_grid, 'S': S, 'tau': tau}
