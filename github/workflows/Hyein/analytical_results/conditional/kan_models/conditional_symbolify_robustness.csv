@@ -1,0 +1,15 @@
+feature,feat_idx,branch,raw_point_spline,raw_point_symbolic,matched,added,dropped,drift,drift_frac,sym_edge_names,status
+Conditional (x0),0,symbolic,,0.2696498814196289,0,1,0,,,"sin, tanh",ok
+Conditional (x0),0,spline,-1.0991053485978803,,0,0,1,,,"sin, tanh",ok
+Conditional (x0),0,spline,-1.0820669017511895,,0,0,1,,,"sin, tanh",ok
+Conditional (x0),0,spline,0.048150072412645954,,0,0,1,,,"sin, tanh",ok
+Conditional (x0),0,spline,1.0250210249562623,,0,0,1,,,"sin, tanh",ok
+Linear (x1),1,matched,1.0700784806617576,1.1154447108370298,1,0,0,0.04536623017527219,0.022683115087636097,"sin, tanh",ok
+Linear (x1),1,symbolic,,0.4349512582079446,0,1,0,,,"sin, tanh",ok
+Linear (x1),1,spline,-1.0167681074007702,,0,0,1,,,"sin, tanh",ok
+Linear (x1),1,spline,-0.9884142135412249,,0,0,1,,,"sin, tanh",ok
+Linear (x1),1,spline,-0.7559122838929542,,0,0,1,,,"sin, tanh",ok
+Linear (x1),1,spline,-0.5290811330165924,,0,0,1,,,"sin, tanh",ok
+Linear (x1),1,spline,-0.449690230209866,,0,0,1,,,"sin, tanh",ok
+Linear (x1),1,spline,-0.4270071151222297,,0,0,1,,,"sin, tanh",ok
+Linear (x1),1,spline,-0.14346817652677765,,0,0,1,,,"sin, tanh",ok

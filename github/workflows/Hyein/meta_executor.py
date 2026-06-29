@@ -46,8 +46,8 @@ def main():
         'log2',
         'exponential',
         'logarithm',
-        'rosenbrock',
-        'ishigami',
+        # 'rosenbrock',
+        # 'ishigami',
         # 'convolution', 'original', 'mult_periodic',
         # 'multiplication',
         # 'log_sum_2d', 'log_sum_5d', 'log_sum_10d', 'log_sum_30d',
@@ -55,6 +55,7 @@ def main():
 
     for s in target_scripts:
         for data in target_data:
+            subprocess.run(['python', s, data, "--model-mode", "symbolic", "--refit"])
             subprocess.run(['python', s, data])
 
     subprocess.run(['python', 'github/workflows/Hyein/aggregate_ranking_transitions.py'])

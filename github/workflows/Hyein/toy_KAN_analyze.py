@@ -159,6 +159,20 @@ def main():
     feat_names = config["names"]
     nx = len(bounds)
 
+    # CONVENTION: knots, inflection points, and ranking-transition points are kept
+    # in NORMALIZED space throughout the script (the space the spline grid lives
+    # in). They are denormalized to RAW input values only for PLOTTING, via this
+    # single helper. (The one exception is the §3.6 ranking-transition figure,
+    # which overlays all features on a shared normalized axis on purpose.)
+    def denorm(vals, feat_idx):
+        """Normalized value(s) for one feature → raw input space (for plotting)."""
+        arr = np.atleast_1d(np.asarray(vals, dtype=float))
+        if arr.size == 0:
+            return arr
+        dummy = np.zeros((arr.size, nx))
+        dummy[:, feat_idx] = arr
+        return scaler_X.inverse_transform(dummy)[:, feat_idx]
+
     X_raw = np.random.uniform(low=[b[0] for b in bounds], high=[b[1] for b in bounds], size=(1000, nx))
     y_raw = np.apply_along_axis(target_func, 1, X_raw).reshape(-1, 1)
     # noise = np.random.normal(0, np.std(y_raw) * 0.05, size=y_raw.shape)
@@ -318,6 +332,7 @@ def main():
         sweep_knots = data_range_knots(act, i).cpu().detach().numpy()
         x_sweep = np.linspace(float(sweep_knots.min()),
                               float(sweep_knots.max()), 400)
+        x_sweep_raw = denorm(x_sweep, i)  # raw x for plotting (sweep stays norm)
         feature_inflections_all = []
         for j in range(no):
             ax = axs_eval[j, col_pos]
@@ -330,7 +345,7 @@ def main():
             knot_indices = np.arange(len(coef_node))
 
             rank = np.argsort(inputs)
-            ax.plot(inputs[rank], outputs[rank], marker='o',
+            ax.plot(denorm(inputs, i)[rank], outputs[rank], marker='o',
                     color=feat_colors[col_pos], label='Activation')
 
             # --- coef-based detector (kept as fallback / comparison only) ---
@@ -349,7 +364,7 @@ def main():
                         hatch='xx', edgecolor='steelblue', facecolor='none', label='2nd Slope')
 
             ax2.set_xticks(knot_indices)
-            ax2.set_xticklabels([f"{val:.2f}" for val in knot_points_actual], rotation=45, fontsize=9)
+            ax2.set_xticklabels([f"{val:.2f}" for val in denorm(knot_points_actual, i)], rotation=45, fontsize=9)
 
             if depth == 1:
                 idx_revert = find_indices_sign_revert(slope_2nd)
@@ -366,8 +381,8 @@ def main():
             # analytic phi' / phi'' overlay on the activation plot
             _, dphi, d2phi = edge_curves(model, l, i, j, x_sweep)
             ax_d = ax.twinx()
-            ax_d.plot(x_sweep, dphi, color='#1f77b4', lw=0.9, ls='--', label=r"$\phi'$")
-            ax_d.plot(x_sweep, d2phi, color='#d62728', lw=0.9, ls=':', label=r"$\phi''$")
+            ax_d.plot(x_sweep_raw, dphi, color='#1f77b4', lw=0.9, ls='--', label=r"$\phi'$")
+            ax_d.plot(x_sweep_raw, d2phi, color='#d62728', lw=0.9, ls=':', label=r"$\phi''$")
             ax_d.axhline(0, color='gray', lw=0.5, alpha=0.5)
             ax_d.set_ylabel(r"$\phi'\,,\ \phi''$")
 
@@ -377,8 +392,8 @@ def main():
                 lab = 'coef-based' if first_c else '_'
                 ax2.axvline(x=ir, color='green', linestyle='--', alpha=0.6, label=lab)
                 if ir < len(knot_points_actual):
-                    ax.axvline(x=knot_points_actual[ir], color='green', linestyle='--',
-                               alpha=0.6, label=lab)
+                    ax.axvline(x=denorm([knot_points_actual[ir]], i)[0], color='green',
+                               linestyle='--', alpha=0.6, label=lab)
                 first_c = False
 
             # analytic inflection vlines (purple solid) — the actual detection
@@ -388,7 +403,8 @@ def main():
                 first_a = True
                 for xinf, fi in zip(ips_ij, frac_idx):
                     lab = 'analytic' if first_a else '_'
-                    ax.axvline(x=xinf, color='purple', linestyle='-', alpha=0.7, label=lab)
+                    ax.axvline(x=denorm([xinf], i)[0], color='purple', linestyle='-',
+                               alpha=0.7, label=lab)
                     ax2.axvline(x=fi, color='purple', linestyle='-', alpha=0.7, label=lab)
                     first_a = False
 
@@ -535,7 +551,8 @@ def main():
             continue
 
         scores_arr = np.array(interval_scores)  # (n_valid_intervals, ni)
-        x_pos = np.array(interval_centers)
+        # interval centers are normalized; denormalize to raw for the x-axis.
+        x_pos = denorm(np.array(interval_centers), split_feat_idx)
 
         # --- Primary axis: line plots per feature ---
         for orig_idx in sort_order_global:
@@ -546,7 +563,8 @@ def main():
                     label=f"x{rank}: {feat_names[orig_idx]}")
 
         for ip in (transition_points_per_input[split_feat_idx] or []):
-            ax.axvline(x=ip, color='purple', linestyle='-', alpha=0.7, linewidth=1.2)
+            ax.axvline(x=denorm([ip], split_feat_idx)[0], color='purple',
+                       linestyle='-', alpha=0.7, linewidth=1.2)
 
         ax.set_xlabel(f"{feat_names[split_feat_idx]}")
         ax.set_ylabel("Normalized Attribution Score")
@@ -907,7 +925,8 @@ def main():
         # --- 1b. Figure: activation phi(x) with its analytical phi'(x), phi''(x) ---
         # Plots the learned activation and its exact 1st/2nd derivatives per edge,
         # with green vlines at the phi'' zero-crossings (detected inflections).
-        # x-axis is the spline's native NORMALIZED input space.
+        # Curves are evaluated over the NORMALIZED sweep (spline space) but the
+        # x-axis is denormalized to RAW input values for display.
         no_l = act.coef.shape[1]
         with plt.rc_context({'figure.autolayout': True}):
             fig_d, axs_d = plt.subplots(no_l, len(top2_curv), squeeze=False,
@@ -915,29 +934,45 @@ def main():
             for col, i_feat in enumerate(top2_curv):
                 knots_i = data_range_knots(act, i_feat).cpu().detach().numpy()
                 x_sweep = np.linspace(float(knots_i.min()), float(knots_i.max()), 400)
+                x_sweep_raw = denorm(x_sweep, i_feat)  # raw x for display
                 for j in range(no_l):
                     ax = axs_d[j, col]
                     ax2 = ax.twinx()
                     phi, dphi, d2phi = edge_curves(model, l, i_feat, j, x_sweep)
-                    ln0 = ax.plot(x_sweep, phi, color='#222222', lw=1.6, label=r'$\phi(x)$')
-                    ln1 = ax2.plot(x_sweep, dphi, color='#1f77b4', lw=1.0, ls='--',
+                    ln0 = ax.plot(x_sweep_raw, phi, color='#222222', lw=1.6, label=r'$\phi(x)$')
+                    ln1 = ax2.plot(x_sweep_raw, dphi, color='#1f77b4', lw=1.0, ls='--',
                                    label=r"$\phi'(x)$")
-                    ln2 = ax2.plot(x_sweep, d2phi, color='#d62728', lw=1.0, ls=':',
+                    ln2 = ax2.plot(x_sweep_raw, d2phi, color='#d62728', lw=1.0, ls=':',
                                    label=r"$\phi''(x)$")
                     ax2.axhline(0, color='gray', lw=0.6, alpha=0.6)
-                    # green vlines at this edge's phi'' zero-crossings (detected inflections)
+                    extra_handles = []
+                    # green dashed: this edge's phi'' zero-crossings (inflection points)
                     first = True
                     for ip in find_inflection_points(model, l, i_feat, j_list=[j]):
-                        ax.axvline(ip, color='green', ls='--', alpha=0.6, lw=1.0,
-                                   label='Inflection' if first else '_')
+                        h = ax.axvline(denorm([ip], i_feat)[0], color='green', ls='--',
+                                       alpha=0.6, lw=1.0,
+                                       label='Inflection' if first else '_')
+                        if first:
+                            extra_handles.append(h)
                         first = False
-                    ax.set_xlabel(f"normalized {feat_names[i_feat]}")
+                    # orange solid: this FEATURE's ranking-transition points (where the
+                    # local sensitivity |phi'| drops below tau). Per-feature, so the same
+                    # vline is drawn on every edge (node j) of input i_feat.
+                    first_t = True
+                    for tp in (curv_ips_norm[i_feat] or []):
+                        h = ax.axvline(denorm([tp], i_feat)[0], color='darkorange', ls='-',
+                                       alpha=0.85, lw=1.3,
+                                       label='ranking transition' if first_t else '_')
+                        if first_t:
+                            extra_handles.append(h)
+                        first_t = False
+                    ax.set_xlabel(f"{feat_names[i_feat]}")
                     ax.set_ylabel(r'$\phi$')
                     ax2.set_ylabel(r"$\phi'\,,\ \phi''$")
                     sym_tag = (f"  [symbolic: {sym_info[(i_feat, j)]}]"
                                if (i_feat, j) in sym_info else "")
                     ax.set_title(f"edge ({feat_names[i_feat]} -> node {j}){sym_tag}")
-                    lns = ln0 + ln1 + ln2
+                    lns = ln0 + ln1 + ln2 + extra_handles
                     ax.legend(lns, [ln.get_label() for ln in lns], loc='best', fontsize=7)
             fig_d.suptitle(f"{data_name} — activation & analytical derivatives (L0)",
                            fontsize=11, fontweight='bold')

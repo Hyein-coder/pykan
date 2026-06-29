@@ -1,0 +1,13 @@
+feature,feat_idx,branch,raw_point_spline,raw_point_symbolic,matched,added,dropped,drift,drift_frac,sym_edge_names,status
+Quadratic (x0),0,matched,1.0721338516343455,1.0300885750969497,1,0,0,-0.04204527653739576,-0.02102263826869788,"1/x^2, sin, tanh",ok
+Quadratic (x0),0,matched,-0.4234766994815873,-0.3574055506371084,1,0,0,0.0660711488444789,0.03303557442223945,"1/x^2, sin, tanh",ok
+Quadratic (x0),0,spline,-1.1262334644637726,,0,0,1,,,"1/x^2, sin, tanh",ok
+Quadratic (x0),0,spline,-0.9100006137000234,,0,0,1,,,"1/x^2, sin, tanh",ok
+Quadratic (x0),0,spline,-0.00302393410763026,,0,0,1,,,"1/x^2, sin, tanh",ok
+Quadratic (x0),0,spline,0.10509249127424435,,0,0,1,,,"1/x^2, sin, tanh",ok
+Quadratic (x0),0,spline,0.6817134266442425,,0,0,1,,,"1/x^2, sin, tanh",ok
+Quadratic (x0),0,spline,0.7658039797190341,,0,0,1,,,"1/x^2, sin, tanh",ok
+Quadratic (x0),0,spline,1.1742438089394496,,0,0,1,,,"1/x^2, sin, tanh",ok
+Parabolic (x1),1,symbolic,,-0.5556032845408929,0,1,0,,,"1/x^2, sin, tanh",ok
+Parabolic (x1),1,spline,-0.9282306626269198,,0,0,1,,,"1/x^2, sin, tanh",ok
+Parabolic (x1),1,spline,-0.7359068545825188,,0,0,1,,,"1/x^2, sin, tanh",ok
