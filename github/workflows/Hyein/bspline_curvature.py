@@ -264,7 +264,15 @@ def _symbolic_edge_deriv(sym_layer, i, j, order):
         fn = sympy.lambdify(X, expr, 'numpy')
 
         def _evaluated(x_np, _fn=fn):
-            out = np.asarray(_fn(x_np), dtype=float)
+            # The edge_* callers zero-fill the off-target input columns and then
+            # discard them; for sqrt/log/fractional-power edges those zeros fall
+            # outside the function's domain (e.g. sqrt of a negative) and raise
+            # numpy warnings. The on-target column is clamped to the data range
+            # (see data_range_knots), so it stays in-domain; the only invalid
+            # values are the discarded off-target ones, which _symbolic_branch
+            # sanitizes via nan_to_num. Silence the expected, harmless warnings.
+            with np.errstate(invalid='ignore', divide='ignore'):
+                out = np.asarray(_fn(x_np), dtype=float)
             if out.shape != np.shape(x_np):     # constant expr -> scalar; broadcast
                 out = np.broadcast_to(out, np.shape(x_np)).copy()
             return out
@@ -420,6 +428,27 @@ def edge_curves(model, l, i, j, x_sweep):
 
 
 # ----------------------------------------------------------------------------
+# Grid helpers
+# ----------------------------------------------------------------------------
+def data_range_knots(act, i=None):
+    """In-data grid knots of a KANLayer ``act`` (normalized space).
+
+    ``extend_grid`` (kan/spline.py) pads the spline grid with ``k`` extrapolation
+    knots beyond the data on *each* side. Sweeping into that padding can push a
+    symbolified ``sqrt``/``log``/fractional-power edge outside its mathematical
+    domain, producing spurious NaN/inf (and RuntimeWarnings) in a region that
+    holds no data anyway. This returns only the original data-range knots
+    ``grid[..., k : k+G+1]`` (equivalently ``grid[..., k:-k]``), where ``G =
+    act.num`` is the number of grid intervals.
+
+    Pass ``i`` to slice a single input feature; omit it for all features.
+    """
+    k = act.k
+    g = act.grid if i is None else act.grid[i]
+    return g[..., k:k + act.num + 1]
+
+
+# ----------------------------------------------------------------------------
 # Inflection point detection
 # ----------------------------------------------------------------------------
 def find_inflection_points(model, l, i, x_grid=None, n_eval=400,
@@ -438,8 +467,9 @@ def find_inflection_points(model, l, i, x_grid=None, n_eval=400,
     l, i : int
         Layer and input index.
     x_grid : np.ndarray, optional
-        Normalized-space sweep. Defaults to a dense linspace over the interior
-        knot range ``act.grid[i, k-1:-2]``.
+        Normalized-space sweep. Defaults to a dense linspace over the
+        **data-range** knots ``act.grid[i, k:k+G+1]`` (the extrapolation padding
+        is excluded; see ``data_range_knots``).
     n_eval : int
         Number of sweep points when ``x_grid`` is None.
     j_list : sequence of int, optional
@@ -460,7 +490,7 @@ def find_inflection_points(model, l, i, x_grid=None, n_eval=400,
     act = model.act_fun[l]
     k = act.k
     if x_grid is None:
-        knots = act.grid[i, k - 1:-2].detach().cpu().numpy()
+        knots = data_range_knots(act, i).detach().cpu().numpy()
         lo, hi = float(np.min(knots)), float(np.max(knots))
         x_grid = np.linspace(lo, hi, n_eval)
     x_grid = np.asarray(x_grid, dtype=float)
@@ -546,7 +576,7 @@ def verify_against_autograd(model, l, edges=None, n_eval=200, margin=0.05):
 
     report = {}
     for (i, j) in edges:
-        knots = act.grid[i, k - 1:-2].detach().cpu().numpy()
+        knots = data_range_knots(act, i).detach().cpu().numpy()
         lo, hi = float(np.min(knots)), float(np.max(knots))
         span = hi - lo
         xs = np.linspace(lo + margin * span, hi - margin * span, n_eval)
@@ -608,7 +638,7 @@ def find_ranking_transitions(model, x_grid=None, rel_thresh=0.1, n_eval=400, lay
     in_dim = act.coef.shape[0]
 
     if x_grid is None:
-        knots = act.grid[:, k - 1:-2].detach().cpu().numpy()
+        knots = data_range_knots(act).detach().cpu().numpy()
         lo, hi = float(np.min(knots)), float(np.max(knots))
         x_grid = np.linspace(lo, hi, n_eval)
     x_grid = np.asarray(x_grid, dtype=float)

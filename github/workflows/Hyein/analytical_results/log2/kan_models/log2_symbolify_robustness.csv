@@ -1,6 +1,0 @@
-feature,feat_idx,branch,raw_point_spline,raw_point_symbolic,matched,added,dropped,drift,drift_frac,sym_edge_names,status
-Log (x0),0,symbolic,,-0.670650932582342,0,1,0,,,"cos, log, sqrt, x^4",ok
-Linear (x1),1,spline,-1.0725314066938665,,0,0,1,,,"cos, log, sqrt, x^4",ok
-Linear (x1),1,spline,-1.0425128526911676,,0,0,1,,,"cos, log, sqrt, x^4",ok
-Linear (x1),1,spline,-0.045896859801562384,,0,0,1,,,"cos, log, sqrt, x^4",ok
-Linear (x1),1,spline,0.6145113282578146,,0,0,1,,,"cos, log, sqrt, x^4",ok

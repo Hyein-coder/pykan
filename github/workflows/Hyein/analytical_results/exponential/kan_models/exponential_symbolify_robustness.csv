@@ -1,6 +1,0 @@
-feature,feat_idx,branch,raw_point_spline,raw_point_symbolic,matched,added,dropped,drift,drift_frac,sym_edge_names,status
-Exponent (x0),0,symbolic,,0.021168053563505214,0,1,0,,,"tanh, x^2",ok
-Exponent (x0),0,spline,-0.9646533738229522,,0,0,1,,,"tanh, x^2",ok
-Exponent (x0),0,spline,-0.9345978425001944,,0,0,1,,,"tanh, x^2",ok
-Exponent (x0),0,spline,-0.3575316411032437,,0,0,1,,,"tanh, x^2",ok
-Exponent (x0),0,spline,0.9468784183044471,,0,0,1,,,"tanh, x^2",ok

@@ -30,7 +30,7 @@ from github.workflows.Hyein.toy_KAN_sweep import KANRegressor, FUNCTION_ZOO
 from kan.experiments.analysis import find_indices_sign_revert
 from github.workflows.Hyein.bspline_curvature import (
     find_inflection_points, edge_curves, symbolic_edge_info,
-    feature_sensitivity, find_ranking_transitions,
+    feature_sensitivity, find_ranking_transitions, data_range_knots,
 )
 
 
@@ -247,8 +247,11 @@ def main():
 
     for col_pos, i in enumerate(sort_order_act):
         knot_points_actual = act.grid[i, model.k - 1:-2].cpu().detach().numpy()
-        x_sweep = np.linspace(float(knot_points_actual.min()),
-                              float(knot_points_actual.max()), 400)
+        # Sweep only the data-range knots (drop the extrapolation padding), so
+        # symbolified sqrt/log edges are never evaluated outside their domain.
+        sweep_knots = data_range_knots(act, i).cpu().detach().numpy()
+        x_sweep = np.linspace(float(sweep_knots.min()),
+                              float(sweep_knots.max()), 400)
         feature_inflections_all = []
         for j in range(no):
             ax = axs_eval[j, col_pos]
@@ -359,11 +362,11 @@ def main():
     # Transition points used by all downstream analysis (§3.5/3.7/3.8/3.9/4):
     # the RANKING-TRANSITION points (τ-crossings of |φ'_i|), replacing the
     # inflection points. Falls back to inflection points if §3.6 fails.
-    transition_points_per_input = [list(p or []) for p in inflection_points_per_input]
+    transition_points_per_input = []
     try:
         rel_thresh = 0.1  # τ = rel_thresh · max_i max_x |φ'_i|  (tunable / exploratory)
         l0 = 0
-        knots_all = act.grid[:, model.k - 1:-2].cpu().detach().numpy()
+        knots_all = data_range_knots(act).cpu().detach().numpy()
         x_grid_rt = np.linspace(float(knots_all.min()), float(knots_all.max()), 400)
         transitions, info = find_ranking_transitions(
             model, x_grid=x_grid_rt, rel_thresh=rel_thresh, layer=l0)
@@ -844,7 +847,7 @@ def main():
             fig_d, axs_d = plt.subplots(no_l, len(top2_curv), squeeze=False,
                                         figsize=(5 * len(top2_curv), 3 * no_l))
             for col, i_feat in enumerate(top2_curv):
-                knots_i = act.grid[i_feat, model.k - 1:-2].cpu().detach().numpy()
+                knots_i = data_range_knots(act, i_feat).cpu().detach().numpy()
                 x_sweep = np.linspace(float(knots_i.min()), float(knots_i.max()), 400)
                 for j in range(no_l):
                     ax = axs_d[j, col]
@@ -1037,85 +1040,137 @@ def main():
 
     # Sort features by global score (Highest -> Lowest)
     sorted_feat_indices = np.argsort(scores_tot)[::-1]
+    n_features = scores_tot.shape[0]
+
+    def _build_interval_masks(feat_idx):
+        """Build per-interval masks/labels for splitting on feat_idx's transition points.
+
+        Returns (masks, labels, split_points) or None if the feature has no valid
+        transition points (in 0.1~0.9) that yield >=2 active intervals.
+        """
+        raw_ips = transition_points_per_input[feat_idx]
+        valid_ips = [ip for ip in raw_ips if ip is not None and 0.1 < ip < 0.9]
+        unique_ips = sorted(list(set([round(ip, 3) for ip in valid_ips])))
+        if len(unique_ips) == 0:
+            return None
+        # Intervals: [0.1, ip1, ip2, ..., 0.9]
+        mask_interval = [0.1] + unique_ips + [0.9]
+        x_mask_data = dataset['train_input'][:, feat_idx]
+        candidate_masks = [((x_mask_data > lb) & (x_mask_data <= ub))
+                           for lb, ub in zip(mask_interval[:-1], mask_interval[1:])]
+        non_empty_count = sum([1 for m in candidate_masks if torch.any(m)])
+        if non_empty_count < 2:
+            return None
+        # Labels show RAW (un-normalized) x boundaries: inverse-transform the
+        # normalized interval edges through scaler_X. Masking itself stays in
+        # normalized space, where the data and the 0.1/0.9 bounds live.
+        dummy = np.zeros((len(mask_interval), nx))
+        dummy[:, feat_idx] = mask_interval
+        mask_interval_raw = scaler_X.inverse_transform(dummy)[:, feat_idx]
+        labels = [f'{lb:.3g} < x{feat_idx} <= {ub:.3g}'
+                  for lb, ub in zip(mask_interval_raw[:-1], mask_interval_raw[1:])]
+        return candidate_masks, labels, mask_interval
+
+    def _compute_interval_scores(masks, labels=None):
+        """Forward-pass KAN attribution per interval, normalized by per-slice input std."""
+        scores_interval_norm = []
+        for i, mask in enumerate(masks):
+            if torch.any(mask):
+                x_tensor_masked = dataset['train_input'][mask, :]
+                # Standard deviation of input in this slice (used for normalization)
+                x_std = torch.std(x_tensor_masked, dim=0).detach().cpu().numpy()
+                # Forward pass on masked data to get local attribution
+                model.forward(x_tensor_masked)
+                score_masked = model.feature_score.detach().cpu().numpy()
+                scores_interval_norm.append(score_masked / (x_std + 1e-6))
+                if labels is not None:
+                    print(f"   Interval {labels[i]}: {mask.sum().item()} samples")
+            else:
+                scores_interval_norm.append(np.zeros(scores_tot.shape))
+                if labels is not None:
+                    print(f"   Interval {labels[i]}: 0 samples (Skipping)")
+        return scores_interval_norm
+
+    def _plot_interval_scores(scores_interval_norm, labels, feat_idx):
+        """Grouped bar chart of per-feature attribution across feat_idx's intervals."""
+        width = 0.2
+        n_intervals = len(scores_interval_norm)
+        fig, ax = plt.subplots(figsize=(max(8, n_intervals * 2), 5))
+        x_positions = np.arange(n_intervals)
+        max_score = max([max(s) for s in scores_interval_norm]) if scores_interval_norm else 1.0
+
+        for fi in range(n_features):
+            feat_scores = [s[fi] for s in scores_interval_norm]
+            offset = (fi - n_features / 2) * width + width / 2
+            ax.bar(x_positions + offset, feat_scores, width, label=f"{feat_names[fi]}")
+
+        ax.set_xticks(x_positions)
+        ax.set_xticklabels(labels, rotation=15, ha='center', fontsize=9)
+        ax.set_ylabel("Normalized Attribution Score")
+        ax.set_title(f"Feature Importance per Range (sliced by {feat_names[feat_idx]})")
+        ax.legend(loc='upper right', bbox_to_anchor=(1, 1))
+        ax.set_ylim(0, max_score * 1.2)
+        plt.tight_layout()
+        fname = f"{data_name}_scores_interval_x{feat_idx}.png"
+        plot_path_score = os.path.join(savepath, fname)
+        plt.savefig(plot_path_score)
+        # Also drop a copy into a shared gallery folder so every function's
+        # score-interval plots can be browsed together in one place.
+        # savepath = .../Hyein/analytical_results/{data_name}/kan_models
+        hyein_root = os.path.dirname(os.path.dirname(os.path.dirname(savepath)))
+        gallery_dir = os.path.join(hyein_root, "figures_for_paper", "scores_interval_all")
+        os.makedirs(gallery_dir, exist_ok=True)
+        gallery_path = os.path.join(gallery_dir, fname)
+        plt.savefig(gallery_path)
+        plt.close(fig)
+        print(f"📊 Range-based score plot saved to: {plot_path_score}")
+        print(f"🖼️  Gallery copy saved to: {gallery_path}")
+        return plot_path_score
+
+    # Draw a per-interval score plot for EVERY feature that has transition points.
+    # The first qualifying feature (highest global score) is kept as the "selected"
+    # feature for the downstream split-data / NN-training pipeline.
+    print("\n🔍 Plotting per-interval scores for every feature with transition points...")
 
     selected_mask_idx = None
     selected_split_points = None
     masks = []
     labels = []
+    scores_interval_norm = []
 
-    print("\n🔍 Searching for a feature that splits data into valid ranges...")
-
-    for mask_idx in sorted_feat_indices:
-        feat_name = feat_names[mask_idx]
-        print(f"   Checking Feature {mask_idx} ({feat_name})...", end=" ")
-
-        # Get valid ranking-transition points for this feature (within 0.1~0.9 range)
-        raw_ips = transition_points_per_input[mask_idx]
-        valid_ips = [ip for ip in raw_ips if ip is not None and 0.1 < ip < 0.9]
-
-        # Remove duplicates and sort
-        unique_ips = sorted(list(set([round(ip, 3) for ip in valid_ips])))
-
-        # If no inflection points, we can't split "into both areas"
-        if len(unique_ips) == 0:
-            print("Skipping (No inflection points in 0.1-0.9).")
+    for feat_idx in sorted_feat_indices:
+        feat_name = feat_names[feat_idx]
+        built = _build_interval_masks(feat_idx)
+        if built is None:
+            print(f"   Feature {feat_idx} ({feat_name}): skipping "
+                  f"(no valid transition points / <2 active intervals).")
             continue
 
-        # Define Intervals: [0.1, ip1, ip2, ..., 0.9]
-        mask_interval = [0.1] + unique_ips + [0.9]
+        f_masks, f_labels, f_split = built
+        print(f"   Feature {feat_idx} ({feat_name}): {len(f_labels)} intervals ✅")
+        f_scores = _compute_interval_scores(f_masks, f_labels)
+        _plot_interval_scores(f_scores, f_labels, feat_idx)
 
-        # Create Candidate Masks
-        x_mask_data = dataset['train_input'][:, mask_idx]
-        candidate_masks = [((x_mask_data > lb) & (x_mask_data <= ub))
-                           for lb, ub in zip(mask_interval[:-1], mask_interval[1:])]
+        # Keep the first (highest-scoring) qualifying feature for downstream use.
+        if selected_mask_idx is None:
+            selected_mask_idx = feat_idx
+            selected_split_points = f_split
+            masks = f_masks
+            labels = f_labels
+            scores_interval_norm = f_scores
 
-        # Check if "mask exists in both areas"
-        # (Meaning: At least 2 intervals have samples)
-        non_empty_count = sum([1 for m in candidate_masks if torch.any(m)])
-
-        if non_empty_count >= 2:
-            print(f"✅ Selected! (Found {non_empty_count} active intervals)")
-            selected_mask_idx = mask_idx
-            selected_split_points = mask_interval
-            masks = candidate_masks
-            labels = [f'{lb:.2f} < x{mask_idx} <= {ub:.2f}' for lb, ub in zip(mask_interval[:-1], mask_interval[1:])]
-            break
-        else:
-            print(f"Skipping (Data only exists in {non_empty_count} interval).")
-
-    # Fallback: If loop finishes without success, pick the top feature anyway (to prevent crash)
+    # Fallback: If no feature provided a valid split, pick the top feature (to prevent crash)
     if selected_mask_idx is None:
         print("⚠️ Warning: No feature provided a valid split. Defaulting to top feature.")
         selected_mask_idx = sorted_feat_indices[0]
-        # Re-generate masks for the top feature (even if empty/single)
-        # ... (simplified logic just to ensure variables exist)
         x_mask_data = dataset['train_input'][:, selected_mask_idx]
-        masks = [(x_mask_data > -np.inf)]  # Dummy mask
+        masks = [(x_mask_data > -np.inf)]  # Dummy mask (all data)
         labels = ["All Range"]
+        scores_interval_norm = _compute_interval_scores(masks, labels)
+        _plot_interval_scores(scores_interval_norm, labels, selected_mask_idx)
 
-    # Now calculate scores for the chosen masks
-    print(f"\n✂️ Slicing data based on Feature {selected_mask_idx}...")
-    scores_interval_norm = []
-
-    # Compute Scores per Interval
-    for i, mask in enumerate(masks):
-        if torch.any(mask):
-            x_tensor_masked = dataset['train_input'][mask, :]
-
-            # Standard deviation of input in this slice (used for normalization)
-            x_std = torch.std(x_tensor_masked, dim=0).detach().cpu().numpy()
-
-            # Forward pass on masked data to get local attribution
-            model.forward(x_tensor_masked)
-            score_masked = model.feature_score.detach().cpu().numpy()
-
-            # Normalize score
-            score_norm = score_masked / (x_std + 1e-6)
-            scores_interval_norm.append(score_norm)
-            print(f"   Interval {labels[i]}: {mask.sum().item()} samples")
-        else:
-            scores_interval_norm.append(np.zeros(scores_tot.shape))
-            print(f"   Interval {labels[i]}: 0 samples (Skipping)")
+    print(f"\n✂️ Selected Feature {selected_mask_idx} ({feat_names[selected_mask_idx]}) "
+          f"for downstream split-data pipeline.")
 
     # ==========================================
     # 4.5 [NEW] Save Range Split Data for NN Training
@@ -1146,43 +1201,8 @@ def main():
     # ==========================================
     # 5. Plot Range-Based Scores
     # ==========================================
-    width = 0.2
-    n_features = scores_tot.shape[0]
-    n_intervals = len(scores_interval_norm)
-
-    fig, ax = plt.subplots(figsize=(max(8, n_intervals * 2), 5))
-
-    # X-axis: Intervals
-    x_positions = np.arange(n_intervals)
-
-    # We want to show bars for EACH feature within each interval group
-    # But usually, we want to see how feature importance changes across intervals.
-    # Let's group by Interval on X-axis.
-
-    max_score = max([max(s) for s in scores_interval_norm]) if scores_interval_norm else 1.0
-
-    for feat_idx in range(n_features):
-        # Extract score of this feature across all intervals
-        feat_scores = [s[feat_idx] for s in scores_interval_norm]
-
-        # Offset bars
-        offset = (feat_idx - n_features / 2) * width + width / 2
-        bars = ax.bar(x_positions + offset, feat_scores, width, label=f"{feat_names[feat_idx]}")
-        # ax.bar_label(bars, fmt='%.2f', fontsize=7, padding=3)
-
-    ax.set_xticks(x_positions)
-    ax.set_xticklabels(labels, rotation=15, ha='center', fontsize=9)
-    ax.set_ylabel("Normalized Attribution Score")
-    ax.set_title(f"Feature Importance per Range (sliced by {feat_names[mask_idx]})")
-    ax.legend(loc='upper right', bbox_to_anchor=(1, 1))
-    ax.set_ylim(0, max_score * 1.2)
-    plt.tight_layout()
-
-    plot_path_score = os.path.join(savepath, f"{data_name}_scores_interval_x{mask_idx}.png")
-    plt.savefig(plot_path_score)
-    # plt.show()
-    print(f"📊 Range-based score plot saved to: {plot_path_score}")
-
+    # Per-interval score plots are now drawn above for EVERY feature with transition
+    # points (see `_plot_interval_scores` in the loop). Nothing to do here.
 
     # ==========================================
     # 6. Attribution Scoring on Saltelli Dataset
