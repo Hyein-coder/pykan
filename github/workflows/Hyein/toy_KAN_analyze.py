@@ -7,6 +7,7 @@ import pandas as pd
 import torch
 import matplotlib.pyplot as plt
 from sklearn.model_selection import train_test_split
+from sklearn.metrics import r2_score
 import yaml  # <--- [NEW] Import YAML
 
 # ==========================================
@@ -110,11 +111,17 @@ def main():
                              "run a short LBFGS refit after auto_symbolic "
                              "(mirrors the training pipeline). Ignored for "
                              "already-symbolified models. Default off.")
+    parser.add_argument("--refit-steps", type=int, default=None,
+                        help="LBFGS step count for the post-symbolic refit (symbolic "
+                             "mode with --refit). Higher = more accurate symbolic fit, "
+                             "helps reach the R²≥0.8 target. Default: the loaded "
+                             "model's own training step count.")
 
     args = parser.parse_args()
     data_name = args.func_name
     model_mode = args.model_mode
     refit_symbolic = args.refit
+    refit_steps = args.refit_steps
     plt.rcParams.update(SA_RC)
     # ==========================================
     # 1. Setup Paths & Load Model/Scalers
@@ -206,27 +213,44 @@ def main():
         print(f"🧩 Model reading: strictly SPLINE — symbolic branch off; "
               f"{len(sym_info_saved)} symbolified edge(s) reverted to spline.")
     elif model_mode == 'symbolic':
-        steps = getattr(model_wrapper, 'steps', 20)
         lr = getattr(model_wrapper, 'lr', 0.1)
         stop_grid = getattr(model_wrapper, 'stop_grid_update_step', 20)
-        # Fit-ready dataset (normalized labels, test=train) only needed for the
-        # optional LBFGS refit when introducing symbolify on a pure-spline model.
-        fit_dataset = None
-        if refit_symbolic and not sym_info_saved:
-            y_train_norm_t = torch.tensor(scaler_y.transform(y_train),
-                                          dtype=torch.float32, device=device).reshape(-1, 1)
-            fit_dataset = {
-                'train_input': dataset['train_input'], 'train_label': y_train_norm_t,
-                'test_input': dataset['train_input'], 'test_label': y_train_norm_t,
-            }
+        # Two-phase accuracy escalation, both stopping early at R²≥0.8:
+        #   Phase 1 — sweep auto_symbolic's a/b search range (±10→±20→±50→±100→±200).
+        #   Phase 2 — if still under target, escalate LBFGS refit steps at the best
+        #             a/b range (100→200→…→cap). The cap is --refit-steps (else 500).
+        ab_ranges = [10, 20, 50, 100, 200]
+        cap = refit_steps if refit_steps is not None else 500
+        refit_steps_schedule = sorted({s for s in [100, 200, 300, 500, 1000] if s < cap}
+                                      | {cap})
+        # Normalized train labels — for the LBFGS refit and the R2 scorer.
+        y_train_norm_t = torch.tensor(scaler_y.transform(y_train),
+                                      dtype=torch.float32, device=device).reshape(-1, 1)
+        fit_dataset = {
+            'train_input': dataset['train_input'], 'train_label': y_train_norm_t,
+            'test_input': dataset['train_input'], 'test_label': y_train_norm_t,
+        }
+        y_true_norm = scaler_y.transform(y_train).reshape(-1)
+
+        def _sym_r2(cand):
+            """R2 of a candidate symbolic reading vs the (normalized) training labels."""
+            with torch.no_grad():
+                yp = cand.forward(dataset['train_input']).detach().cpu().numpy().reshape(-1)
+            return float(r2_score(y_true_norm, yp))
+
+        # Only the introduce-symbolify (pure-spline) path runs auto_symbolic +
+        # escalation; already-saved symbolic models are used as-is.
         model, n_edges, refit_done = _build_symbolic_reading(
             model, sym_info_saved, dataset['train_input'], refit_symbolic,
-            fit_dataset, steps, lr, stop_grid)
+            fit_dataset, refit_steps_schedule[0], lr, stop_grid,
+            ab_ranges=ab_ranges, r2_target=0.8, r2_scorer=_sym_r2,
+            refit_steps_schedule=refit_steps_schedule)
         model_wrapper.model = model
+        final_r2 = _sym_r2(model)
         kind = 'as-saved symbolic' if sym_info_saved else 'introduced via auto_symbolic'
         extra = '' if sym_info_saved else f"; LBFGS refit={'done' if refit_done else 'off'}"
         print(f"🧩 Model reading: strictly SYMBOLIC — {kind}; "
-              f"{n_edges} symbolified edge(s){extra}.")
+              f"{n_edges} symbolified edge(s){extra}; R²={final_r2:.4f}.")
 
     # Non-default modes write into a kan_models/<mode> subfolder so the canonical
     # as-saved outputs are never clobbered. (Gallery copies are tagged separately.)

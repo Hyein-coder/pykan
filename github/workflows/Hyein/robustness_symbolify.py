@@ -171,38 +171,98 @@ def _build_spline_reading(model, sym_info):
 
 
 def _build_symbolic_reading(model, sym_info, train_input_norm, refit, dataset,
-                            steps, lr, stop_grid):
+                            steps, lr, stop_grid,
+                            ab_ranges=None, r2_target=None, r2_scorer=None,
+                            refit_steps_schedule=None):
     """deepcopy that uses the symbolic branch.
 
     already-symbolified (sym_info non-empty): use as-saved, no auto_symbolic.
     pure-spline (sym_info empty): run auto_symbolic with production defaults;
     optionally a short LBFGS refit. Returns (model_copy, n_edges, refit_done).
     Raises on auto_symbolic failure (caller maps to symbolify_failed).
+
+    Optional accuracy escalation (introduce-symbolify only), two phases, stopping
+    as soon as ``r2_scorer(model) >= r2_target``; otherwise the best attempt is
+    kept. ``r2_scorer(model)->float`` is evaluated AFTER the optional refit.
+      Phase 1 — a/b range sweep: if ``ab_ranges`` (e.g. [10,20,50,100,200]) is
+        given, symbolify at a_range=b_range=(-w, w) for increasing w (refit at the
+        first / base step count).
+      Phase 2 — refit-step escalation: if still under target and
+        ``refit_steps_schedule`` (e.g. [100,200,500]) has more than one entry, fix
+        the best a/b range from Phase 1 and re-refit with each larger step count.
+    With ab_ranges=None and refit_steps_schedule=None the function behaves exactly
+    as before (single run at SYM_A_RANGE/SYM_B_RANGE, ``steps`` refit) — the
+    robustness study, which passes neither, is unaffected.
     """
-    m = copy.deepcopy(model)
     refit_done = False
     if sym_info:
-        # As-saved symbolic reading.
+        # As-saved symbolic reading (no auto_symbolic → escalation not applicable).
+        m = copy.deepcopy(model)
         n_edges = len(symbolic_edge_info(m, 0))
         return m, n_edges, refit_done
 
-    # Introduce-symbolify on a pure-spline model.
-    m.symbolic_enabled = True
-    # auto_symbolic needs cached activations: one forward pass first.
-    m.forward(train_input_norm)
-    m.auto_symbolic(lib=SYM_LIB, a_range=SYM_A_RANGE, b_range=SYM_B_RANGE,
-                    r2_threshold=SYM_R2_THRESHOLD, weight_simple=SYM_WEIGHT_SIMPLE,
-                    verbose=0)
-    n_edges = len(symbolic_edge_info(m, 0))
-    if refit and n_edges > 0:
-        # Mirror toy_KAN_sweep.py lines ~205-206 (short LBFGS post-symbolic fit).
-        try:
-            m.fit(dataset, opt='LBFGS', steps=steps,
-                  stop_grid_update_step=stop_grid, lr=lr)
-            refit_done = True
-        except Exception as e:
-            print(f"      [refit] short LBFGS fit failed (ignoring): {e}")
-    return m, n_edges, refit_done
+    widths = ab_ranges if ab_ranges else [SYM_A_RANGE[1]]
+    steps_sched = refit_steps_schedule if refit_steps_schedule else [steps]
+    base_steps = steps_sched[0]
+
+    def _attempt(w, st):
+        """One escalation attempt: symbolify at a/b ±w, optional LBFGS refit for
+        ``st`` steps, then score. Re-symbolifies from the clean (un-forwarded)
+        ``model`` each call — we must NOT deepcopy an already-forwarded/symbolified
+        model, since its cached non-leaf tensors break copy.deepcopy.
+        """
+        cand = copy.deepcopy(model)
+        cand.symbolic_enabled = True
+        cand.forward(train_input_norm)  # cache activations for auto_symbolic
+        cand.auto_symbolic(lib=SYM_LIB, a_range=(-w, w), b_range=(-w, w),
+                           r2_threshold=SYM_R2_THRESHOLD,
+                           weight_simple=SYM_WEIGHT_SIMPLE, verbose=0)
+        n_edges = len(symbolic_edge_info(cand, 0))
+        cand_refit = False
+        if refit and n_edges > 0:
+            try:  # mirror toy_KAN_sweep.py (short LBFGS post-symbolic fit)
+                cand.fit(dataset, opt='LBFGS', steps=st,
+                         stop_grid_update_step=stop_grid, lr=lr)
+                cand_refit = True
+            except Exception as e:
+                print(f"      [refit] LBFGS fit failed (ignoring): {e}")
+        r2 = r2_scorer(cand) if r2_scorer is not None else None
+        return cand, n_edges, cand_refit, r2
+
+    best = None  # (r2, model, n_edges, refit_done, width, steps)
+
+    def _consider(cand, n_edges, cand_refit, r2, w, st):
+        nonlocal best
+        if r2 is not None:
+            print(f"      [symbolic] a/b ±{w}, refit steps={st if cand_refit else 0}: "
+                  f"R2={r2:.4f} ({n_edges} edges)")
+        score = r2 if r2 is not None else float('-inf')
+        if best is None or score > best[0]:
+            best = (score, cand, n_edges, cand_refit, w, st)
+        return r2 is not None and r2_target is not None and r2 >= r2_target
+
+    # --- Phase 1: a/b range sweep (refit at base step count) ---
+    for w in widths:
+        cand, n_edges, cand_refit, r2 = _attempt(w, base_steps)
+        if _consider(cand, n_edges, cand_refit, r2, w, base_steps):
+            print(f"      [symbolic] reached R2 {r2:.4f} >= {r2_target} "
+                  f"(a/b ±{w}, steps={base_steps})")
+            return cand, n_edges, cand_refit
+
+    # --- Phase 2: escalate refit steps at the best a/b range ---
+    if refit and len(steps_sched) > 1 and best is not None:
+        best_w = best[4]
+        for st in steps_sched[1:]:
+            cand, n_edges, cand_refit, r2 = _attempt(best_w, st)
+            if _consider(cand, n_edges, cand_refit, r2, best_w, st):
+                print(f"      [symbolic] reached R2 {r2:.4f} >= {r2_target} "
+                      f"(a/b ±{best_w}, steps={st})")
+                return cand, n_edges, cand_refit
+
+    if r2_target is not None and best[0] != float('-inf'):
+        print(f"      [symbolic] R2 target {r2_target} not reached; using best "
+              f"R2={best[0]:.4f} (a/b ±{best[4]}, steps={best[5]})")
+    return best[1], best[2], best[3]
 
 
 def _match_transitions(spline_pts, sym_pts, tol):

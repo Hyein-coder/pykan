@@ -55,7 +55,8 @@ def main():
 
     for s in target_scripts:
         for data in target_data:
-            subprocess.run(['python', s, data, "--model-mode", "symbolic", "--refit"])
+            subprocess.run(['python', s, data, "--model-mode", "symbolic", "--refit",
+                            "--refit-steps", "300"])
             subprocess.run(['python', s, data])
 
     subprocess.run(['python', 'github/workflows/Hyein/aggregate_ranking_transitions.py'])
