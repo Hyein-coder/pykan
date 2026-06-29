@@ -33,7 +33,7 @@ def main():
 
 
     target_scripts = [
-        # "github/workflows/Hyein/toy_KAN_sweep.py",
+        "github/workflows/Hyein/toy_KAN_sweep.py",
         "github/workflows/Hyein/toy_KAN_analyze.py",
         # "github/workflows/Hyein/toy_analytic_SHAP_Sobol.py",
         # "github/workflows/Hyein/toy_KAN_analyze_multi.py",

@@ -1,0 +1,8 @@
+func,direction,status,n_edges_symbolified,n_spline,n_sym,delta_count,matched,added,dropped,count_match_rate,domain_width,median_drift_raw,max_drift_raw,median_drift_pct,max_drift_pct
+conditional,introduce-symbolify,ok,4,12,3,-9,1,2,11,0.0714285714285714,2.0000000000000044,0.0453662301752721,0.0453662301752721,2.2683115087636,2.2683115087636
+damping_sin,introduce-symbolify,ok,4,8,9,1,6,3,2,0.5454545454545454,2.000000000000001,0.0390253608723062,0.0840546234172749,1.95126804361531,4.20273117086374
+log2,invert-symbolify,ok,4,4,1,-3,0,1,4,0.0,,,,,
+exponential,invert-symbolify,ok,2,4,1,-3,0,1,4,0.0,,,,,
+logarithm,invert-symbolify,ok,2,6,1,-5,0,1,6,0.0,,,,,
+rosenbrock,invert-symbolify,ok,4,3,0,-3,0,0,3,0.0,,,,,
+ishigami,introduce-symbolify,ok,9,12,1,-11,0,1,12,0.0,,,,,

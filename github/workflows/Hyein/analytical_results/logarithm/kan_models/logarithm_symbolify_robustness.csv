@@ -1,0 +1,8 @@
+feature,feat_idx,branch,raw_point_spline,raw_point_symbolic,matched,added,dropped,drift,drift_frac,sym_edge_names,status
+Log (x0),0,symbolic,,-1.1669907060261409,0,1,0,,,"log, x",ok
+Log (x0),0,spline,0.6754687836369004,,0,0,1,,,"log, x",ok
+Log (x0),0,spline,1.0775690631399095,,0,0,1,,,"log, x",ok
+Linear (x1),1,spline,-1.1631300630354717,,0,0,1,,,"log, x",ok
+Linear (x1),1,spline,-1.0849787187820064,,0,0,1,,,"log, x",ok
+Linear (x1),1,spline,1.0792123528524222,,0,0,1,,,"log, x",ok
+Linear (x1),1,spline,1.1453404133745853,,0,0,1,,,"log, x",ok
