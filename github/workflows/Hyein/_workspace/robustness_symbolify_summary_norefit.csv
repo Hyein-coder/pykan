@@ -1,8 +1,8 @@
 func,status,direction,n_edges_symbolified,n_spline,n_sym,n_spline_dominant,n_sym_dominant,n_matched,n_added,n_dropped,count_match_rate,median_drift,max_drift,median_drift_frac,max_drift_frac,refit,rel_thresh,match_frac,reason
-conditional,ok,introduce-symbolify,4,12,2,1,1,0,2,12,0.0,,,,,True,0.1,0.05,
-damping_sin,ok,introduce-symbolify,4,8,2,3,1,1,1,7,0.1111111111111111,0.06608079554897373,0.06608079554897373,0.03304039777448686,0.03304039777448686,True,0.1,0.05,
+conditional,ok,introduce-symbolify,4,12,3,1,1,1,2,11,0.07142857142857142,0.04536623017527219,0.04536623017527219,0.022683115087636097,0.022683115087636097,False,0.1,0.05,
+damping_sin,ok,introduce-symbolify,4,8,9,3,5,6,3,2,0.5454545454545454,0.039025360872306264,0.08405462341727499,0.019512680436153132,0.042027311708637494,False,0.1,0.05,
 log2,ok,invert-symbolify,4,4,1,0,1,0,1,4,0.0,,,,,False,0.1,0.05,
 exponential,ok,invert-symbolify,2,4,1,2,1,0,1,4,0.0,,,,,False,0.1,0.05,
 logarithm,ok,invert-symbolify,2,6,1,1,1,0,1,6,0.0,,,,,False,0.1,0.05,
 rosenbrock,ok,invert-symbolify,4,3,0,0,0,0,0,3,0.0,,,,,False,0.1,0.05,
-ishigami,ok,introduce-symbolify,9,12,1,0,1,0,1,12,0.0,,,,,True,0.1,0.05,
+ishigami,ok,introduce-symbolify,9,12,1,0,1,0,1,12,0.0,,,,,False,0.1,0.05,
