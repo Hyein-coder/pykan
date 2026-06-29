@@ -248,7 +248,7 @@ class KANRegressor(BaseEstimator, RegressorMixin):
 # ==========================================
 def main():
     parser = argparse.ArgumentParser(description="Tune KAN for Analytical Functions.")
-    parser.add_argument("func_name", type=str, nargs='?', default="damping_sin",
+    parser.add_argument("func_name", type=str, nargs='?', default="rosenbrock",
                         choices=FUNCTION_ZOO.keys(),
                         help="Choose a function from the ZOO.")
 

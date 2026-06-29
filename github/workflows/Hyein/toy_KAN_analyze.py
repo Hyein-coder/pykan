@@ -94,7 +94,7 @@ def _step_over_edges(ax, edges, vals, **kwargs):
 
 def main():
     parser = argparse.ArgumentParser(description="Tune KAN for Analytical Functions.")
-    parser.add_argument("func_name", type=str, nargs='?', default="ishigami",
+    parser.add_argument("func_name", type=str, nargs='?', default="rosenbrock",
                         choices=FUNCTION_ZOO.keys(),
                         help="Choose a function from the ZOO.")
     parser.add_argument("--model-mode", type=str, default="as-saved",
