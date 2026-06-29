@@ -308,24 +308,24 @@ def main():
         'n_layers': [1, 2],
         'grid': [10, 15],
         'k': [3],
-        'steps': [20, 50],
+        'steps': [20, 50, 100],
         'stop_grid_update_step': [20],
         'lamb': [0, 0.01, 0.1],
         'lamb_coef': [0, 0.01, 0.1, 1.],  # Penalize large coefficients (sparsity)
         'lamb_coefdiff': [0., 0.01, 0.1],  # Penalize large coefficients (sparsity)
         'lamb_entropy': [2],  # Penalize complexity (for symbolic)
         'lr': [0.1, 1.],  # Learning rate for LBFGS
-        # 'sym_range': [10, 50]
+        'sym_range': [50, 200]
     }
 
     # Pass default symbolic options here if you want to override defaults
     # For now, we rely on the class defaults or you can set fixed values
-    kan_wrapper = KANRegressor(device=device, symbolic_enabled=False, pruning_enabled=False)
+    kan_wrapper = KANRegressor(device=device, symbolic_enabled=True, pruning_enabled=False)
 
     search = RandomizedSearchCV(
         estimator=kan_wrapper,
         param_distributions=param_distributions,
-        n_iter=400,
+        n_iter=600,
         cv=3,
         scoring='r2',
         n_jobs=1,  # IMPORTANT: Keep 1 for CUDA safety

@@ -343,7 +343,7 @@ def main():
     #     the activation figures below can mark them. The dedicated figure + CSV are
     #     emitted from these same results in §3.6. transition_points_per_input is the
     #     single source of ranking-transition points for all downstream sections. ---
-    rel_thresh = 0.1  # τ = rel_thresh · max_i max_x |φ'_i|  (tunable / exploratory)
+    rel_thresh = 0.2  # τ = rel_thresh · max_i max_x |φ'_i|  (tunable / exploratory)
     transition_points_per_input = [[] for _ in range(ni)]
     transitions, info = [], None
     try:

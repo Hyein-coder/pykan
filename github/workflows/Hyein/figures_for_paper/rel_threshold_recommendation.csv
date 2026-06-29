@@ -1,0 +1,2 @@
+func,recommended_rel_thresh,loc_err,band_lo,band_hi,note
+conditional,0.2,0.0010025174097907374,0.06,0.4,"min loc_err in detected&clean band [0.06,0.4]; tie-break by robustness"
