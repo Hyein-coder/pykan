@@ -27,9 +27,8 @@ except AttributeError:
 # Import your wrapper and function ZOO
 from SALib.sample import sobol as saltelli
 from github.workflows.Hyein.toy_KAN_sweep import KANRegressor, FUNCTION_ZOO
-from kan.experiments.analysis import find_indices_sign_revert
 from github.workflows.Hyein.bspline_curvature import (
-    find_inflection_points, edge_curves, symbolic_edge_info,
+    edge_curves, symbolic_edge_info,
     feature_sensitivity, find_ranking_transitions, data_range_knots,
 )
 # Reuse the spline/symbolic reading builders from the robustness driver so the
@@ -159,9 +158,9 @@ def main():
     feat_names = config["names"]
     nx = len(bounds)
 
-    # CONVENTION: knots, inflection points, and ranking-transition points are kept
-    # in NORMALIZED space throughout the script (the space the spline grid lives
-    # in). They are denormalized to RAW input values only for PLOTTING, via this
+    # CONVENTION: knots and ranking-transition points are kept in NORMALIZED space
+    # throughout the script (the space the spline grid lives in). They are
+    # denormalized to RAW input values only for PLOTTING, via this
     # single helper. (The one exception is the §3.6 ranking-transition figure,
     # which overlays all features on a shared normalized axis on purpose.)
     def denorm(vals, feat_idx):
@@ -305,18 +304,37 @@ def main():
         plt.close()
 
     # ==========================================
-    # 3. Inflection Point Analysis (Layer 0)
+    # 3. Activation & first-derivative analysis (Layer 0)
     # ==========================================
-    print("\n🔍 Analyzing Inflection Points in Layer 0...")
+    print("\n🔍 Analyzing activations & ranking transitions in Layer 0...")
     l = 0
     act = model.act_fun[l]
     ni, no = act.coef.shape[:2]
     coef = act.coef.tolist()
     depth = len(model.act_fun)
-    # Pre-allocate indexed by original feature; downstream code uses inflection_points_per_input[mask_idx]
-    inflection_points_per_input = [None] * ni
     sort_order_act = np.argsort(scores_tot)[::-1]
     feat_colors = [plt.get_cmap('RdYlBu')(x) for x in np.linspace(0.1, 0.9, ni)]
+
+    # --- Ranking transitions (1st-derivative |φ'| τ-crossings), computed up front so
+    #     the activation figures below can mark them. The dedicated figure + CSV are
+    #     emitted from these same results in §3.6. transition_points_per_input is the
+    #     single source of ranking-transition points for all downstream sections. ---
+    rel_thresh = 0.1  # τ = rel_thresh · max_i max_x |φ'_i|  (tunable / exploratory)
+    transition_points_per_input = [[] for _ in range(ni)]
+    transitions, info = [], None
+    try:
+        knots_all = data_range_knots(act).cpu().detach().numpy()
+        x_grid_rt = np.linspace(float(knots_all.min()), float(knots_all.max()), 400)
+        transitions, info = find_ranking_transitions(
+            model, x_grid=x_grid_rt, rel_thresh=rel_thresh, layer=0)
+        transition_points_per_input = [
+            sorted(t['point'] for t in transitions if t['feat_idx'] == i)
+            for i in range(ni)
+        ]
+    except Exception as e:
+        import traceback
+        print(f"⚠️ Ranking-transition computation failed: {e}")
+        traceback.print_exc()
 
     fig_eval, axs_eval = plt.subplots(nrows=no, ncols=ni, squeeze=False,
                                       figsize=(4 * ni, 3 * no),
@@ -333,7 +351,6 @@ def main():
         x_sweep = np.linspace(float(sweep_knots.min()),
                               float(sweep_knots.max()), 400)
         x_sweep_raw = denorm(x_sweep, i)  # raw x for plotting (sweep stays norm)
-        feature_inflections_all = []
         for j in range(no):
             ax = axs_eval[j, col_pos]
             ax2 = axs_spline[j, col_pos]
@@ -348,9 +365,8 @@ def main():
             ax.plot(denorm(inputs, i)[rank], outputs[rank], marker='o',
                     color=feat_colors[col_pos], label='Activation')
 
-            # --- coef-based detector (kept as fallback / comparison only) ---
+            # coefficient first-difference (slope), shown as bars on ax3
             slope = [x - y for x, y in zip(coef_node[1:], coef_node[:-1])]
-            slope_2nd = [(x - y) * 10 for x, y in zip(slope[1:], slope[:-1])]
 
             ax2.plot(knot_indices, coef_node, marker='o',
                      color=feat_colors[col_pos], label='Coefficients')
@@ -359,60 +375,29 @@ def main():
             ax3.bar(slope_indices, slope, width=0.3, align='center',
                     hatch='///', edgecolor='dimgray', facecolor='none', label='Slope')
 
-            if depth == 1:
-                ax3.bar(slope_indices[1:] - 0.3, slope_2nd, width=0.3, align='center',
-                        hatch='xx', edgecolor='steelblue', facecolor='none', label='2nd Slope')
-
             ax2.set_xticks(knot_indices)
             ax2.set_xticklabels([f"{val:.2f}" for val in denorm(knot_points_actual, i)], rotation=45, fontsize=9)
 
-            if depth == 1:
-                idx_revert = find_indices_sign_revert(slope_2nd)
-                idx_revert = [ir + 1 for ir in idx_revert]
-            elif depth == 2:
-                idx_revert = find_indices_sign_revert(slope)
-            else:
-                idx_revert = []
-
-            # --- analytic detector (source of truth for inflection_points_per_input) ---
-            ips_ij = find_inflection_points(model, l, i, j_list=[j])
-            feature_inflections_all.extend(ips_ij)
-
-            # analytic phi' / phi'' overlay on the activation plot
-            _, dphi, d2phi = edge_curves(model, l, i, j, x_sweep)
+            # analytic phi' overlay on the activation plot
+            _, dphi, _ = edge_curves(model, l, i, j, x_sweep)
             ax_d = ax.twinx()
             ax_d.plot(x_sweep_raw, dphi, color='#1f77b4', lw=0.9, ls='--', label=r"$\phi'$")
-            ax_d.plot(x_sweep_raw, d2phi, color='#d62728', lw=0.9, ls=':', label=r"$\phi''$")
             ax_d.axhline(0, color='gray', lw=0.5, alpha=0.5)
-            ax_d.set_ylabel(r"$\phi'\,,\ \phi''$")
+            ax_d.set_ylabel(r"$\phi'$")
 
-            # coef-based inflection vlines (green dashed) — fallback comparison
-            first_c = True
-            for ir in idx_revert:
-                lab = 'coef-based' if first_c else '_'
-                ax2.axvline(x=ir, color='green', linestyle='--', alpha=0.6, label=lab)
-                if ir < len(knot_points_actual):
-                    ax.axvline(x=denorm([knot_points_actual[ir]], i)[0], color='green',
-                               linestyle='--', alpha=0.6, label=lab)
-                first_c = False
-
-            # analytic inflection vlines (purple solid) — the actual detection
-            if ips_ij:
-                frac_idx = np.interp(ips_ij, knot_points_actual,
-                                     np.arange(len(knot_points_actual)))
-                first_a = True
-                for xinf, fi in zip(ips_ij, frac_idx):
-                    lab = 'analytic' if first_a else '_'
-                    ax.axvline(x=denorm([xinf], i)[0], color='purple', linestyle='-',
-                               alpha=0.7, label=lab)
-                    ax2.axvline(x=fi, color='purple', linestyle='-', alpha=0.7, label=lab)
-                    first_a = False
+            # ranking-transition vlines (per feature: where s_i=Σ_j|φ'| drops below τ)
+            first_t = True
+            for tp in (transition_points_per_input[i] or []):
+                ax.axvline(x=denorm([tp], i)[0], color='darkorange', linestyle='-',
+                           alpha=0.85, lw=1.3,
+                           label='ranking transition' if first_t else '_')
+                first_t = False
 
             ax.set_xlabel(f"{feat_names[i]}")
             ax.set_ylabel(f"node ({l+1}, {j})")
             ax2.set_xlabel(f"{feat_names[i]}")
             ax2.set_ylabel(f"$c_i$ at node ({l+1}, {j})")
-            ax3.set_ylabel(f"$\Delta c_i$ & $\Delta^2 c_i$")
+            ax3.set_ylabel(r"$\Delta c_i$")
             ax3.axhline(0, color='dimgray', linestyle='--', alpha=0.4)
             h_ax, l_ax = ax.get_legend_handles_labels()
             h_d, l_d = ax_d.get_legend_handles_labels()
@@ -420,9 +405,6 @@ def main():
             handles2, labels2 = ax2.get_legend_handles_labels()
             handles3, labels3 = ax3.get_legend_handles_labels()
             ax3.legend(handles2 + handles3, labels2 + labels3, loc='best', fontsize=7)
-
-        feature_inflections = sorted(set(feature_inflections_all))
-        inflection_points_per_input[i] = feature_inflections
 
     fig_eval.savefig(os.path.join(savepath, f"{data_name}_activations_values_L{l}.png"), dpi=300)
     fig_eval.savefig(os.path.join(savepath, f"{data_name}_activations_values_L{l}.svg"), format='svg')
@@ -435,81 +417,60 @@ def main():
     print(f"📊 Activation analysis saved to: {savepath}")
 
     # ==========================================
-    # 3.6 Ranking transition by small 1st-derivative |φ'|
+    # 3.6 Ranking transition figure (small 1st-derivative |φ'|)
     # ==========================================
     # Per-feature bottom-layer local sensitivity s_i(x) = Σ_j |φ'_{i,j}(x)| (exact,
     # feature-separable). A ranking transition = where the dominant feature's s_i
-    # drops below a small threshold τ (it becomes locally negligible).
-    print("\n🏁 Computing ranking transitions (small |φ'|)...")
-    # Transition points used by all downstream analysis (§3.5/3.7/3.8/3.9/4):
-    # the RANKING-TRANSITION points (τ-crossings of |φ'_i|), replacing the
-    # inflection points. Falls back to inflection points if §3.6 fails.
-    transition_points_per_input = []
-    try:
-        rel_thresh = 0.1  # τ = rel_thresh · max_i max_x |φ'_i|  (tunable / exploratory)
-        l0 = 0
-        knots_all = data_range_knots(act).cpu().detach().numpy()
-        x_grid_rt = np.linspace(float(knots_all.min()), float(knots_all.max()), 400)
-        transitions, info = find_ranking_transitions(
-            model, x_grid=x_grid_rt, rel_thresh=rel_thresh, layer=l0)
-        tau = info['tau']
-        S = info['S']
-        # Per-feature ranking-transition points (all τ-crossings) -> downstream source.
-        transition_points_per_input = [
-            sorted(t['point'] for t in transitions if t['feat_idx'] == i)
-            for i in range(ni)
-        ]
+    # drops below a small threshold τ. The points were computed in §3 into
+    # transition_points_per_input; here we just draw the dedicated figure + CSV.
+    # (This is the one figure kept on a shared NORMALIZED x-axis across features.)
+    print("\n🏁 Plotting ranking transitions (small |φ'|)...")
+    if info is not None:
+        try:
+            tau = info['tau']
+            S = info['S']
+            feat_colors_rt = [plt.get_cmap('tab10')(c) for c in range(ni)]
+            with plt.rc_context({'figure.autolayout': True}):
+                fig_rt, ax_rt = plt.subplots(figsize=(7, 4))
+                for i in range(ni):
+                    ax_rt.plot(x_grid_rt, S[i], color=feat_colors_rt[i], lw=1.4,
+                               label=rf"$|\phi'|$ {feat_names[i]}")
+                ax_rt.axhline(tau, color='black', ls='--', lw=1.0, alpha=0.7,
+                              label=rf"$\tau={rel_thresh:g}\cdot$max")
 
-        feat_colors_rt = [plt.get_cmap('tab10')(c) for c in range(ni)]
-        with plt.rc_context({'figure.autolayout': True}):
-            fig_rt, ax_rt = plt.subplots(figsize=(7, 4))
-            for i in range(ni):
-                ax_rt.plot(x_grid_rt, S[i], color=feat_colors_rt[i], lw=1.4,
-                           label=rf"$|\phi'|$ {feat_names[i]}")
-            ax_rt.axhline(tau, color='black', ls='--', lw=1.0, alpha=0.7,
-                          label=rf"$\tau={rel_thresh:g}\cdot$max")
+                # All τ-crossings, every feature: solid = down (→negligible),
+                # dotted = up (→active); colored by the crossing feature.
+                first_d, first_u = True, True
+                for t in transitions:
+                    c = feat_colors_rt[t['feat_idx']]
+                    if t['direction'] == 'down':
+                        ax_rt.axvline(t['point'], color=c, ls='-', alpha=0.85, lw=1.3,
+                                      label='transition (down)' if first_d else '_')
+                        first_d = False
+                    else:
+                        ax_rt.axvline(t['point'], color=c, ls=':', alpha=0.7, lw=1.1,
+                                      label='transition (up)' if first_u else '_')
+                        first_u = False
 
-            # All τ-crossings, every feature: solid = down (→negligible),
-            # dotted = up (→active); colored by the crossing feature.
-            first_d, first_u = True, True
-            for t in transitions:
-                c = feat_colors_rt[t['feat_idx']]
-                if t['direction'] == 'down':
-                    ax_rt.axvline(t['point'], color=c, ls='-', alpha=0.85, lw=1.3,
-                                  label='transition (down)' if first_d else '_')
-                    first_d = False
-                else:
-                    ax_rt.axvline(t['point'], color=c, ls=':', alpha=0.7, lw=1.1,
-                                  label='transition (up)' if first_u else '_')
-                    first_u = False
+                ax_rt.set_xlabel("normalized input value")
+                ax_rt.set_ylabel(r"local sensitivity  $\sum_j|\phi'_{ij}|$")
+                ax_rt.set_title(rf"{data_name} — ranking transition (small $|\phi'|$)")
+                ax_rt.legend(loc='best', fontsize=7)
+                for ext in ['.png', '.svg', '.eps']:
+                    fig_rt.savefig(os.path.join(savepath, f"{data_name}_ranking_transition{ext}"))
+                plt.close(fig_rt)
 
-            # overlay KAN inflection points (normalized) for comparison
-            first_inf = True
-            for i in range(ni):
-                for ip in (inflection_points_per_input[i] or []):
-                    ax_rt.axvline(ip, color='green', ls='--', alpha=0.5, lw=0.9,
-                                  label='KAN inflection' if first_inf else '_')
-                    first_inf = False
-
-            ax_rt.set_xlabel("normalized input value")
-            ax_rt.set_ylabel(r"local sensitivity  $\sum_j|\phi'_{ij}|$")
-            ax_rt.set_title(rf"{data_name} — ranking transition (small $|\phi'|$)")
-            ax_rt.legend(loc='best', fontsize=7)
-            for ext in ['.png', '.svg', '.eps']:
-                fig_rt.savefig(os.path.join(savepath, f"{data_name}_ranking_transition{ext}"))
-            plt.close(fig_rt)
-
-        pd.DataFrame(transitions).to_csv(
-            os.path.join(savepath, f"{data_name}_ranking_transition.csv"), index=False)
-        down_pts = [round(t['point'], 3) for t in transitions if t['direction'] == 'down']
-        up_pts = [round(t['point'], 3) for t in transitions if t['direction'] == 'up']
-        print(f"🏁 τ = {tau:.4g}; down-crossings (→negligible) = {down_pts}; "
-              f"up-crossings (→active) = {up_pts}")
-        print(f"🏁 Saved: {data_name}_ranking_transition.(png/svg/eps/csv)")
-    except Exception as e:
-        import traceback
-        print(f"⚠️ Ranking-transition section 3.6 failed: {e}")
-        traceback.print_exc()
+            pd.DataFrame(transitions).to_csv(
+                os.path.join(savepath, f"{data_name}_ranking_transition.csv"), index=False)
+            down_pts = [round(t['point'], 3) for t in transitions if t['direction'] == 'down']
+            up_pts = [round(t['point'], 3) for t in transitions if t['direction'] == 'up']
+            print(f"🏁 τ = {tau:.4g}; down-crossings (→negligible) = {down_pts}; "
+                  f"up-crossings (→active) = {up_pts}")
+            print(f"🏁 Saved: {data_name}_ranking_transition.(png/svg/eps/csv)")
+        except Exception as e:
+            import traceback
+            print(f"⚠️ Ranking-transition figure (§3.6) failed: {e}")
+            traceback.print_exc()
 
     # ==========================================
     # 3.5 Attribution Trajectory across Grid Intervals
@@ -627,26 +588,26 @@ def main():
         Z = np.apply_along_axis(target_func, 1, grid_input).reshape(grid_res, grid_res)
 
         # Denormalize ranking-transition points from [0.1, 0.9] → raw space
-        def get_denorm_ips(feat_idx):
-            raw_ips = transition_points_per_input[feat_idx] or []
-            valid_ips = [ip for ip in raw_ips if 0.05 < ip < 0.95]
-            if not valid_ips:
+        def get_denorm_pts(feat_idx):
+            raw_pts = transition_points_per_input[feat_idx] or []
+            valid_pts = [ip for ip in raw_pts if 0.05 < ip < 0.95]
+            if not valid_pts:
                 return []
-            dummy = np.zeros((len(valid_ips), nx))
-            dummy[:, feat_idx] = valid_ips
+            dummy = np.zeros((len(valid_pts), nx))
+            dummy[:, feat_idx] = valid_pts
             return scaler_X.inverse_transform(dummy)[:, feat_idx]
 
-        f1_ips = get_denorm_ips(f1_idx)
-        f2_ips = get_denorm_ips(f2_idx)
+        f1_pts = get_denorm_pts(f1_idx)
+        f2_pts = get_denorm_pts(f2_idx)
 
         fig_c, ax_c = plt.subplots(figsize=(4, 3))
         cp = ax_c.contourf(X1_mesh, X2_mesh, Z, levels=30, cmap='RdYlBu_r', alpha=0.8)
         cbar = fig_c.colorbar(cp, ax=ax_c)
         cbar.set_label("y")
 
-        for ip in f1_ips:
+        for ip in f1_pts:
             ax_c.axvline(x=ip, color='green', linestyle='--', alpha=0.5)
-        for ip in f2_ips:
+        for ip in f2_pts:
             ax_c.axhline(y=ip, color='green', linestyle='--', alpha=0.5)
 
         ax_c.set_xlabel(f1_name)
@@ -690,8 +651,8 @@ def main():
 
         batch_func = _kan_batch_func
 
-        def denorm_ips(ips_norm, feat_idx):
-            valid = [ip for ip in (ips_norm or []) if 0.05 < ip < 0.95]
+        def denorm_pts(pts_norm, feat_idx):
+            valid = [ip for ip in (pts_norm or []) if 0.05 < ip < 0.95]
             if not valid:
                 return []
             dummy = np.zeros((len(valid), nx))
@@ -705,8 +666,8 @@ def main():
             return scaler_X.inverse_transform(dummy)[:, feat_idx]
 
         # Ranking-transition points (raw space) per top-2 feature — used as the
-        # KAN-side transition markers in the AGSM comparison (replaces inflection).
-        kan_ips_raw_agsm = {idx: denorm_ips(transition_points_per_input[idx], idx)
+        # KAN-side transition markers in the AGSM comparison.
+        kan_tr_raw_agsm = {idx: denorm_pts(transition_points_per_input[idx], idx)
                             for idx in top2_idx_agsm}
 
         agsm_results = {}
@@ -834,7 +795,7 @@ def main():
 
                 first_inflect = True
                 for feat_idx in top2_idx_agsm:
-                    for ip in kan_ips_raw_agsm.get(feat_idx, []):
+                    for ip in kan_tr_raw_agsm.get(feat_idx, []):
                         ax_agsm.axvline(x=ip, color='green', linestyle='--', alpha=0.7,
                                         linewidth=1.0,
                                         label='ranking transition' if first_inflect else '_')
@@ -862,7 +823,7 @@ def main():
 
                     first_inflect = True
                     for feat_idx in top2_idx_agsm:
-                        for ip in kan_ips_raw_agsm.get(feat_idx, []):
+                        for ip in kan_tr_raw_agsm.get(feat_idx, []):
                             ax_attr.axvline(x=ip, color='green', linestyle='--', alpha=0.7,
                                             linewidth=1.0,
                                             label='ranking transition' if first_inflect else '_')
@@ -889,77 +850,64 @@ def main():
         traceback.print_exc()
 
     # ==========================================
-    # 3.9 Curvature-Based Inflection + Per-Interval Dual Measure (New KAN analysis)
+    # 3.9 Per-Interval Dual Measure (ranking-transition–segmented)
     # ==========================================
-    # Replaces the coefficient finite-difference inflection detector (section 3)
-    # with the ANALYTICAL 2nd derivative of the full learned activation, then
-    # compares AGSM S_a and KAN attribution over the inflection-segmented domain.
-    print("\n🧭 Computing curvature-based inflection points (analytical 2nd derivative)...")
+    # Segments the domain by the ranking-transition points (τ-crossings of |φ'|)
+    # and compares AGSM S_a with KAN attribution over those intervals.
+    print("\n🧭 Computing ranking-transition–segmented dual measure (AGSM + attribution)...")
     try:
         from github.workflows.Hyein.sectional_gsa import (
             compute_gradient_agsm, find_agsm_transition_points,
         )
 
         if nx < 2:
-            raise RuntimeError("curvature section 3.9 needs >=2 inputs; skipping.")
+            raise RuntimeError("section 3.9 needs >=2 inputs; skipping.")
 
         l = 0
         act = model.act_fun[l]
-        top2_curv = np.argsort(scores_tot)[::-1][:2].tolist()
-        ci_idx, cj_idx = int(top2_curv[0]), int(top2_curv[1])
+        top2_dual = np.argsort(scores_tot)[::-1][:2].tolist()
+        ci_idx, cj_idx = int(top2_dual[0]), int(top2_dual[1])
 
         # Symbolified edges route through model.symbolic_fun (spline disabled);
-        # the curvature/derivatives below use the symbolic function for those edges.
+        # the derivatives below use the symbolic function for those edges.
         sym_info = symbolic_edge_info(model, l)
         if sym_info:
-            print("⚠️ Symbolic edges detected (spline branch disabled) — curvature "
-                  "uses the symbolic function for these edges:")
+            print("⚠️ Symbolic edges detected (spline branch disabled) — φ/φ' "
+                  "use the symbolic function for these edges:")
             for (ei, ej), nm in sorted(sym_info.items()):
                 print(f"     edge ({feat_names[ei]} -> node {ej}): {nm}")
 
         # --- 1. Ranking-transition points (normalized space) used as the KAN-side
-        #        transition points for the dual measure (replaces inflection). ---
-        curv_ips_norm = {idx: (transition_points_per_input[idx] or [])
-                         for idx in top2_curv}
+        #        transition points for the dual measure. ---
+        tr_pts_norm = {idx: (transition_points_per_input[idx] or [])
+                         for idx in top2_dual}
 
-        # --- 1b. Figure: activation phi(x) with its analytical phi'(x), phi''(x) ---
-        # Plots the learned activation and its exact 1st/2nd derivatives per edge,
-        # with green vlines at the phi'' zero-crossings (detected inflections).
-        # Curves are evaluated over the NORMALIZED sweep (spline space) but the
-        # x-axis is denormalized to RAW input values for display.
+        # --- 1b. Figure: activation phi(x) with its analytical phi'(x) ---
+        # Plots the learned activation and its exact 1st derivative per edge, with
+        # orange vlines at the ranking-transition points. Curves are evaluated over
+        # the NORMALIZED sweep (spline space) but the x-axis is denormalized to RAW.
         no_l = act.coef.shape[1]
         with plt.rc_context({'figure.autolayout': True}):
-            fig_d, axs_d = plt.subplots(no_l, len(top2_curv), squeeze=False,
-                                        figsize=(5 * len(top2_curv), 3 * no_l))
-            for col, i_feat in enumerate(top2_curv):
+            fig_d, axs_d = plt.subplots(no_l, len(top2_dual), squeeze=False,
+                                        figsize=(5 * len(top2_dual), 3 * no_l))
+            for col, i_feat in enumerate(top2_dual):
                 knots_i = data_range_knots(act, i_feat).cpu().detach().numpy()
                 x_sweep = np.linspace(float(knots_i.min()), float(knots_i.max()), 400)
                 x_sweep_raw = denorm(x_sweep, i_feat)  # raw x for display
                 for j in range(no_l):
                     ax = axs_d[j, col]
                     ax2 = ax.twinx()
-                    phi, dphi, d2phi = edge_curves(model, l, i_feat, j, x_sweep)
+                    phi, dphi, _ = edge_curves(model, l, i_feat, j, x_sweep)
                     ln0 = ax.plot(x_sweep_raw, phi, color='#222222', lw=1.6, label=r'$\phi(x)$')
                     ln1 = ax2.plot(x_sweep_raw, dphi, color='#1f77b4', lw=1.0, ls='--',
                                    label=r"$\phi'(x)$")
-                    ln2 = ax2.plot(x_sweep_raw, d2phi, color='#d62728', lw=1.0, ls=':',
-                                   label=r"$\phi''(x)$")
                     ax2.axhline(0, color='gray', lw=0.6, alpha=0.6)
                     extra_handles = []
-                    # green dashed: this edge's phi'' zero-crossings (inflection points)
-                    first = True
-                    for ip in find_inflection_points(model, l, i_feat, j_list=[j]):
-                        h = ax.axvline(denorm([ip], i_feat)[0], color='green', ls='--',
-                                       alpha=0.6, lw=1.0,
-                                       label='Inflection' if first else '_')
-                        if first:
-                            extra_handles.append(h)
-                        first = False
                     # orange solid: this FEATURE's ranking-transition points (where the
                     # local sensitivity |phi'| drops below tau). Per-feature, so the same
                     # vline is drawn on every edge (node j) of input i_feat.
                     first_t = True
-                    for tp in (curv_ips_norm[i_feat] or []):
+                    for tp in (tr_pts_norm[i_feat] or []):
                         h = ax.axvline(denorm([tp], i_feat)[0], color='darkorange', ls='-',
                                        alpha=0.85, lw=1.3,
                                        label='ranking transition' if first_t else '_')
@@ -968,13 +916,13 @@ def main():
                         first_t = False
                     ax.set_xlabel(f"{feat_names[i_feat]}")
                     ax.set_ylabel(r'$\phi$')
-                    ax2.set_ylabel(r"$\phi'\,,\ \phi''$")
+                    ax2.set_ylabel(r"$\phi'$")
                     sym_tag = (f"  [symbolic: {sym_info[(i_feat, j)]}]"
                                if (i_feat, j) in sym_info else "")
                     ax.set_title(f"edge ({feat_names[i_feat]} -> node {j}){sym_tag}")
-                    lns = ln0 + ln1 + ln2 + extra_handles
+                    lns = ln0 + ln1 + extra_handles
                     ax.legend(lns, [ln.get_label() for ln in lns], loc='best', fontsize=7)
-            fig_d.suptitle(f"{data_name} — activation & analytical derivatives (L0)",
+            fig_d.suptitle(f"{data_name} — activation & first derivative (L0)",
                            fontsize=11, fontweight='bold')
             for ext in ['.png', '.svg', '.eps']:
                 fig_d.savefig(os.path.join(savepath,
@@ -992,20 +940,20 @@ def main():
             dummy[:, feat_idx] = vals
             return scaler_X.inverse_transform(dummy)[:, feat_idx].tolist()
 
-        curv_ips_raw = {idx: _denorm_feat(curv_ips_norm[idx], idx) for idx in top2_curv}
+        tr_pts_raw = {idx: _denorm_feat(tr_pts_norm[idx], idx) for idx in top2_dual}
 
-        # --- 3. Single source of truth: inflection-based section edges (raw) ---
-        # custom_edges[feat] = [lo, <interior inflections>, hi]. The interior of
-        # this array is reused verbatim for (a) AGSM custom_edges, (b) KAN
+        # --- 3. Single source of truth: ranking-transition section edges (raw) ---
+        # custom_edges[feat] = [lo, <interior ranking transitions>, hi]. The interior
+        # of this array is reused verbatim for (a) AGSM custom_edges, (b) KAN
         # attribution interval masks, and (c) the plotted vlines -> fully traceable.
         custom_edges = {}
-        for idx in top2_curv:
+        for idx in top2_dual:
             lo_raw, hi_raw = bounds[idx]
-            interior = sorted(v for v in curv_ips_raw[idx] if lo_raw < v < hi_raw)
+            interior = sorted(v for v in tr_pts_raw[idx] if lo_raw < v < hi_raw)
             custom_edges[idx] = np.array([lo_raw] + interior + [hi_raw], dtype=float)
 
         # --- 4. KAN surrogate batch func (raw space), as in section 3.8 ---
-        def _kan_batch_func_curv(X_raw):
+        def _kan_batch_func_dual(X_raw):
             X_np = np.atleast_2d(np.asarray(X_raw, dtype=float))
             X_norm = scaler_X.transform(X_np)
             X_tensor = torch.tensor(X_norm, dtype=torch.float32, device=device)
@@ -1017,20 +965,20 @@ def main():
                 y_inv = y_pred
             return y_inv.ravel()
 
-        # --- 5. AGSM S_a over the inflection-segmented intervals ---
+        # --- 5. AGSM S_a over the ranking-transition–segmented intervals ---
         sc, sh, sa, r = compute_gradient_agsm(
-            func_batch=_kan_batch_func_curv, bounds=bounds, feat_names=feat_names,
-            top2_idx=top2_curv, n_sections=10, n_samples_per_section=512, seed=42,
+            func_batch=_kan_batch_func_dual, bounds=bounds, feat_names=feat_names,
+            top2_idx=top2_dual, n_sections=10, n_samples_per_section=512, seed=42,
             section_mode='custom', custom_edges=custom_edges,
         )
-        curv_tps = find_agsm_transition_points(
+        dual_agsm_tps = find_agsm_transition_points(
             sc[ci_idx], sa[ci_idx], sc[cj_idx], sa[cj_idx],
             feat_names[ci_idx], feat_names[cj_idx],
         )
 
         # --- 6. Per-interval KAN attribution over the SAME intervals (3.8 pattern) ---
-        curv_kan_attr = {}
-        for feat_idx in top2_curv:
+        dual_kan_attr = {}
+        for feat_idx in top2_dual:
             edges_raw = custom_edges[feat_idx]
             n_eff = len(edges_raw) - 1
             dummy = np.zeros((len(edges_raw), nx))
@@ -1050,27 +998,27 @@ def main():
                     attr_sections.append(score / (x_std + 1e-6))
                 else:
                     attr_sections.append(np.full(nx, np.nan))
-            curv_kan_attr[feat_idx] = np.array(attr_sections)  # (n_eff, nx)
+            dual_kan_attr[feat_idx] = np.array(attr_sections)  # (n_eff, nx)
 
         # --- 7. CSV ---
         rows = []
-        for feat_idx in top2_curv:
+        for feat_idx in top2_dual:
             for kk, (center, s_hat, s_a_v, r_v) in enumerate(zip(
                     sc[feat_idx], sh[feat_idx], sa[feat_idx], r[feat_idx])):
                 rows.append({'Feature': feat_names[feat_idx], 'Feature_idx': feat_idx,
                              'Section_k': kk, 'Section_center': center,
                              'S_hat': s_hat, 'S_a': s_a_v, 'R': r_v})
         pd.DataFrame(rows).to_csv(
-            os.path.join(savepath, f"{data_name}_curvature_inflection.csv"), index=False)
+            os.path.join(savepath, f"{data_name}_transition_dual_measure.csv"), index=False)
 
         # --- 8. Dual-panel figure: AGSM S_a (left) | KAN attribution (right) ---
         # vlines come from custom_edges[ci_idx] interior (the same array driving
         # AGSM sectioning and the ci_idx attribution masks).
         ip_lines = list(custom_edges[ci_idx][1:-1])
-        feat_colors_curv = ['#1f77b4', '#d62728']
+        feat_colors_dual = ['#1f77b4', '#d62728']
 
         def _seg_edges(feat_idx, centers):
-            """Section edges for piecewise-constant plotting (the inflection edges)."""
+            """Section edges for piecewise-constant plotting (ranking-transition edges)."""
             ce = np.asarray(custom_edges[feat_idx], dtype=float)
             centers = np.asarray(centers, dtype=float)
             if ce.size == centers.size + 1:
@@ -1085,7 +1033,7 @@ def main():
         with plt.rc_context({'figure.autolayout': True}):
             fig_cv, (ax_l, ax_rt) = plt.subplots(1, 2, figsize=(10, 3.4))
 
-            for color, feat_idx in zip(feat_colors_curv, top2_curv):
+            for color, feat_idx in zip(feat_colors_dual, top2_dual):
                 _step_over_edges(ax_l, _seg_edges(feat_idx, sc[feat_idx]),
                                  sa[feat_idx], color=color, label=feat_names[feat_idx])
             first = True
@@ -1094,7 +1042,7 @@ def main():
                              label='ranking transition' if first else '_')
                 first = False
             first = True
-            for tp in curv_tps:
+            for tp in dual_agsm_tps:
                 ax_l.axvline(tp['point'], color='orange', linestyle=':', alpha=0.8,
                              linewidth=1.2, label='AGSM transition' if first else '_')
                 first = False
@@ -1103,11 +1051,11 @@ def main():
             ax_l.set_title('AGSM (transition-segmented)')
             ax_l.legend(loc='best')
 
-            attr_mat = curv_kan_attr[ci_idx]
+            attr_mat = dual_kan_attr[ci_idx]
             edges_i = _seg_edges(ci_idx, sc[ci_idx])
-            for color, feat_idx in zip(feat_colors_curv, top2_curv):
-                # Piecewise-constant over the SAME inflection edges, so the steps
-                # change exactly at the inflection vlines.
+            for color, feat_idx in zip(feat_colors_dual, top2_dual):
+                # Piecewise-constant over the SAME ranking-transition edges, so the
+                # steps change exactly at the transition vlines.
                 _step_over_edges(ax_rt, edges_i, attr_mat[:, feat_idx],
                                  color=color, label=feat_names[feat_idx])
             first = True
@@ -1122,13 +1070,13 @@ def main():
 
             fig_cv.suptitle(f"{data_name} — ranking-transition dual measure", fontsize=11, fontweight='bold')
             for ext in ['.png', '.svg', '.eps']:
-                fig_cv.savefig(os.path.join(savepath, f"{data_name}_curvature_inflection{ext}"))
+                fig_cv.savefig(os.path.join(savepath, f"{data_name}_transition_dual_measure{ext}"))
             plt.close(fig_cv)
 
-        print(f"🧭 Ranking-transition pts (normalized): {curv_ips_norm}")
-        print(f"🧭 Ranking-transition pts (raw): {curv_ips_raw}")
-        print(f"🧭 AGSM transitions: {[round(t['point'], 3) for t in curv_tps]}")
-        print(f"🧭 Saved: {data_name}_curvature_inflection.(png/svg/eps/csv)")
+        print(f"🧭 Ranking-transition pts (normalized): {tr_pts_norm}")
+        print(f"🧭 Ranking-transition pts (raw): {tr_pts_raw}")
+        print(f"🧭 AGSM transitions: {[round(t['point'], 3) for t in dual_agsm_tps]}")
+        print(f"🧭 Saved: {data_name}_transition_dual_measure.(png/svg/eps/csv)")
 
     except Exception as e:
         import traceback
@@ -1149,13 +1097,13 @@ def main():
         Returns (masks, labels, split_points) or None if the feature has no valid
         transition points (in 0.1~0.9) that yield >=2 active intervals.
         """
-        raw_ips = transition_points_per_input[feat_idx]
-        valid_ips = [ip for ip in raw_ips if ip is not None and 0.1 < ip < 0.9]
-        unique_ips = sorted(list(set([round(ip, 3) for ip in valid_ips])))
-        if len(unique_ips) == 0:
+        raw_pts = transition_points_per_input[feat_idx]
+        valid_pts = [ip for ip in raw_pts if ip is not None and 0.1 < ip < 0.9]
+        unique_pts = sorted(list(set([round(ip, 3) for ip in valid_pts])))
+        if len(unique_pts) == 0:
             return None
         # Intervals: [0.1, ip1, ip2, ..., 0.9]
-        mask_interval = [0.1] + unique_ips + [0.9]
+        mask_interval = [0.1] + unique_pts + [0.9]
         x_mask_data = dataset['train_input'][:, feat_idx]
         candidate_masks = [((x_mask_data > lb) & (x_mask_data <= ub))
                            for lb, ub in zip(mask_interval[:-1], mask_interval[1:])]
@@ -1289,7 +1237,6 @@ def main():
         'selected_mask_idx': selected_mask_idx,
         'selected_mask_name': feat_names[selected_mask_idx],
         'split_points': selected_split_points,  # interval boundaries in [0.1, 0.9] space
-        'inflection_points_per_input': inflection_points_per_input,  # per-feature inflection points (original)
         'transition_points_per_input': transition_points_per_input,  # ranking-transition points (used downstream)
         'feature_names': feat_names,
         'scaler_X': scaler_X,
