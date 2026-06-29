@@ -1,10 +1,12 @@
 feature,feat_idx,branch,raw_point_spline,raw_point_symbolic,matched,added,dropped,drift,drift_frac,sym_edge_names,status
-Oscillator (x0),0,spline,-0.4049332395452251,,0,0,1,,,"1/x^2, sin, x",ok
-Oscillator (x0),0,spline,-0.29085910776463747,,0,0,1,,,"1/x^2, sin, x",ok
-Oscillator (x0),0,spline,0.35155837121025035,,0,0,1,,,"1/x^2, sin, x",ok
-Oscillator (x0),0,spline,0.5076598146994754,,0,0,1,,,"1/x^2, sin, x",ok
+Oscillator (x0),0,matched,0.35155837121025035,0.37557397790090047,1,0,0,0.024015606690650115,0.012007803345325058,"1/x^2, sin, x",ok
+Oscillator (x0),0,matched,-0.4049332395452251,-0.43495274790853755,1,0,0,-0.030019508363312464,-0.015009754181656232,"1/x^2, sin, x",ok
+Oscillator (x0),0,matched,-0.29085910776463747,-0.25483569772866244,1,0,0,0.036023410035975034,0.018011705017987517,"1/x^2, sin, x",ok
+Oscillator (x0),0,matched,0.5076598146994754,0.5496871264081129,1,0,0,0.042027311708637494,0.021013655854318747,"1/x^2, sin, x",ok
+Oscillator (x0),0,matched,1.0960421786204007,1.1800968020376756,1,0,0,0.08405462341727499,0.042027311708637494,"1/x^2, sin, x",ok
+Oscillator (x0),0,symbolic,,-1.1794365553186879,0,1,0,,,"1/x^2, sin, x",ok
+Oscillator (x0),0,symbolic,,-1.0593585218654378,0,1,0,,,"1/x^2, sin, x",ok
 Oscillator (x0),0,spline,1.0360031618937757,,0,0,1,,,"1/x^2, sin, x",ok
-Oscillator (x0),0,spline,1.0960421786204007,,0,0,1,,,"1/x^2, sin, x",ok
 Linear (x1),1,matched,1.095974939436233,1.0298941438872593,1,0,0,-0.06608079554897373,-0.03304039777448686,"1/x^2, sin, x",ok
 Linear (x1),1,symbolic,,1.0178794537874463,0,1,0,,,"1/x^2, sin, x",ok
 Linear (x1),1,spline,-1.1147280389294312,,0,0,1,,,"1/x^2, sin, x",ok

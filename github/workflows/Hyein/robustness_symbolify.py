@@ -56,6 +56,7 @@ try:
 except AttributeError:
     pass
 
+from sklearn.metrics import r2_score
 from sklearn.model_selection import train_test_split
 
 from github.workflows.Hyein.toy_KAN_sweep import KANRegressor, FUNCTION_ZOO
@@ -119,6 +120,22 @@ def _denorm_feature(vals_norm, feat_idx, scaler_X, nx):
     return scaler_X.inverse_transform(dummy)[:, feat_idx]
 
 
+def _r2_on_test(model, test_input_norm, y_test_norm):
+    """R2 of a reading on the held-out test set, in normalized space.
+
+    Forwards a *reading* (spline/symbolic deepcopy) -- never the clean loaded
+    model (see deepcopy note in analyze_function). Mirrors the toy_KAN_sweep.py
+    convention: r2_score on normalized y. Returns NaN on any failure.
+    """
+    try:
+        with torch.no_grad():
+            y_pred = model.forward(test_input_norm).detach().cpu().numpy().reshape(-1)
+        return float(r2_score(np.asarray(y_test_norm).reshape(-1), y_pred))
+    except Exception as e:
+        print(f"      [r2] scoring failed (ignoring): {e}")
+        return float('nan')
+
+
 def _sensitivity_is_degenerate(model, x_grid, layer=0):
     """True if every feature's s_i(x) is ~0 / NaN over the whole grid."""
     in_dim = model.act_fun[layer].coef.shape[0]
@@ -131,16 +148,24 @@ def _sensitivity_is_degenerate(model, x_grid, layer=0):
 
 
 def _build_spline_reading(model, sym_info):
-    """deepcopy with symbolified edges forced back onto the spline branch.
+    """deepcopy with symbolified edges (ALL layers) forced back onto the spline.
 
-    Restores ONLY the edges listed in ``sym_info`` (``act_fun[0].mask[i,j]=1``)
-    and disables the symbolic branch. For a pure-spline model (empty sym_info)
-    this is a no-op restore -- still a clean deepcopy with symbolic disabled.
+    Restores the spline mask (=1) on every symbolified edge in EVERY layer, then
+    disables the symbolic branch globally. Scanning all layers (not just layer 0)
+    is required for multi-layer models: ``symbolic_enabled=False`` turns OFF the
+    symbolic branch in every layer, so any layer left with spline mask=0 would
+    output nothing and decapitate the network -- producing a spurious negative
+    R2 even when the layer-0 transition analysis is perfectly valid. Pruned edges
+    (no symbolic fn, spline mask already 0) are left untouched, so pruning is
+    preserved. For a pure-spline model this is a clean deepcopy with symbolic off.
+
+    ``sym_info`` (layer-0 symbolic edges) is kept for backward compatibility but
+    is no longer the sole source; symbolic_edge_info is queried per layer.
     """
     m = copy.deepcopy(model)
-    act = m.act_fun[0]
-    for (i, j) in sym_info:
-        act.mask.data[i, j] = 1.0
+    for layer in range(len(m.act_fun)):
+        for (i, j) in symbolic_edge_info(m, layer):
+            m.act_fun[layer].mask.data[i, j] = 1.0
     m.symbolic_enabled = False
     return m
 
@@ -265,11 +290,16 @@ def analyze_function(func_name, rel_thresh=0.1, refit=False, match_frac=0.05,
     X_raw = np.random.uniform(low=[b[0] for b in bounds],
                               high=[b[1] for b in bounds], size=(1000, nx))
     y_raw = np.apply_along_axis(target_func, 1, X_raw).reshape(-1, 1)
-    X_train, _, y_train, _ = train_test_split(X_raw, y_raw, test_size=0.2,
-                                              random_state=42)
+    X_train, X_test, y_train, y_test = train_test_split(X_raw, y_raw,
+                                                        test_size=0.2,
+                                                        random_state=42)
     X_train_norm = scaler_X.transform(X_train)
     y_train_norm = scaler_y.transform(y_train)
     train_input_norm = torch.tensor(X_train_norm, dtype=torch.float32, device=device)
+    # Held-out test set (2nd & 4th train_test_split outputs) for R2 scoring.
+    X_test_norm = scaler_X.transform(X_test)
+    y_test_norm = scaler_y.transform(y_test)
+    test_input_norm = torch.tensor(X_test_norm, dtype=torch.float32, device=device)
     dataset = {
         'train_input': train_input_norm,
         'train_label': torch.tensor(y_train_norm, dtype=torch.float32,
@@ -296,10 +326,12 @@ def analyze_function(func_name, rel_thresh=0.1, refit=False, match_frac=0.05,
     x_grid = _shared_x_grid(model, layer=0, n_eval=400)  # reads grid only
 
     # --- 4. SPLINE READING ----------------------------------------------------
+    r2_spline, r2_symbolic = np.nan, np.nan
     spline_model = _build_spline_reading(model, sym_info_saved)
     spline_degenerate = _sensitivity_is_degenerate(spline_model, x_grid, layer=0)
     spline_trans, spline_info = find_ranking_transitions(
         spline_model, x_grid=x_grid, rel_thresh=rel_thresh, layer=0)
+    r2_spline = _r2_on_test(spline_model, test_input_norm, y_test_norm)
 
     # --- 5. SYMBOLIC READING --------------------------------------------------
     steps = getattr(wrapper, 'steps', 20)
@@ -317,6 +349,8 @@ def analyze_function(func_name, rel_thresh=0.1, refit=False, match_frac=0.05,
         sym_model = None
         print(f"[{func_name}] auto_symbolic raised: {e}")
         traceback.print_exc()
+    if not sym_failed and sym_model is not None:
+        r2_symbolic = _r2_on_test(sym_model, test_input_norm, y_test_norm)
 
     result['n_edges_symbolified'] = int(n_edges if already_symbolified or not sym_failed else 0)
 
@@ -351,7 +385,8 @@ def analyze_function(func_name, rel_thresh=0.1, refit=False, match_frac=0.05,
     print(f"[{func_name}] status={status}"
           + (f": {reason}" if reason else "")
           + f"; n_edges_symbolified={result['n_edges_symbolified']}; "
-          f"refit={'on' if (refit and not already_symbolified) else 'off'}")
+          f"refit={'on' if (refit and not already_symbolified) else 'off'}; "
+          f"R2(spline)={r2_spline:.4f}; R2(symbolic)={r2_symbolic:.4f}")
 
     # --- 7. Per-feature compare in RAW space ----------------------------------
     spline_pts_norm = {i: sorted(t['point'] for t in spline_trans if t['feat_idx'] == i)
@@ -451,6 +486,7 @@ def analyze_function(func_name, rel_thresh=0.1, refit=False, match_frac=0.05,
         'median_drift_frac': median_drift_frac, 'max_drift_frac': max_drift_frac,
         'refit': bool(refit and not already_symbolified),
         'rel_thresh': rel_thresh, 'match_frac': match_frac,
+        'r2_spline': r2_spline, 'r2_symbolic': r2_symbolic,
         'reason': reason,
     }
 
