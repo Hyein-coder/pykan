@@ -32,6 +32,11 @@ from github.workflows.Hyein.bspline_curvature import (
     find_inflection_points, edge_curves, symbolic_edge_info,
     feature_sensitivity, find_ranking_transitions, data_range_knots,
 )
+# Reuse the spline/symbolic reading builders from the robustness driver so the
+# three model-reading modes here match that pipeline exactly (no duplication).
+from github.workflows.Hyein.robustness_symbolify import (
+    _build_spline_reading, _build_symbolic_reading,
+)
 
 
 SA_RC = {
@@ -92,9 +97,25 @@ def main():
     parser.add_argument("func_name", type=str, nargs='?', default="ishigami",
                         choices=FUNCTION_ZOO.keys(),
                         help="Choose a function from the ZOO.")
+    parser.add_argument("--model-mode", type=str, default="as-saved",
+                        choices=["as-saved", "spline", "symbolic"],
+                        help="Which reading of the saved KAN to analyze: "
+                             "'as-saved' (on-disk mix of spline/symbolic edges), "
+                             "'spline' (force every symbolified edge back onto its "
+                             "spline branch; symbolic branch off), or 'symbolic' "
+                             "(use the symbolic branch; run auto_symbolic if the "
+                             "model was saved as pure spline). Non-default modes "
+                             "write into a kan_models/<mode> subfolder.")
+    parser.add_argument("--refit", action="store_true",
+                        help="With --model-mode symbolic on a pure-spline model, "
+                             "run a short LBFGS refit after auto_symbolic "
+                             "(mirrors the training pipeline). Ignored for "
+                             "already-symbolified models. Default off.")
 
     args = parser.parse_args()
     data_name = args.func_name
+    model_mode = args.model_mode
+    refit_symbolic = args.refit
     plt.rcParams.update(SA_RC)
     # ==========================================
     # 1. Setup Paths & Load Model/Scalers
@@ -155,6 +176,51 @@ def main():
         'train_label': torch.tensor(y_train, dtype=torch.float32, device=device).reshape(-1, 1)
         # Label scaling optional here
     }
+
+    # ==========================================
+    # 2.1 Select model reading mode (as-saved / spline / symbolic)
+    # ==========================================
+    # IMPORTANT: do this BEFORE any forward pass on the loaded `model`. The spline/
+    # symbolic readings deepcopy it, and a forward pass caches non-leaf tensors that
+    # break copy.deepcopy. Each reading runs its own forward afterwards.
+    sym_info_saved = symbolic_edge_info(model, 0)
+    if model_mode == 'as-saved':
+        print(f"🧩 Model reading: as-saved (symbolic edges on disk: "
+              f"{sorted(sym_info_saved.items()) if sym_info_saved else 'none'}).")
+    elif model_mode == 'spline':
+        model = _build_spline_reading(model, sym_info_saved)
+        model_wrapper.model = model
+        print(f"🧩 Model reading: strictly SPLINE — symbolic branch off; "
+              f"{len(sym_info_saved)} symbolified edge(s) reverted to spline.")
+    elif model_mode == 'symbolic':
+        steps = getattr(model_wrapper, 'steps', 20)
+        lr = getattr(model_wrapper, 'lr', 0.1)
+        stop_grid = getattr(model_wrapper, 'stop_grid_update_step', 20)
+        # Fit-ready dataset (normalized labels, test=train) only needed for the
+        # optional LBFGS refit when introducing symbolify on a pure-spline model.
+        fit_dataset = None
+        if refit_symbolic and not sym_info_saved:
+            y_train_norm_t = torch.tensor(scaler_y.transform(y_train),
+                                          dtype=torch.float32, device=device).reshape(-1, 1)
+            fit_dataset = {
+                'train_input': dataset['train_input'], 'train_label': y_train_norm_t,
+                'test_input': dataset['train_input'], 'test_label': y_train_norm_t,
+            }
+        model, n_edges, refit_done = _build_symbolic_reading(
+            model, sym_info_saved, dataset['train_input'], refit_symbolic,
+            fit_dataset, steps, lr, stop_grid)
+        model_wrapper.model = model
+        kind = 'as-saved symbolic' if sym_info_saved else 'introduced via auto_symbolic'
+        extra = '' if sym_info_saved else f"; LBFGS refit={'done' if refit_done else 'off'}"
+        print(f"🧩 Model reading: strictly SYMBOLIC — {kind}; "
+              f"{n_edges} symbolified edge(s){extra}.")
+
+    # Non-default modes write into a kan_models/<mode> subfolder so the canonical
+    # as-saved outputs are never clobbered. (Gallery copies are tagged separately.)
+    if model_mode != 'as-saved':
+        savepath = os.path.join(savepath, model_mode)
+        os.makedirs(savepath, exist_ok=True)
+        print(f"📁 Outputs for this run → {savepath}")
 
     # ==========================================
     # 2.5 [NEW] Plot Input vs Output (Ground Truth vs Prediction)
@@ -1115,12 +1181,16 @@ def main():
         plot_path_score = os.path.join(savepath, fname)
         plt.savefig(plot_path_score)
         # Also drop a copy into a shared gallery folder so every function's
-        # score-interval plots can be browsed together in one place.
-        # savepath = .../Hyein/analytical_results/{data_name}/kan_models
-        hyein_root = os.path.dirname(os.path.dirname(os.path.dirname(savepath)))
-        gallery_dir = os.path.join(hyein_root, "figures_for_paper", "scores_interval_all")
+        # score-interval plots can be browsed together in one place. Anchor on the
+        # project root (savepath may be redirected to a kan_models/<mode> subfolder)
+        # and tag non-default modes so spline/symbolic copies sit beside the
+        # as-saved one instead of clobbering it.
+        gallery_dir = os.path.join(os.getcwd(), 'github', 'workflows', 'Hyein',
+                                   'figures_for_paper', 'scores_interval_all')
         os.makedirs(gallery_dir, exist_ok=True)
-        gallery_path = os.path.join(gallery_dir, fname)
+        mode_tag = '' if model_mode == 'as-saved' else f'_{model_mode}'
+        gallery_path = os.path.join(
+            gallery_dir, f"{data_name}{mode_tag}_scores_interval_x{feat_idx}.png")
         plt.savefig(gallery_path)
         plt.close(fig)
         print(f"📊 Range-based score plot saved to: {plot_path_score}")
