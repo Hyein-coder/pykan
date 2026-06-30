@@ -1,541 +1,85 @@
 func,grid,k,feature_idx,feature_name,test_r2,attribution,n_tp,tp_norm,tp_raw,first_tp_norm,first_tp_raw,ckpt_path
-exponential,3,0,0,Exponent (x0),,,-1,local variable 'coef' referenced before assignment,local variable 'coef' referenced before assignment,,,
-exponential,3,0,1,Linear (x1),,,-1,local variable 'coef' referenced before assignment,local variable 'coef' referenced before assignment,,,
-exponential,3,1,0,Exponent (x0),0.9846,0.97741,0,[],[],,,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\exponential\g3_k1
-exponential,3,1,1,Linear (x1),0.9846,0.26017,0,[],[],,,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\exponential\g3_k1
-exponential,3,2,0,Exponent (x0),0.9897,0.98123,0,[],[],,,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\exponential\g3_k2
-exponential,3,2,1,Linear (x1),0.9897,0.24552,0,[],[],,,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\exponential\g3_k2
-exponential,3,3,0,Exponent (x0),0.9576,0.98409,0,[],[],,,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\exponential\g3_k3
-exponential,3,3,1,Linear (x1),0.9576,0.21855,0,[],[],,,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\exponential\g3_k3
-exponential,3,4,0,Exponent (x0),0.9759,0.98152,0,[],[],,,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\exponential\g3_k4
-exponential,3,4,1,Linear (x1),0.9759,0.23709,0,[],[],,,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\exponential\g3_k4
-exponential,3,5,0,Exponent (x0),0.9231,0.99036,0,[],[],,,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\exponential\g3_k5
-exponential,3,5,1,Linear (x1),0.9231,0.17717,0,[],[],,,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\exponential\g3_k5
-exponential,3,6,0,Exponent (x0),0.9592,0.96795,1,[0.64591],[0.3643469260699538],0.64591,0.3643469260699538,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\exponential\g3_k6
-exponential,3,6,1,Linear (x1),0.9592,0.29484,0,[],[],,,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\exponential\g3_k6
-exponential,3,7,0,Exponent (x0),0.8993,0.93716,0,[],[],,,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\exponential\g3_k7
-exponential,3,7,1,Linear (x1),0.8993,0.38402,0,[],[],,,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\exponential\g3_k7
-exponential,3,8,0,Exponent (x0),0.9307,0.96508,0,[],[],,,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\exponential\g3_k8
-exponential,3,8,1,Linear (x1),0.9307,0.30375,0,[],[],,,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\exponential\g3_k8
-exponential,5,0,0,Exponent (x0),,,-1,local variable 'coef' referenced before assignment,local variable 'coef' referenced before assignment,,,
-exponential,5,0,1,Linear (x1),,,-1,local variable 'coef' referenced before assignment,local variable 'coef' referenced before assignment,,,
-exponential,5,1,0,Exponent (x0),0.9815,0.98836,0,[],[],,,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\exponential\g5_k1
-exponential,5,1,1,Linear (x1),0.9815,0.20468,0,[],[],,,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\exponential\g5_k1
-exponential,5,2,0,Exponent (x0),0.9918,0.97242,0,[],[],,,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\exponential\g5_k2
-exponential,5,2,1,Linear (x1),0.9918,0.2835,0,[],[],,,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\exponential\g5_k2
-exponential,5,3,0,Exponent (x0),0.973,0.98461,0,[],[],,,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\exponential\g5_k3
-exponential,5,3,1,Linear (x1),0.973,0.22211,0,[],[],,,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\exponential\g5_k3
-exponential,5,4,0,Exponent (x0),0.9828,0.97163,1,[0.74243],[0.6053703431755671],0.74243,0.6053703431755671,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\exponential\g5_k4
-exponential,5,4,1,Linear (x1),0.9828,0.2834,0,[],[],,,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\exponential\g5_k4
-exponential,5,5,0,Exponent (x0),0.9733,0.964,1,[0.74243],[0.6053703431755671],0.74243,0.6053703431755671,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\exponential\g5_k5
-exponential,5,5,1,Linear (x1),0.9733,0.30876,0,[],[],,,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\exponential\g5_k5
-exponential,5,6,0,Exponent (x0),0.9664,0.96493,0,[],[],,,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\exponential\g5_k6
-exponential,5,6,1,Linear (x1),0.9664,0.3053,0,[],[],,,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\exponential\g5_k6
-exponential,5,7,0,Exponent (x0),0.964,0.95845,2,"[0.25139, 0.59474]","[-0.6208225571097656, 0.23656855626790016]",0.25139,-0.6208225571097656,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\exponential\g5_k7
-exponential,5,7,1,Linear (x1),0.964,0.32516,0,[],[],,,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\exponential\g5_k7
-exponential,5,8,0,Exponent (x0),0.9591,0.96021,1,[0.42255],[-0.19341302466263813],0.42255,-0.19341302466263813,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\exponential\g5_k8
-exponential,5,8,1,Linear (x1),0.9591,0.32072,0,[],[],,,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\exponential\g5_k8
-exponential,7,0,0,Exponent (x0),,,-1,local variable 'coef' referenced before assignment,local variable 'coef' referenced before assignment,,,
-exponential,7,0,1,Linear (x1),,,-1,local variable 'coef' referenced before assignment,local variable 'coef' referenced before assignment,,,
-exponential,7,1,0,Exponent (x0),0.9729,0.99283,0,[],[],,,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\exponential\g7_k1
-exponential,7,1,1,Linear (x1),0.9729,0.17545,0,[],[],,,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\exponential\g7_k1
-exponential,7,2,0,Exponent (x0),0.9833,0.98757,0,[],[],,,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\exponential\g7_k2
-exponential,7,2,1,Linear (x1),0.9833,0.21109,0,[],[],,,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\exponential\g7_k2
-exponential,7,3,0,Exponent (x0),0.9793,0.98606,1,[0.44888],[-0.12766347459642594],0.44888,-0.12766347459642594,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\exponential\g7_k3
-exponential,7,3,1,Linear (x1),0.9793,0.21826,0,[],[],,,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\exponential\g7_k3
-exponential,7,4,0,Exponent (x0),0.9812,0.96379,1,[0.69316],[0.48233652882834815],0.69316,0.48233652882834815,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\exponential\g7_k4
-exponential,7,4,1,Linear (x1),0.9812,0.31077,0,[],[],,,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\exponential\g7_k4
-exponential,7,5,0,Exponent (x0),0.9755,0.96249,1,[0.31664],[-0.45788453425293546],0.31664,-0.45788453425293546,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\exponential\g7_k5
-exponential,7,5,1,Linear (x1),0.9755,0.31609,0,[],[],,,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\exponential\g7_k5
-exponential,7,6,0,Exponent (x0),0.9651,0.97398,1,[0.69316],[0.48233652882834815],0.69316,0.48233652882834815,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\exponential\g7_k6
-exponential,7,6,1,Linear (x1),0.9651,0.2731,0,[],[],,,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\exponential\g7_k6
-exponential,7,7,0,Exponent (x0),0.935,0.9818,2,"[0.31664, 0.56726]","[-0.45788453425293546, 0.1679473015842878]",0.31664,-0.45788453425293546,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\exponential\g7_k7
-exponential,7,7,1,Linear (x1),0.935,0.2299,0,[],[],,,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\exponential\g7_k7
-exponential,7,8,0,Exponent (x0),0.9693,0.96668,1,[0.31664],[-0.45788453425293546],0.31664,-0.45788453425293546,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\exponential\g7_k8
-exponential,7,8,1,Linear (x1),0.9693,0.29948,0,[],[],,,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\exponential\g7_k8
-exponential,10,0,0,Exponent (x0),,,-1,local variable 'coef' referenced before assignment,local variable 'coef' referenced before assignment,,,
-exponential,10,0,1,Linear (x1),,,-1,local variable 'coef' referenced before assignment,local variable 'coef' referenced before assignment,,,
-exponential,10,1,0,Exponent (x0),0.975,0.99107,0,[],[],,,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\exponential\g10_k1
-exponential,10,1,1,Linear (x1),0.975,0.18864,0,[],[],,,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\exponential\g10_k1
-exponential,10,2,0,Exponent (x0),0.9935,0.97224,0,[],[],,,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\exponential\g10_k2
-exponential,10,2,1,Linear (x1),0.9935,0.28524,0,[],[],,,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\exponential\g10_k2
-exponential,10,3,0,Exponent (x0),0.9687,0.96371,1,[0.42255],[-0.19341302466263813],0.42255,-0.19341302466263813,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\exponential\g10_k3
-exponential,10,3,1,Linear (x1),0.9687,0.3166,0,[],[],,,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\exponential\g10_k3
-exponential,10,4,0,Exponent (x0),0.9861,0.97629,1,[0.50061],[0.0015132904975791572],0.50061,0.0015132904975791572,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\exponential\g10_k4
-exponential,10,4,1,Linear (x1),0.9861,0.26699,0,[],[],,,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\exponential\g10_k4
-exponential,10,5,0,Exponent (x0),0.9656,0.95116,1,[0.68356],[0.4583640381091822],0.68356,0.4583640381091822,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\exponential\g10_k5
-exponential,10,5,1,Linear (x1),0.9656,0.35164,0,[],[],,,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\exponential\g10_k5
-exponential,10,6,0,Exponent (x0),0.9684,0.95275,2,"[0.18468, 0.33359]","[-0.7874063962634691, -0.4155581053269082]",0.18468,-0.7874063962634691,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\exponential\g10_k6
-exponential,10,6,1,Linear (x1),0.9684,0.34591,0,[],[],,,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\exponential\g10_k6
-exponential,10,7,0,Exponent (x0),0.9738,0.95242,1,[0.59474],[0.23656855626790016],0.59474,0.23656855626790016,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\exponential\g10_k7
-exponential,10,7,1,Linear (x1),0.9738,0.34561,0,[],[],,,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\exponential\g10_k7
-exponential,10,8,0,Exponent (x0),0.9681,0.95555,1,[0.42255],[-0.19341302466263813],0.42255,-0.19341302466263813,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\exponential\g10_k8
-exponential,10,8,1,Linear (x1),0.9681,0.33513,0,[],[],,,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\exponential\g10_k8
-exponential,15,0,0,Exponent (x0),,,-1,local variable 'coef' referenced before assignment,local variable 'coef' referenced before assignment,,,
-exponential,15,0,1,Linear (x1),,,-1,local variable 'coef' referenced before assignment,local variable 'coef' referenced before assignment,,,
-exponential,15,1,0,Exponent (x0),0.9853,0.9858,1,[0.42255],[-0.19341302466263813],0.42255,-0.19341302466263813,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\exponential\g15_k1
-exponential,15,1,1,Linear (x1),0.9853,0.22149,0,[],[],,,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\exponential\g15_k1
-exponential,15,2,0,Exponent (x0),0.9865,0.94063,2,"[0.14933, 0.64591]","[-0.8756800990678976, 0.3643469260699538]",0.14933,-0.8756800990678976,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\exponential\g15_k2
-exponential,15,2,1,Linear (x1),0.9865,0.38921,0,[],[],,,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\exponential\g15_k2
-exponential,15,3,0,Exponent (x0),0.9856,0.98496,1,[0.47468],[-0.06323740578866777],0.47468,-0.06323740578866777,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\exponential\g15_k3
-exponential,15,3,1,Linear (x1),0.9856,0.2257,0,[],[],,,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\exponential\g15_k3
-exponential,15,4,0,Exponent (x0),0.98,0.96607,1,[0.42255],[-0.19341302466263813],0.42255,-0.19341302466263813,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\exponential\g15_k4
-exponential,15,4,1,Linear (x1),0.98,0.30606,0,[],[],,,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\exponential\g15_k4
-exponential,15,5,0,Exponent (x0),0.9536,0.93949,2,"[0.14933, 0.36063]","[-0.8756800990678976, -0.3480355898012577]",0.14933,-0.8756800990678976,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\exponential\g15_k5
-exponential,15,5,1,Linear (x1),0.9536,0.38726,0,[],[],,,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\exponential\g15_k5
-exponential,15,6,0,Exponent (x0),0.9614,0.93899,1,[0.36063],[-0.3480355898012577],0.36063,-0.3480355898012577,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\exponential\g15_k6
-exponential,15,6,1,Linear (x1),0.9614,0.38765,0,[],[],,,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\exponential\g15_k6
-exponential,15,7,0,Exponent (x0),0.6838,0.93187,2,"[0.20366, 0.30196]","[-0.7400107844041184, -0.49454246797765977]",0.20366,-0.7400107844041184,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\exponential\g15_k7
-exponential,15,7,1,Linear (x1),0.6838,0.4085,0,[],[],,,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\exponential\g15_k7
-exponential,15,8,0,Exponent (x0),0.9573,0.93635,2,"[0.14933, 0.30196]","[-0.8756800990678976, -0.49454246797765977]",0.14933,-0.8756800990678976,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\exponential\g15_k8
-exponential,15,8,1,Linear (x1),0.9573,0.39239,0,[],[],,,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\exponential\g15_k8
-exponential,30,0,0,Exponent (x0),,,-1,local variable 'coef' referenced before assignment,local variable 'coef' referenced before assignment,,,
-exponential,30,0,1,Linear (x1),,,-1,local variable 'coef' referenced before assignment,local variable 'coef' referenced before assignment,,,
-exponential,30,1,0,Exponent (x0),0.9859,0.98476,1,[0.50061],[0.0015132904975791572],0.50061,0.0015132904975791572,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\exponential\g30_k1
-exponential,30,1,1,Linear (x1),0.9859,0.22507,0,[],[],,,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\exponential\g30_k1
-exponential,30,2,0,Exponent (x0),0.9927,0.97515,2,"[0.14933, 0.36063]","[-0.8756800990678976, -0.3480355898012577]",0.14933,-0.8756800990678976,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\exponential\g30_k2
-exponential,30,2,1,Linear (x1),0.9927,0.2731,0,[],[],,,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\exponential\g30_k2
-exponential,30,3,0,Exponent (x0),0.968,0.97013,4,"[0.14933, 0.20366, 0.30196, 0.64591]","[-0.8756800990678976, -0.7400107844041184, -0.49454246797765977, 0.3643469260699538]",0.14933,-0.8756800990678976,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\exponential\g30_k3
-exponential,30,3,1,Linear (x1),0.968,0.2927,0,[],[],,,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\exponential\g30_k3
-exponential,30,4,0,Exponent (x0),0.9517,0.94832,3,"[0.14933, 0.22332, 0.50061]","[-0.8756800990678976, -0.6909171211188267, 0.0015132904975791572]",0.14933,-0.8756800990678976,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\exponential\g30_k4
-exponential,30,4,1,Linear (x1),0.9517,0.3675,0,[],[],,,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\exponential\g30_k4
-exponential,30,5,0,Exponent (x0),0.8791,0.87914,3,"[0.12428, 0.18468, 0.77389]","[-0.9382333170382209, -0.7874063962634691, 0.6839301929698333]",0.12428,-0.9382333170382209,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\exponential\g30_k5
-exponential,30,5,1,Linear (x1),0.8791,0.52216,0,[],[],,,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\exponential\g30_k5
-exponential,30,6,0,Exponent (x0),0.909,0.9099,2,"[0.18468, 0.50061]","[-0.7874063962634691, 0.0015132904975791572]",0.18468,-0.7874063962634691,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\exponential\g30_k6
-exponential,30,6,1,Linear (x1),0.909,0.45929,0,[],[],,,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\exponential\g30_k6
-exponential,30,7,0,Exponent (x0),0.9129,0.89406,2,"[0.14933, 0.5355]","[-0.8756800990678976, 0.08863831145504744]",0.14933,-0.8756800990678976,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\exponential\g30_k7
-exponential,30,7,1,Linear (x1),0.9129,0.49567,0,[],[],,,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\exponential\g30_k7
-exponential,30,8,0,Exponent (x0),0.3862,0.86015,2,"[0.12428, 0.18468]","[-0.9382333170382209, -0.7874063962634691]",0.12428,-0.9382333170382209,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\exponential\g30_k8
-exponential,30,8,1,Linear (x1),0.3862,0.57546,0,[],[],,,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\exponential\g30_k8
-logarithm,3,0,0,Log (x0),,,-1,local variable 'coef' referenced before assignment,local variable 'coef' referenced before assignment,,,
-logarithm,3,0,1,Linear (x1),,,-1,local variable 'coef' referenced before assignment,local variable 'coef' referenced before assignment,,,
-logarithm,3,1,0,Log (x0),0.9982,0.71534,0,[],[],,,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\logarithm\g3_k1
-logarithm,3,1,1,Linear (x1),0.9982,0.66499,0,[],[],,,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\logarithm\g3_k1
-logarithm,3,2,0,Log (x0),0.9997,0.71578,0,[],[],,,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\logarithm\g3_k2
-logarithm,3,2,1,Linear (x1),0.9997,0.66312,0,[],[],,,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\logarithm\g3_k2
-logarithm,3,3,0,Log (x0),1.0,0.71586,0,[],[],,,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\logarithm\g3_k3
-logarithm,3,3,1,Linear (x1),1.0,0.66256,0,[],[],,,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\logarithm\g3_k3
-logarithm,3,4,0,Log (x0),1.0,0.71585,0,[],[],,,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\logarithm\g3_k4
-logarithm,3,4,1,Linear (x1),1.0,0.66246,0,[],[],,,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\logarithm\g3_k4
-logarithm,3,5,0,Log (x0),1.0,0.71588,0,[],[],,,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\logarithm\g3_k5
-logarithm,3,5,1,Linear (x1),1.0,0.66248,0,[],[],,,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\logarithm\g3_k5
-logarithm,3,6,0,Log (x0),0.9999,0.71563,0,[],[],,,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\logarithm\g3_k6
-logarithm,3,6,1,Linear (x1),0.9999,0.66289,0,[],[],,,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\logarithm\g3_k6
-logarithm,3,7,0,Log (x0),0.9979,0.7185,0,[],[],,,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\logarithm\g3_k7
-logarithm,3,7,1,Linear (x1),0.9979,0.66093,0,[],[],,,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\logarithm\g3_k7
-logarithm,3,8,0,Log (x0),0.9998,0.71614,0,[],[],,,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\logarithm\g3_k8
-logarithm,3,8,1,Linear (x1),0.9998,0.66236,0,[],[],,,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\logarithm\g3_k8
-logarithm,5,0,0,Log (x0),,,-1,local variable 'coef' referenced before assignment,local variable 'coef' referenced before assignment,,,
-logarithm,5,0,1,Linear (x1),,,-1,local variable 'coef' referenced before assignment,local variable 'coef' referenced before assignment,,,
-logarithm,5,1,0,Log (x0),0.9996,0.71569,0,[],[],,,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\logarithm\g5_k1
-logarithm,5,1,1,Linear (x1),0.9996,0.66356,0,[],[],,,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\logarithm\g5_k1
-logarithm,5,2,0,Log (x0),1.0,0.71587,0,[],[],,,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\logarithm\g5_k2
-logarithm,5,2,1,Linear (x1),1.0,0.66242,0,[],[],,,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\logarithm\g5_k2
-logarithm,5,3,0,Log (x0),1.0,0.71583,0,[],[],,,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\logarithm\g5_k3
-logarithm,5,3,1,Linear (x1),1.0,0.66241,0,[],[],,,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\logarithm\g5_k3
-logarithm,5,4,0,Log (x0),1.0,0.71583,0,[],[],,,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\logarithm\g5_k4
-logarithm,5,4,1,Linear (x1),1.0,0.66244,0,[],[],,,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\logarithm\g5_k4
-logarithm,5,5,0,Log (x0),1.0,0.71582,0,[],[],,,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\logarithm\g5_k5
-logarithm,5,5,1,Linear (x1),1.0,0.66251,0,[],[],,,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\logarithm\g5_k5
-logarithm,5,6,0,Log (x0),0.9979,0.71513,0,[],[],,,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\logarithm\g5_k6
-logarithm,5,6,1,Linear (x1),0.9979,0.66386,0,[],[],,,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\logarithm\g5_k6
-logarithm,5,7,0,Log (x0),0.9783,0.71065,0,[],[],,,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\logarithm\g5_k7
-logarithm,5,7,1,Linear (x1),0.9783,0.67098,0,[],[],,,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\logarithm\g5_k7
-logarithm,5,8,0,Log (x0),0.9693,0.76147,0,[],[],,,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\logarithm\g5_k8
-logarithm,5,8,1,Linear (x1),0.9693,0.61406,0,[],[],,,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\logarithm\g5_k8
-logarithm,7,0,0,Log (x0),,,-1,local variable 'coef' referenced before assignment,local variable 'coef' referenced before assignment,,,
-logarithm,7,0,1,Linear (x1),,,-1,local variable 'coef' referenced before assignment,local variable 'coef' referenced before assignment,,,
-logarithm,7,1,0,Log (x0),0.9998,0.71564,0,[],[],,,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\logarithm\g7_k1
-logarithm,7,1,1,Linear (x1),0.9998,0.66249,0,[],[],,,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\logarithm\g7_k1
-logarithm,7,2,0,Log (x0),1.0,0.71583,0,[],[],,,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\logarithm\g7_k2
-logarithm,7,2,1,Linear (x1),1.0,0.66245,0,[],[],,,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\logarithm\g7_k2
-logarithm,7,3,0,Log (x0),1.0,0.71583,0,[],[],,,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\logarithm\g7_k3
-logarithm,7,3,1,Linear (x1),1.0,0.66245,0,[],[],,,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\logarithm\g7_k3
-logarithm,7,4,0,Log (x0),1.0,0.71583,0,[],[],,,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\logarithm\g7_k4
-logarithm,7,4,1,Linear (x1),1.0,0.66245,0,[],[],,,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\logarithm\g7_k4
-logarithm,7,5,0,Log (x0),1.0,0.71583,0,[],[],,,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\logarithm\g7_k5
-logarithm,7,5,1,Linear (x1),1.0,0.66245,0,[],[],,,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\logarithm\g7_k5
-logarithm,7,6,0,Log (x0),0.9999,0.71597,0,[],[],,,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\logarithm\g7_k6
-logarithm,7,6,1,Linear (x1),0.9999,0.66197,0,[],[],,,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\logarithm\g7_k6
-logarithm,7,7,0,Log (x0),0.9994,0.71447,1,[0.78794],[0.7190149319911125],0.78794,0.7190149319911125,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\logarithm\g7_k7
-logarithm,7,7,1,Linear (x1),0.9994,0.66459,0,[],[],,,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\logarithm\g7_k7
-logarithm,7,8,0,Log (x0),0.9989,0.71538,1,[0.78794],[0.7190149319911125],0.78794,0.7190149319911125,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\logarithm\g7_k8
-logarithm,7,8,1,Linear (x1),0.9989,0.66367,0,[],[],,,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\logarithm\g7_k8
-logarithm,10,0,0,Log (x0),,,-1,local variable 'coef' referenced before assignment,local variable 'coef' referenced before assignment,,,
-logarithm,10,0,1,Linear (x1),,,-1,local variable 'coef' referenced before assignment,local variable 'coef' referenced before assignment,,,
-logarithm,10,1,0,Log (x0),0.9998,0.71554,0,[],[],,,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\logarithm\g10_k1
-logarithm,10,1,1,Linear (x1),0.9998,0.66273,0,[],[],,,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\logarithm\g10_k1
-logarithm,10,2,0,Log (x0),1.0,0.71583,0,[],[],,,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\logarithm\g10_k2
-logarithm,10,2,1,Linear (x1),1.0,0.66243,0,[],[],,,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\logarithm\g10_k2
-logarithm,10,3,0,Log (x0),1.0,0.71584,0,[],[],,,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\logarithm\g10_k3
-logarithm,10,3,1,Linear (x1),1.0,0.66245,0,[],[],,,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\logarithm\g10_k3
-logarithm,10,4,0,Log (x0),1.0,0.71583,0,[],[],,,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\logarithm\g10_k4
-logarithm,10,4,1,Linear (x1),1.0,0.66245,0,[],[],,,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\logarithm\g10_k4
-logarithm,10,5,0,Log (x0),1.0,0.71582,0,[],[],,,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\logarithm\g10_k5
-logarithm,10,5,1,Linear (x1),1.0,0.66247,0,[],[],,,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\logarithm\g10_k5
-logarithm,10,6,0,Log (x0),1.0,0.71584,0,[],[],,,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\logarithm\g10_k6
-logarithm,10,6,1,Linear (x1),1.0,0.66242,0,[],[],,,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\logarithm\g10_k6
-logarithm,10,7,0,Log (x0),0.999,0.71596,0,[],[],,,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\logarithm\g10_k7
-logarithm,10,7,1,Linear (x1),0.999,0.6624,0,[],[],,,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\logarithm\g10_k7
-logarithm,10,8,0,Log (x0),0.9966,0.72235,1,[0.74243],[0.6053703431755671],0.74243,0.6053703431755671,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\logarithm\g10_k8
-logarithm,10,8,1,Linear (x1),0.9966,0.6566,0,[],[],,,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\logarithm\g10_k8
-logarithm,15,0,0,Log (x0),,,-1,local variable 'coef' referenced before assignment,local variable 'coef' referenced before assignment,,,
-logarithm,15,0,1,Linear (x1),,,-1,local variable 'coef' referenced before assignment,local variable 'coef' referenced before assignment,,,
-logarithm,15,1,0,Log (x0),0.9997,0.7155,0,[],[],,,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\logarithm\g15_k1
-logarithm,15,1,1,Linear (x1),0.9997,0.66264,0,[],[],,,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\logarithm\g15_k1
-logarithm,15,2,0,Log (x0),1.0,0.71584,0,[],[],,,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\logarithm\g15_k2
-logarithm,15,2,1,Linear (x1),1.0,0.66244,0,[],[],,,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\logarithm\g15_k2
-logarithm,15,3,0,Log (x0),1.0,0.71583,0,[],[],,,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\logarithm\g15_k3
-logarithm,15,3,1,Linear (x1),1.0,0.66245,0,[],[],,,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\logarithm\g15_k3
-logarithm,15,4,0,Log (x0),1.0,0.71583,0,[],[],,,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\logarithm\g15_k4
-logarithm,15,4,1,Linear (x1),1.0,0.66245,0,[],[],,,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\logarithm\g15_k4
-logarithm,15,5,0,Log (x0),1.0,0.71583,0,[],[],,,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\logarithm\g15_k5
-logarithm,15,5,1,Linear (x1),1.0,0.66245,0,[],[],,,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\logarithm\g15_k5
-logarithm,15,6,0,Log (x0),0.9998,0.71597,1,[0.74243],[0.6053703431755671],0.74243,0.6053703431755671,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\logarithm\g15_k6
-logarithm,15,6,1,Linear (x1),0.9998,0.66183,0,[],[],,,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\logarithm\g15_k6
-logarithm,15,7,0,Log (x0),0.9995,0.7163,0,[],[],,,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\logarithm\g15_k7
-logarithm,15,7,1,Linear (x1),0.9995,0.66181,0,[],[],,,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\logarithm\g15_k7
-logarithm,15,8,0,Log (x0),0.987,0.71185,0,[],[],,,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\logarithm\g15_k8
-logarithm,15,8,1,Linear (x1),0.987,0.67219,0,[],[],,,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\logarithm\g15_k8
-logarithm,30,0,0,Log (x0),,,-1,local variable 'coef' referenced before assignment,local variable 'coef' referenced before assignment,,,
-logarithm,30,0,1,Linear (x1),,,-1,local variable 'coef' referenced before assignment,local variable 'coef' referenced before assignment,,,
-logarithm,30,1,0,Log (x0),0.999,0.71502,0,[],[],,,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\logarithm\g30_k1
-logarithm,30,1,1,Linear (x1),0.999,0.66287,0,[],[],,,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\logarithm\g30_k1
-logarithm,30,2,0,Log (x0),1.0,0.71583,1,[0.77389],[0.6839301929698333],0.77389,0.6839301929698333,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\logarithm\g30_k2
-logarithm,30,2,1,Linear (x1),1.0,0.66245,0,[],[],,,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\logarithm\g30_k2
-logarithm,30,3,0,Log (x0),1.0,0.71583,1,[0.82633],[0.8148799235232769],0.82633,0.8148799235232769,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\logarithm\g30_k3
-logarithm,30,3,1,Linear (x1),1.0,0.66245,0,[],[],,,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\logarithm\g30_k3
-logarithm,30,4,0,Log (x0),1.0,0.71583,0,[],[],,,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\logarithm\g30_k4
-logarithm,30,4,1,Linear (x1),1.0,0.66245,0,[],[],,,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\logarithm\g30_k4
-logarithm,30,5,0,Log (x0),1.0,0.71584,1,[0.77389],[0.6839301929698333],0.77389,0.6839301929698333,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\logarithm\g30_k5
-logarithm,30,5,1,Linear (x1),1.0,0.66245,0,[],[],,,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\logarithm\g30_k5
-logarithm,30,6,0,Log (x0),1.0,0.71584,0,[],[],,,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\logarithm\g30_k6
-logarithm,30,6,1,Linear (x1),1.0,0.66243,0,[],[],,,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\logarithm\g30_k6
-logarithm,30,7,0,Log (x0),0.9943,0.71731,1,[0.12428],[-0.9382333170382209],0.12428,-0.9382333170382209,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\logarithm\g30_k7
-logarithm,30,7,1,Linear (x1),0.9943,0.66216,0,[],[],,,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\logarithm\g30_k7
-logarithm,30,8,0,Log (x0),0.9998,0.71604,0,[],[],,,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\logarithm\g30_k8
-logarithm,30,8,1,Linear (x1),0.9998,0.66225,0,[],[],,,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\logarithm\g30_k8
-log2,3,0,0,Log (x0),,,-1,local variable 'coef' referenced before assignment,local variable 'coef' referenced before assignment,,,
-log2,3,0,1,Linear (x1),,,-1,local variable 'coef' referenced before assignment,local variable 'coef' referenced before assignment,,,
-log2,3,1,0,Log (x0),0.9993,0.70752,0,[],[],,,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\log2\g3_k1
-log2,3,1,1,Linear (x1),0.9993,0.71789,0,[],[],,,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\log2\g3_k1
-log2,3,2,0,Log (x0),0.9999,0.7446,0,[],[],,,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\log2\g3_k2
-log2,3,2,1,Linear (x1),0.9999,0.66072,0,[],[],,,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\log2\g3_k2
-log2,3,3,0,Log (x0),1.0,0.72338,0,[],[],,,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\log2\g3_k3
-log2,3,3,1,Linear (x1),1.0,0.65881,0,[],[],,,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\log2\g3_k3
-log2,3,4,0,Log (x0),1.0,0.71108,0,[],[],,,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\log2\g3_k4
-log2,3,4,1,Linear (x1),1.0,0.71481,0,[],[],,,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\log2\g3_k4
-log2,3,5,0,Log (x0),1.0,0.71172,0,[],[],,,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\log2\g3_k5
-log2,3,5,1,Linear (x1),1.0,0.76106,0,[],[],,,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\log2\g3_k5
-log2,3,6,0,Log (x0),0.9999,0.81488,0,[],[],,,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\log2\g3_k6
-log2,3,6,1,Linear (x1),0.9999,0.65148,0,[],[],,,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\log2\g3_k6
-log2,3,7,0,Log (x0),0.9638,0.59423,0,[],[],,,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\log2\g3_k7
-log2,3,7,1,Linear (x1),0.9638,0.60303,0,[],[],,,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\log2\g3_k7
-log2,3,8,0,Log (x0),0.9994,0.80977,0,[],[],,,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\log2\g3_k8
-log2,3,8,1,Linear (x1),0.9994,0.87574,0,[],[],,,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\log2\g3_k8
-log2,5,0,0,Log (x0),,,-1,local variable 'coef' referenced before assignment,local variable 'coef' referenced before assignment,,,
-log2,5,0,1,Linear (x1),,,-1,local variable 'coef' referenced before assignment,local variable 'coef' referenced before assignment,,,
-log2,5,1,0,Log (x0),0.9998,0.71917,0,[],[],,,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\log2\g5_k1
-log2,5,1,1,Linear (x1),0.9998,0.6711,0,[],[],,,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\log2\g5_k1
-log2,5,2,0,Log (x0),1.0,0.73437,0,[],[],,,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\log2\g5_k2
-log2,5,2,1,Linear (x1),1.0,0.66001,0,[],[],,,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\log2\g5_k2
-log2,5,3,0,Log (x0),1.0,0.71769,1,[0.74243],[0.6053703431755671],0.74243,0.6053703431755671,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\log2\g5_k3
-log2,5,3,1,Linear (x1),1.0,0.65858,0,[],[],,,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\log2\g5_k3
-log2,5,4,0,Log (x0),1.0,0.71991,0,[],[],,,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\log2\g5_k4
-log2,5,4,1,Linear (x1),1.0,0.73472,0,[],[],,,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\log2\g5_k4
-log2,5,5,0,Log (x0),1.0,0.71627,0,[],[],,,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\log2\g5_k5
-log2,5,5,1,Linear (x1),1.0,0.76544,0,[],[],,,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\log2\g5_k5
-log2,5,6,0,Log (x0),0.9999,0.71321,0,[],[],,,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\log2\g5_k6
-log2,5,6,1,Linear (x1),0.9999,0.71508,0,[],[],,,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\log2\g5_k6
-log2,5,7,0,Log (x0),0.9997,0.73059,0,[],[],,,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\log2\g5_k7
-log2,5,7,1,Linear (x1),0.9997,0.69614,0,[],[],,,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\log2\g5_k7
-log2,5,8,0,Log (x0),0.9207,0.74835,1,[0.74243],[0.6053703431755671],0.74243,0.6053703431755671,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\log2\g5_k8
-log2,5,8,1,Linear (x1),0.9207,0.59878,0,[],[],,,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\log2\g5_k8
-log2,7,0,0,Log (x0),,,-1,local variable 'coef' referenced before assignment,local variable 'coef' referenced before assignment,,,
-log2,7,0,1,Linear (x1),,,-1,local variable 'coef' referenced before assignment,local variable 'coef' referenced before assignment,,,
-log2,7,1,0,Log (x0),0.9999,0.70513,0,[],[],,,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\log2\g7_k1
-log2,7,1,1,Linear (x1),0.9999,0.86298,0,[],[],,,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\log2\g7_k1
-log2,7,2,0,Log (x0),1.0,0.72009,0,[],[],,,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\log2\g7_k2
-log2,7,2,1,Linear (x1),1.0,0.65793,0,[],[],,,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\log2\g7_k2
-log2,7,3,0,Log (x0),1.0,0.71965,0,[],[],,,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\log2\g7_k3
-log2,7,3,1,Linear (x1),1.0,0.65828,0,[],[],,,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\log2\g7_k3
-log2,7,4,0,Log (x0),1.0,0.71413,0,[],[],,,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\log2\g7_k4
-log2,7,4,1,Linear (x1),1.0,0.70635,0,[],[],,,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\log2\g7_k4
-log2,7,5,0,Log (x0),1.0,0.71192,0,[],[],,,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\log2\g7_k5
-log2,7,5,1,Linear (x1),1.0,0.80162,0,[],[],,,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\log2\g7_k5
-log2,7,6,0,Log (x0),1.0,0.71893,1,[0.78794],[0.7190149319911125],0.78794,0.7190149319911125,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\log2\g7_k6
-log2,7,6,1,Linear (x1),1.0,0.66785,0,[],[],,,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\log2\g7_k6
-log2,7,7,0,Log (x0),0.9954,0.75154,0,[],[],,,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\log2\g7_k7
-log2,7,7,1,Linear (x1),0.9954,1.84891,2,"[0.23186, 0.55621]","[-0.6697786412819811, 0.13994977036595072]",0.23186,-0.6697786412819811,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\log2\g7_k7
-log2,7,8,0,Log (x0),0.9999,0.95481,1,[0.78794],[0.7190149319911125],0.78794,0.7190149319911125,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\log2\g7_k8
-log2,7,8,1,Linear (x1),0.9999,0.7108,0,[],[],,,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\log2\g7_k8
-log2,10,0,0,Log (x0),,,-1,local variable 'coef' referenced before assignment,local variable 'coef' referenced before assignment,,,
-log2,10,0,1,Linear (x1),,,-1,local variable 'coef' referenced before assignment,local variable 'coef' referenced before assignment,,,
-log2,10,1,0,Log (x0),0.9999,0.71376,0,[],[],,,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\log2\g10_k1
-log2,10,1,1,Linear (x1),0.9999,0.68948,0,[],[],,,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\log2\g10_k1
-log2,10,2,0,Log (x0),1.0,0.72766,0,[],[],,,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\log2\g10_k2
-log2,10,2,1,Linear (x1),1.0,0.65894,0,[],[],,,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\log2\g10_k2
-log2,10,3,0,Log (x0),1.0,0.72054,1,[0.82633],[0.8148799235232769],0.82633,0.8148799235232769,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\log2\g10_k3
-log2,10,3,1,Linear (x1),1.0,0.65793,0,[],[],,,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\log2\g10_k3
-log2,10,4,0,Log (x0),1.0,0.71207,0,[],[],,,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\log2\g10_k4
-log2,10,4,1,Linear (x1),1.0,0.70636,0,[],[],,,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\log2\g10_k4
-log2,10,5,0,Log (x0),1.0,0.71042,0,[],[],,,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\log2\g10_k5
-log2,10,5,1,Linear (x1),1.0,0.7746,0,[],[],,,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\log2\g10_k5
-log2,10,6,0,Log (x0),1.0,0.71604,1,[0.82633],[0.8148799235232769],0.82633,0.8148799235232769,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\log2\g10_k6
-log2,10,6,1,Linear (x1),1.0,0.66239,0,[],[],,,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\log2\g10_k6
-log2,10,7,0,Log (x0),0.9994,0.56913,0,[],[],,,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\log2\g10_k7
-log2,10,7,1,Linear (x1),0.9994,1.1962,3,"[0.19838, 0.4379, 0.82616]","[-0.7533602883360053, -0.1554069997344556, 0.8138704878759221]",0.19838,-0.7533602883360053,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\log2\g10_k7
-log2,10,8,0,Log (x0),1.0,0.80937,0,[],[],,,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\log2\g10_k8
-log2,10,8,1,Linear (x1),1.0,0.73289,0,[],[],,,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\log2\g10_k8
-log2,15,0,0,Log (x0),,,-1,local variable 'coef' referenced before assignment,local variable 'coef' referenced before assignment,,,
-log2,15,0,1,Linear (x1),,,-1,local variable 'coef' referenced before assignment,local variable 'coef' referenced before assignment,,,
-log2,15,1,0,Log (x0),1.0,0.7107,0,[],[],,,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\log2\g15_k1
-log2,15,1,1,Linear (x1),1.0,0.65797,0,[],[],,,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\log2\g15_k1
-log2,15,2,0,Log (x0),1.0,0.73915,0,[],[],,,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\log2\g15_k2
-log2,15,2,1,Linear (x1),1.0,0.6612,0,[],[],,,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\log2\g15_k2
-log2,15,3,0,Log (x0),1.0,0.72417,0,[],[],,,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\log2\g15_k3
-log2,15,3,1,Linear (x1),1.0,0.65779,0,[],[],,,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\log2\g15_k3
-log2,15,4,0,Log (x0),1.0,0.71278,0,[],[],,,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\log2\g15_k4
-log2,15,4,1,Linear (x1),1.0,0.7223,0,[],[],,,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\log2\g15_k4
-log2,15,5,0,Log (x0),1.0,0.8273,1,[0.14933],[-0.8756800990678976],0.14933,-0.8756800990678976,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\log2\g15_k5
-log2,15,5,1,Linear (x1),1.0,0.67364,0,[],[],,,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\log2\g15_k5
-log2,15,6,0,Log (x0),1.0,0.72296,0,[],[],,,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\log2\g15_k6
-log2,15,6,1,Linear (x1),1.0,0.66397,0,[],[],,,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\log2\g15_k6
-log2,15,7,0,Log (x0),0.9996,0.71861,0,[],[],,,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\log2\g15_k7
-log2,15,7,1,Linear (x1),0.9996,0.73554,0,[],[],,,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\log2\g15_k7
-log2,15,8,0,Log (x0),1.0,0.72096,0,[],[],,,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\log2\g15_k8
-log2,15,8,1,Linear (x1),1.0,0.66091,0,[],[],,,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\log2\g15_k8
-log2,30,0,0,Log (x0),,,-1,local variable 'coef' referenced before assignment,local variable 'coef' referenced before assignment,,,
-log2,30,0,1,Linear (x1),,,-1,local variable 'coef' referenced before assignment,local variable 'coef' referenced before assignment,,,
-log2,30,1,0,Log (x0),0.9265,0.92178,2,"[0.12428, 0.18468]","[-0.9382333170382209, -0.7874063962634691]",0.12428,-0.9382333170382209,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\log2\g30_k1
-log2,30,1,1,Linear (x1),0.9265,0.63087,0,[],[],,,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\log2\g30_k1
-log2,30,2,0,Log (x0),1.0,0.71808,1,[0.77389],[0.6839301929698333],0.77389,0.6839301929698333,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\log2\g30_k2
-log2,30,2,1,Linear (x1),1.0,0.66103,0,[],[],,,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\log2\g30_k2
-log2,30,3,0,Log (x0),1.0,0.7182,1,[0.74243],[0.6053703431755671],0.74243,0.6053703431755671,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\log2\g30_k3
-log2,30,3,1,Linear (x1),1.0,0.66084,0,[],[],,,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\log2\g30_k3
-log2,30,4,0,Log (x0),1.0,0.70915,0,[],[],,,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\log2\g30_k4
-log2,30,4,1,Linear (x1),1.0,0.65325,0,[],[],,,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\log2\g30_k4
-log2,30,5,0,Log (x0),1.0,0.74971,1,[0.12428],[-0.9382333170382209],0.12428,-0.9382333170382209,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\log2\g30_k5
-log2,30,5,1,Linear (x1),1.0,0.65576,0,[],[],,,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\log2\g30_k5
-log2,30,6,0,Log (x0),0.9933,0.74249,0,[],[],,,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\log2\g30_k6
-log2,30,6,1,Linear (x1),0.9933,0.68136,0,[],[],,,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\log2\g30_k6
-log2,30,7,0,Log (x0),0.9763,0.72116,0,[],[],,,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\log2\g30_k7
-log2,30,7,1,Linear (x1),0.9763,0.72739,0,[],[],,,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\log2\g30_k7
-log2,30,8,0,Log (x0),-0.1459,0.652,0,[],[],,,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\log2\g30_k8
-log2,30,8,1,Linear (x1),-0.1459,1.02609,1,[0.22361],[-0.6903744772495947],0.22361,-0.6903744772495947,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\log2\g30_k8
-conditional,3,0,0,Conditional (x0),,,-1,local variable 'coef' referenced before assignment,local variable 'coef' referenced before assignment,,,
-conditional,3,0,1,Linear (x1),,,-1,local variable 'coef' referenced before assignment,local variable 'coef' referenced before assignment,,,
-conditional,3,1,0,Conditional (x0),0.9901,0.73457,0,[],[],,,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\conditional\g3_k1
-conditional,3,1,1,Linear (x1),0.9901,0.64373,0,[],[],,,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\conditional\g3_k1
-conditional,3,2,0,Conditional (x0),0.999,0.73786,0,[],[],,,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\conditional\g3_k2
-conditional,3,2,1,Linear (x1),0.999,0.6431,0,[],[],,,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\conditional\g3_k2
-conditional,3,3,0,Conditional (x0),0.9977,0.73624,0,[],[],,,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\conditional\g3_k3
-conditional,3,3,1,Linear (x1),0.9977,0.6443,0,[],[],,,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\conditional\g3_k3
-conditional,3,4,0,Conditional (x0),0.9993,0.73744,0,[],[],,,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\conditional\g3_k4
-conditional,3,4,1,Linear (x1),0.9993,0.64329,0,[],[],,,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\conditional\g3_k4
-conditional,3,5,0,Conditional (x0),0.9983,0.73784,1,[0.64591],[0.3643469260699538],0.64591,0.3643469260699538,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\conditional\g3_k5
-conditional,3,5,1,Linear (x1),0.9983,0.64298,0,[],[],,,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\conditional\g3_k5
-conditional,3,6,0,Conditional (x0),0.9986,0.73772,0,[],[],,,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\conditional\g3_k6
-conditional,3,6,1,Linear (x1),0.9986,0.64324,0,[],[],,,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\conditional\g3_k6
-conditional,3,7,0,Conditional (x0),0.9984,0.73738,0,[],[],,,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\conditional\g3_k7
-conditional,3,7,1,Linear (x1),0.9984,0.64338,0,[],[],,,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\conditional\g3_k7
-conditional,3,8,0,Conditional (x0),0.9985,0.7379,1,[0.64591],[0.3643469260699538],0.64591,0.3643469260699538,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\conditional\g3_k8
-conditional,3,8,1,Linear (x1),0.9985,0.64272,0,[],[],,,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\conditional\g3_k8
-conditional,5,0,0,Conditional (x0),,,-1,local variable 'coef' referenced before assignment,local variable 'coef' referenced before assignment,,,
-conditional,5,0,1,Linear (x1),,,-1,local variable 'coef' referenced before assignment,local variable 'coef' referenced before assignment,,,
-conditional,5,1,0,Conditional (x0),0.998,0.73735,0,[],[],,,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\conditional\g5_k1
-conditional,5,1,1,Linear (x1),0.998,0.64335,0,[],[],,,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\conditional\g5_k1
-conditional,5,2,0,Conditional (x0),0.9996,0.73771,0,[],[],,,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\conditional\g5_k2
-conditional,5,2,1,Linear (x1),0.9996,0.64314,0,[],[],,,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\conditional\g5_k2
-conditional,5,3,0,Conditional (x0),0.999,0.73763,0,[],[],,,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\conditional\g5_k3
-conditional,5,3,1,Linear (x1),0.999,0.64307,0,[],[],,,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\conditional\g5_k3
-conditional,5,4,0,Conditional (x0),0.9996,0.73781,0,[],[],,,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\conditional\g5_k4
-conditional,5,4,1,Linear (x1),0.9996,0.64301,0,[],[],,,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\conditional\g5_k4
-conditional,5,5,0,Conditional (x0),0.9993,0.73753,1,[0.59474],[0.23656855626790016],0.59474,0.23656855626790016,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\conditional\g5_k5
-conditional,5,5,1,Linear (x1),0.9993,0.64322,0,[],[],,,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\conditional\g5_k5
-conditional,5,6,0,Conditional (x0),0.9994,0.73791,0,[],[],,,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\conditional\g5_k6
-conditional,5,6,1,Linear (x1),0.9994,0.64302,0,[],[],,,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\conditional\g5_k6
-conditional,5,7,0,Conditional (x0),0.999,0.73779,1,[0.74243],[0.6053703431755671],0.74243,0.6053703431755671,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\conditional\g5_k7
-conditional,5,7,1,Linear (x1),0.999,0.64317,0,[],[],,,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\conditional\g5_k7
-conditional,5,8,0,Conditional (x0),0.9992,0.73776,0,[],[],,,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\conditional\g5_k8
-conditional,5,8,1,Linear (x1),0.9992,0.64337,0,[],[],,,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\conditional\g5_k8
-conditional,7,0,0,Conditional (x0),,,-1,local variable 'coef' referenced before assignment,local variable 'coef' referenced before assignment,,,
-conditional,7,0,1,Linear (x1),,,-1,local variable 'coef' referenced before assignment,local variable 'coef' referenced before assignment,,,
-conditional,7,1,0,Conditional (x0),0.9993,0.73742,0,[],[],,,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\conditional\g7_k1
-conditional,7,1,1,Linear (x1),0.9993,0.64367,0,[],[],,,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\conditional\g7_k1
-conditional,7,2,0,Conditional (x0),0.9997,0.73801,0,[],[],,,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\conditional\g7_k2
-conditional,7,2,1,Linear (x1),0.9997,0.64276,0,[],[],,,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\conditional\g7_k2
-conditional,7,3,0,Conditional (x0),0.9994,0.73821,0,[],[],,,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\conditional\g7_k3
-conditional,7,3,1,Linear (x1),0.9994,0.64258,0,[],[],,,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\conditional\g7_k3
-conditional,7,4,0,Conditional (x0),0.9997,0.73764,0,[],[],,,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\conditional\g7_k4
-conditional,7,4,1,Linear (x1),0.9997,0.64325,0,[],[],,,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\conditional\g7_k4
-conditional,7,5,0,Conditional (x0),0.9995,0.73879,1,[0.56726],[0.1679473015842878],0.56726,0.1679473015842878,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\conditional\g7_k5
-conditional,7,5,1,Linear (x1),0.9995,0.64195,0,[],[],,,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\conditional\g7_k5
-conditional,7,6,0,Conditional (x0),0.9996,0.73789,0,[],[],,,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\conditional\g7_k6
-conditional,7,6,1,Linear (x1),0.9996,0.64301,0,[],[],,,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\conditional\g7_k6
-conditional,7,7,0,Conditional (x0),0.8354,0.7324,0,[],[],,,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\conditional\g7_k7
-conditional,7,7,1,Linear (x1),0.8354,0.64925,0,[],[],,,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\conditional\g7_k7
-conditional,7,8,0,Conditional (x0),0.8058,0.7038,0,[],[],,,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\conditional\g7_k8
-conditional,7,8,1,Linear (x1),0.8058,0.67945,0,[],[],,,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\conditional\g7_k8
-conditional,10,0,0,Conditional (x0),,,-1,local variable 'coef' referenced before assignment,local variable 'coef' referenced before assignment,,,
-conditional,10,0,1,Linear (x1),,,-1,local variable 'coef' referenced before assignment,local variable 'coef' referenced before assignment,,,
-conditional,10,1,0,Conditional (x0),0.9998,0.73854,0,[],[],,,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\conditional\g10_k1
-conditional,10,1,1,Linear (x1),0.9998,0.64208,0,[],[],,,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\conditional\g10_k1
-conditional,10,2,0,Conditional (x0),0.9996,0.73791,1,[0.68356],[0.4583640381091822],0.68356,0.4583640381091822,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\conditional\g10_k2
-conditional,10,2,1,Linear (x1),0.9996,0.64301,0,[],[],,,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\conditional\g10_k2
-conditional,10,3,0,Conditional (x0),0.9997,0.73823,0,[],[],,,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\conditional\g10_k3
-conditional,10,3,1,Linear (x1),0.9997,0.64238,0,[],[],,,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\conditional\g10_k3
-conditional,10,4,0,Conditional (x0),0.9997,0.7376,1,[0.50061],[0.0015132904975791572],0.50061,0.0015132904975791572,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\conditional\g10_k4
-conditional,10,4,1,Linear (x1),0.9997,0.64332,0,[],[],,,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\conditional\g10_k4
-conditional,10,5,0,Conditional (x0),0.9997,0.73827,0,[],[],,,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\conditional\g10_k5
-conditional,10,5,1,Linear (x1),0.9997,0.64241,0,[],[],,,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\conditional\g10_k5
-conditional,10,6,0,Conditional (x0),0.9996,0.73794,1,[0.59474],[0.23656855626790016],0.59474,0.23656855626790016,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\conditional\g10_k6
-conditional,10,6,1,Linear (x1),0.9996,0.64295,0,[],[],,,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\conditional\g10_k6
-conditional,10,7,0,Conditional (x0),0.9997,0.7379,0,[],[],,,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\conditional\g10_k7
-conditional,10,7,1,Linear (x1),0.9997,0.64283,0,[],[],,,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\conditional\g10_k7
-conditional,10,8,0,Conditional (x0),0.9996,0.73773,1,[0.68356],[0.4583640381091822],0.68356,0.4583640381091822,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\conditional\g10_k8
-conditional,10,8,1,Linear (x1),0.9996,0.6431,0,[],[],,,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\conditional\g10_k8
-conditional,15,0,0,Conditional (x0),,,-1,local variable 'coef' referenced before assignment,local variable 'coef' referenced before assignment,,,
-conditional,15,0,1,Linear (x1),,,-1,local variable 'coef' referenced before assignment,local variable 'coef' referenced before assignment,,,
-conditional,15,1,0,Conditional (x0),0.9997,0.73809,1,[0.74243],[0.6053703431755671],0.74243,0.6053703431755671,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\conditional\g15_k1
-conditional,15,1,1,Linear (x1),0.9997,0.64277,0,[],[],,,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\conditional\g15_k1
-conditional,15,2,0,Conditional (x0),0.9997,0.73824,1,[0.70331],[0.5076824434949662],0.70331,0.5076824434949662,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\conditional\g15_k2
-conditional,15,2,1,Linear (x1),0.9997,0.64218,0,[],[],,,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\conditional\g15_k2
-conditional,15,3,0,Conditional (x0),0.9997,0.73821,1,[0.59474],[0.23656855626790016],0.59474,0.23656855626790016,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\conditional\g15_k3
-conditional,15,3,1,Linear (x1),0.9997,0.6425,0,[],[],,,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\conditional\g15_k3
-conditional,15,4,0,Conditional (x0),0.9997,0.73797,1,[0.84867],[0.8706659071343357],0.84867,0.8706659071343357,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\conditional\g15_k4
-conditional,15,4,1,Linear (x1),0.9997,0.64249,0,[],[],,,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\conditional\g15_k4
-conditional,15,5,0,Conditional (x0),0.9998,0.73772,1,[0.5355],[0.08863831145504744],0.5355,0.08863831145504744,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\conditional\g15_k5
-conditional,15,5,1,Linear (x1),0.9998,0.64292,0,[],[],,,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\conditional\g15_k5
-conditional,15,6,0,Conditional (x0),0.8409,0.76276,2,"[0.14933, 0.25139]","[-0.8756800990678976, -0.6208225571097656]",0.14933,-0.8756800990678976,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\conditional\g15_k6
-conditional,15,6,1,Linear (x1),0.8409,0.61373,0,[],[],,,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\conditional\g15_k6
-conditional,15,7,0,Conditional (x0),0.9997,0.73838,1,[0.59474],[0.23656855626790016],0.59474,0.23656855626790016,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\conditional\g15_k7
-conditional,15,7,1,Linear (x1),0.9997,0.64228,0,[],[],,,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\conditional\g15_k7
-conditional,15,8,0,Conditional (x0),0.9996,0.73805,1,[0.5355],[0.08863831145504744],0.5355,0.08863831145504744,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\conditional\g15_k8
-conditional,15,8,1,Linear (x1),0.9996,0.64258,0,[],[],,,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\conditional\g15_k8
-conditional,30,0,0,Conditional (x0),,,-1,local variable 'coef' referenced before assignment,local variable 'coef' referenced before assignment,,,
-conditional,30,0,1,Linear (x1),,,-1,local variable 'coef' referenced before assignment,local variable 'coef' referenced before assignment,,,
-conditional,30,1,0,Conditional (x0),0.9998,0.73782,0,[],[],,,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\conditional\g30_k1
-conditional,30,1,1,Linear (x1),0.9998,0.64235,0,[],[],,,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\conditional\g30_k1
-conditional,30,2,0,Conditional (x0),0.9996,0.73813,2,"[0.12428, 0.64591]","[-0.9382333170382209, 0.3643469260699538]",0.12428,-0.9382333170382209,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\conditional\g30_k2
-conditional,30,2,1,Linear (x1),0.9996,0.64213,0,[],[],,,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\conditional\g30_k2
-conditional,30,3,0,Conditional (x0),0.9998,0.73806,0,[],[],,,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\conditional\g30_k3
-conditional,30,3,1,Linear (x1),0.9998,0.64223,0,[],[],,,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\conditional\g30_k3
-conditional,30,4,0,Conditional (x0),0.9998,0.73799,1,[0.50061],[0.0015132904975791572],0.50061,0.0015132904975791572,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\conditional\g30_k4
-conditional,30,4,1,Linear (x1),0.9998,0.64215,0,[],[],,,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\conditional\g30_k4
-conditional,30,5,0,Conditional (x0),0.9997,0.73831,1,[0.61845],[0.29577561407534],0.61845,0.29577561407534,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\conditional\g30_k5
-conditional,30,5,1,Linear (x1),0.9997,0.64176,0,[],[],,,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\conditional\g30_k5
-conditional,30,6,0,Conditional (x0),0.9997,0.73813,2,"[0.12428, 0.5355]","[-0.9382333170382209, 0.08863831145504744]",0.12428,-0.9382333170382209,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\conditional\g30_k6
-conditional,30,6,1,Linear (x1),0.9997,0.6422,0,[],[],,,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\conditional\g30_k6
-conditional,30,7,0,Conditional (x0),0.8337,0.76531,2,"[0.14933, 0.20366]","[-0.8756800990678976, -0.7400107844041184]",0.14933,-0.8756800990678976,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\conditional\g30_k7
-conditional,30,7,1,Linear (x1),0.8337,0.61136,0,[],[],,,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\conditional\g30_k7
-conditional,30,8,0,Conditional (x0),0.8226,0.78871,3,"[0.12428, 0.18468, 0.22332]","[-0.9382333170382209, -0.7874063962634691, -0.6909171211188267]",0.12428,-0.9382333170382209,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\conditional\g30_k8
-conditional,30,8,1,Linear (x1),0.8226,0.58165,0,[],[],,,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\conditional\g30_k8
-rosenbrock,3,0,0,Quadratic (x0),,,-1,local variable 'coef' referenced before assignment,local variable 'coef' referenced before assignment,,,
-rosenbrock,3,0,1,Parabolic (x1),,,-1,local variable 'coef' referenced before assignment,local variable 'coef' referenced before assignment,,,
-rosenbrock,3,1,0,Quadratic (x0),0.7864,1.08938,0,[],[],,,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\rosenbrock\g3_k1
-rosenbrock,3,1,1,Parabolic (x1),0.7864,0.92701,0,[],[],,,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\rosenbrock\g3_k1
-rosenbrock,3,2,0,Quadratic (x0),0.994,9.14564,1,[0.36063],[-0.3480355898012577],0.36063,-0.3480355898012577,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\rosenbrock\g3_k2
-rosenbrock,3,2,1,Parabolic (x1),0.994,0.96103,0,[],[],,,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\rosenbrock\g3_k2
-rosenbrock,3,3,0,Quadratic (x0),0.9964,7.99997,0,[],[],,,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\rosenbrock\g3_k3
-rosenbrock,3,3,1,Parabolic (x1),0.9964,1.97103,0,[],[],,,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\rosenbrock\g3_k3
-rosenbrock,3,4,0,Quadratic (x0),0.9975,9.08521,0,[],[],,,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\rosenbrock\g3_k4
-rosenbrock,3,4,1,Parabolic (x1),0.9975,3.36806,0,[],[],,,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\rosenbrock\g3_k4
-rosenbrock,3,5,0,Quadratic (x0),0.9989,10.53702,1,[0.64591],[0.3643469260699538],0.64591,0.3643469260699538,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\rosenbrock\g3_k5
-rosenbrock,3,5,1,Parabolic (x1),0.9989,2.78352,0,[],[],,,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\rosenbrock\g3_k5
-rosenbrock,3,6,0,Quadratic (x0),0.9943,13.46343,0,[],[],,,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\rosenbrock\g3_k6
-rosenbrock,3,6,1,Parabolic (x1),0.9943,5.00386,0,[],[],,,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\rosenbrock\g3_k6
-rosenbrock,3,7,0,Quadratic (x0),0.9976,0.73377,1,[0.36063],[-0.3480355898012577],0.36063,-0.3480355898012577,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\rosenbrock\g3_k7
-rosenbrock,3,7,1,Parabolic (x1),0.9976,0.6785,0,[],[],,,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\rosenbrock\g3_k7
-rosenbrock,3,8,0,Quadratic (x0),0.9977,0.72567,1,[0.64591],[0.3643469260699538],0.64591,0.3643469260699538,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\rosenbrock\g3_k8
-rosenbrock,3,8,1,Parabolic (x1),0.9977,0.68806,0,[],[],,,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\rosenbrock\g3_k8
-rosenbrock,5,0,0,Quadratic (x0),,,-1,local variable 'coef' referenced before assignment,local variable 'coef' referenced before assignment,,,
-rosenbrock,5,0,1,Parabolic (x1),,,-1,local variable 'coef' referenced before assignment,local variable 'coef' referenced before assignment,,,
-rosenbrock,5,1,0,Quadratic (x0),0.8661,1.16051,0,[],[],,,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\rosenbrock\g5_k1
-rosenbrock,5,1,1,Parabolic (x1),0.8661,0.88998,0,[],[],,,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\rosenbrock\g5_k1
-rosenbrock,5,2,0,Quadratic (x0),0.9992,9.42275,1,[0.25139],[-0.6208225571097656],0.25139,-0.6208225571097656,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\rosenbrock\g5_k2
-rosenbrock,5,2,1,Parabolic (x1),0.9992,2.03341,0,[],[],,,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\rosenbrock\g5_k2
-rosenbrock,5,3,0,Quadratic (x0),0.9988,10.03371,1,[0.25139],[-0.6208225571097656],0.25139,-0.6208225571097656,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\rosenbrock\g5_k3
-rosenbrock,5,3,1,Parabolic (x1),0.9988,2.10069,0,[],[],,,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\rosenbrock\g5_k3
-rosenbrock,5,4,0,Quadratic (x0),0.9994,9.4412,1,[0.25139],[-0.6208225571097656],0.25139,-0.6208225571097656,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\rosenbrock\g5_k4
-rosenbrock,5,4,1,Parabolic (x1),0.9994,3.79718,0,[],[],,,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\rosenbrock\g5_k4
-rosenbrock,5,5,0,Quadratic (x0),0.9994,15.60399,1,[0.25139],[-0.6208225571097656],0.25139,-0.6208225571097656,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\rosenbrock\g5_k5
-rosenbrock,5,5,1,Parabolic (x1),0.9994,3.45666,0,[],[],,,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\rosenbrock\g5_k5
-rosenbrock,5,6,0,Quadratic (x0),0.9856,1.68538,0,[],[],,,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\rosenbrock\g5_k6
-rosenbrock,5,6,1,Parabolic (x1),0.9856,2.30114,0,[],[],,,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\rosenbrock\g5_k6
-rosenbrock,5,7,0,Quadratic (x0),0.9957,19.99969,1,[0.74243],[0.6053703431755671],0.74243,0.6053703431755671,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\rosenbrock\g5_k7
-rosenbrock,5,7,1,Parabolic (x1),0.9957,3.22331,0,[],[],,,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\rosenbrock\g5_k7
-rosenbrock,5,8,0,Quadratic (x0),0.9991,0.72399,1,[0.42255],[-0.19341302466263813],0.42255,-0.19341302466263813,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\rosenbrock\g5_k8
-rosenbrock,5,8,1,Parabolic (x1),0.9991,0.6862,0,[],[],,,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\rosenbrock\g5_k8
-rosenbrock,7,0,0,Quadratic (x0),,,-1,local variable 'coef' referenced before assignment,local variable 'coef' referenced before assignment,,,
-rosenbrock,7,0,1,Parabolic (x1),,,-1,local variable 'coef' referenced before assignment,local variable 'coef' referenced before assignment,,,
-rosenbrock,7,1,0,Quadratic (x0),0.8686,1.65622,1,[0.56726],[0.1679473015842878],0.56726,0.1679473015842878,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\rosenbrock\g7_k1
-rosenbrock,7,1,1,Parabolic (x1),0.8686,1.17434,0,[],[],,,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\rosenbrock\g7_k1
-rosenbrock,7,2,0,Quadratic (x0),0.9993,7.89438,0,[],[],,,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\rosenbrock\g7_k2
-rosenbrock,7,2,1,Parabolic (x1),0.9993,1.44007,0,[],[],,,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\rosenbrock\g7_k2
-rosenbrock,7,3,0,Quadratic (x0),0.9998,8.7891,1,[0.20923],[-0.7261017455181022],0.20923,-0.7261017455181022,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\rosenbrock\g7_k3
-rosenbrock,7,3,1,Parabolic (x1),0.9998,2.70879,0,[],[],,,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\rosenbrock\g7_k3
-rosenbrock,7,4,0,Quadratic (x0),0.8275,4.03106,0,[],[],,,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\rosenbrock\g7_k4
-rosenbrock,7,4,1,Parabolic (x1),0.8275,2.9825,0,[],[],,,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\rosenbrock\g7_k4
-rosenbrock,7,5,0,Quadratic (x0),0.9999,10.71355,1,[0.20923],[-0.7261017455181022],0.20923,-0.7261017455181022,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\rosenbrock\g7_k5
-rosenbrock,7,5,1,Parabolic (x1),0.9999,2.65774,0,[],[],,,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\rosenbrock\g7_k5
-rosenbrock,7,6,0,Quadratic (x0),0.9965,4.51024,1,[0.31664],[-0.45788453425293546],0.31664,-0.45788453425293546,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\rosenbrock\g7_k6
-rosenbrock,7,6,1,Parabolic (x1),0.9965,1.79301,0,[],[],,,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\rosenbrock\g7_k6
-rosenbrock,7,7,0,Quadratic (x0),0.9882,0.7096,2,"[0.31664, 0.44888]","[-0.45788453425293546, -0.12766347459642594]",0.31664,-0.45788453425293546,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\rosenbrock\g7_k7
-rosenbrock,7,7,1,Parabolic (x1),0.9882,0.64704,0,[],[],,,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\rosenbrock\g7_k7
-rosenbrock,7,8,0,Quadratic (x0),0.9778,2.63973,1,[0.78794],[0.7190149319911125],0.78794,0.7190149319911125,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\rosenbrock\g7_k8
-rosenbrock,7,8,1,Parabolic (x1),0.9778,0.69862,0,[],[],,,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\rosenbrock\g7_k8
-rosenbrock,10,0,0,Quadratic (x0),,,-1,local variable 'coef' referenced before assignment,local variable 'coef' referenced before assignment,,,
-rosenbrock,10,0,1,Parabolic (x1),,,-1,local variable 'coef' referenced before assignment,local variable 'coef' referenced before assignment,,,
-rosenbrock,10,1,0,Quadratic (x0),0.9645,0.373,0,[],[],,,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\rosenbrock\g10_k1
-rosenbrock,10,1,1,Parabolic (x1),0.9645,1.02775,2,"[0.2659, 0.50513]","[-0.5847989738471249, 0.012430339914350986]",0.2659,-0.5847989738471249,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\rosenbrock\g10_k1
-rosenbrock,10,2,0,Quadratic (x0),1.0,0.71537,2,"[0.33359, 0.50061]","[-0.4155581053269082, 0.0015132904975791572]",0.33359,-0.4155581053269082,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\rosenbrock\g10_k2
-rosenbrock,10,2,1,Parabolic (x1),1.0,0.68266,0,[],[],,,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\rosenbrock\g10_k2
-rosenbrock,10,3,0,Quadratic (x0),0.9998,7.1819,1,[0.18468],[-0.7874063962634691],0.18468,-0.7874063962634691,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\rosenbrock\g10_k3
-rosenbrock,10,3,1,Parabolic (x1),0.9998,2.14235,0,[],[],,,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\rosenbrock\g10_k3
-rosenbrock,10,4,0,Quadratic (x0),0.9997,11.14794,1,[0.50061],[0.0015132904975791572],0.50061,0.0015132904975791572,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\rosenbrock\g10_k4
-rosenbrock,10,4,1,Parabolic (x1),0.9997,4.11771,0,[],[],,,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\rosenbrock\g10_k4
-rosenbrock,10,5,0,Quadratic (x0),0.9997,16.7921,1,[0.18468],[-0.7874063962634691],0.18468,-0.7874063962634691,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\rosenbrock\g10_k5
-rosenbrock,10,5,1,Parabolic (x1),0.9997,3.07333,0,[],[],,,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\rosenbrock\g10_k5
-rosenbrock,10,6,0,Quadratic (x0),0.8839,1.46396,2,"[0.18468, 0.59474]","[-0.7874063962634691, 0.23656855626790016]",0.18468,-0.7874063962634691,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\rosenbrock\g10_k6
-rosenbrock,10,6,1,Parabolic (x1),0.8839,0.70068,0,[],[],,,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\rosenbrock\g10_k6
-rosenbrock,10,7,0,Quadratic (x0),0.9962,0.72229,1,[0.42255],[-0.19341302466263813],0.42255,-0.19341302466263813,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\rosenbrock\g10_k7
-rosenbrock,10,7,1,Parabolic (x1),0.9962,0.71761,0,[],[],,,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\rosenbrock\g10_k7
-rosenbrock,10,8,0,Quadratic (x0),0.8749,1.70339,0,[],[],,,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\rosenbrock\g10_k8
-rosenbrock,10,8,1,Parabolic (x1),0.8749,6.01309,2,"[0.19838, 0.35596]","[-0.7533602883360053, -0.35996733902975864]",0.19838,-0.7533602883360053,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\rosenbrock\g10_k8
-rosenbrock,15,0,0,Quadratic (x0),,,-1,local variable 'coef' referenced before assignment,local variable 'coef' referenced before assignment,,,
-rosenbrock,15,0,1,Parabolic (x1),,,-1,local variable 'coef' referenced before assignment,local variable 'coef' referenced before assignment,,,
-rosenbrock,15,1,0,Quadratic (x0),0.8727,1.00485,2,"[0.25139, 0.47468]","[-0.6208225571097656, -0.06323740578866777]",0.25139,-0.6208225571097656,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\rosenbrock\g15_k1
-rosenbrock,15,1,1,Parabolic (x1),0.8727,0.82216,0,[],[],,,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\rosenbrock\g15_k1
-rosenbrock,15,2,0,Quadratic (x0),0.9999,8.29933,3,"[0.14933, 0.30196, 0.47468]","[-0.8756800990678976, -0.49454246797765977, -0.06323740578866777]",0.14933,-0.8756800990678976,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\rosenbrock\g15_k2
-rosenbrock,15,2,1,Parabolic (x1),0.9999,1.36805,0,[],[],,,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\rosenbrock\g15_k2
-rosenbrock,15,3,0,Quadratic (x0),1.0,8.613,2,"[0.20366, 0.59474]","[-0.7400107844041184, 0.23656855626790016]",0.20366,-0.7400107844041184,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\rosenbrock\g15_k3
-rosenbrock,15,3,1,Parabolic (x1),1.0,2.26442,0,[],[],,,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\rosenbrock\g15_k3
-rosenbrock,15,4,0,Quadratic (x0),0.9996,10.45479,3,"[0.30196, 0.42255, 0.79853]","[-0.49454246797765977, -0.19341302466263813, 0.7454595858156923]",0.30196,-0.49454246797765977,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\rosenbrock\g15_k4
-rosenbrock,15,4,1,Parabolic (x1),0.9996,3.66823,0,[],[],,,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\rosenbrock\g15_k4
-rosenbrock,15,5,0,Quadratic (x0),0.9997,17.3707,1,[0.20366],[-0.7400107844041184],0.20366,-0.7400107844041184,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\rosenbrock\g15_k5
-rosenbrock,15,5,1,Parabolic (x1),0.9997,3.67935,0,[],[],,,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\rosenbrock\g15_k5
-rosenbrock,15,6,0,Quadratic (x0),0.9997,5.30156,2,"[0.14933, 0.70331]","[-0.8756800990678976, 0.5076824434949662]",0.14933,-0.8756800990678976,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\rosenbrock\g15_k6
-rosenbrock,15,6,1,Parabolic (x1),0.9997,1.95248,0,[],[],,,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\rosenbrock\g15_k6
-rosenbrock,15,7,0,Quadratic (x0),0.9659,2.28292,1,[0.14933],[-0.8756800990678976],0.14933,-0.8756800990678976,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\rosenbrock\g15_k7
-rosenbrock,15,7,1,Parabolic (x1),0.9659,1.92976,0,[],[],,,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\rosenbrock\g15_k7
-rosenbrock,15,8,0,Quadratic (x0),0.9952,0.75238,4,"[0.20366, 0.25139, 0.47468, 0.5355]","[-0.7400107844041184, -0.6208225571097656, -0.06323740578866777, 0.08863831145504744]",0.20366,-0.7400107844041184,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\rosenbrock\g15_k8
-rosenbrock,15,8,1,Parabolic (x1),0.9952,0.67763,0,[],[],,,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\rosenbrock\g15_k8
-rosenbrock,30,0,0,Quadratic (x0),,,-1,local variable 'coef' referenced before assignment,local variable 'coef' referenced before assignment,,,
-rosenbrock,30,0,1,Parabolic (x1),,,-1,local variable 'coef' referenced before assignment,local variable 'coef' referenced before assignment,,,
-rosenbrock,30,1,0,Quadratic (x0),0.8227,0.96553,4,"[0.22332, 0.25139, 0.36063, 0.45099]","[-0.6909171211188267, -0.6208225571097656, -0.3480355898012577, -0.12239452090710927]",0.22332,-0.6909171211188267,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\rosenbrock\g30_k1
-rosenbrock,30,1,1,Parabolic (x1),0.8227,0.73491,0,[],[],,,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\rosenbrock\g30_k1
-rosenbrock,30,2,0,Quadratic (x0),0.9998,8.25086,4,"[0.25139, 0.45099, 0.50061, 0.56405]","[-0.6208225571097656, -0.12239452090710927, 0.0015132904975791572, 0.15993150000006687]",0.25139,-0.6208225571097656,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\rosenbrock\g30_k2
-rosenbrock,30,2,1,Parabolic (x1),0.9998,1.14345,0,[],[],,,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\rosenbrock\g30_k2
-rosenbrock,30,3,0,Quadratic (x0),0.9997,10.95101,2,"[0.18468, 0.87539]","[-0.7874063962634691, 0.9373893396360139]",0.18468,-0.7874063962634691,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\rosenbrock\g30_k3
-rosenbrock,30,3,1,Parabolic (x1),0.9997,2.47642,0,[],[],,,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\rosenbrock\g30_k3
-rosenbrock,30,4,0,Quadratic (x0),0.9997,9.12312,4,"[0.33359, 0.38941, 0.45099, 0.87539]","[-0.4155581053269082, -0.27616806033275854, -0.12239452090710927, 0.9373893396360139]",0.33359,-0.4155581053269082,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\rosenbrock\g30_k4
-rosenbrock,30,4,1,Parabolic (x1),0.9997,3.27439,0,[],[],,,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\rosenbrock\g30_k4
-rosenbrock,30,5,0,Quadratic (x0),0.9997,10.56306,3,"[0.12428, 0.22332, 0.87539]","[-0.9382333170382209, -0.6909171211188267, 0.9373893396360139]",0.12428,-0.9382333170382209,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\rosenbrock\g30_k5
-rosenbrock,30,5,1,Parabolic (x1),0.9997,1.66747,0,[],[],,,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\rosenbrock\g30_k5
-rosenbrock,30,6,0,Quadratic (x0),0.8796,0.99812,5,"[0.14933, 0.18468, 0.20366, 0.38941, 0.72201]","[-0.8756800990678976, -0.7874063962634691, -0.7400107844041184, -0.27616806033275854, 0.5543788577083414]",0.14933,-0.8756800990678976,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\rosenbrock\g30_k6
-rosenbrock,30,6,1,Parabolic (x1),0.8796,0.43063,0,[],[],,,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\rosenbrock\g30_k6
-rosenbrock,30,7,0,Quadratic (x0),0.8407,1.76694,2,"[0.12428, 0.68356]","[-0.9382333170382209, 0.4583640381091822]",0.12428,-0.9382333170382209,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\rosenbrock\g30_k7
-rosenbrock,30,7,1,Parabolic (x1),0.8407,0.79239,0,[],[],,,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\rosenbrock\g30_k7
-rosenbrock,30,8,0,Quadratic (x0),0.895,2.10275,1,[0.74243],[0.6053703431755671],0.74243,0.6053703431755671,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\rosenbrock\g30_k8
-rosenbrock,30,8,1,Parabolic (x1),0.895,0.66199,0,[],[],,,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\rosenbrock\g30_k8
+conditional,3,2,0,Conditional (x0),1.0,0.91405,2,"[0.5571428441575595, 0.8859648888832645]","[0.1426834031949901, 0.9637962589704169]",0.5571428441575595,0.1426834031949901,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\conditional\g3_k2
+conditional,3,2,1,Linear (x1),1.0,0.64213,0,[],[],,,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\conditional\g3_k2
+conditional,3,3,0,Conditional (x0),0.9999,0.80681,4,"[0.6473684052103444, 0.7075187792455344, 0.8298245397837539, 0.8899749138189438]","[0.3679887599626377, 0.5181923311410694, 0.8236062592038806, 0.9738098303823122]",0.6473684052103444,0.3679887599626377,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\conditional\g3_k3
+conditional,3,3,1,Linear (x1),0.9999,0.64381,0,[],[],,,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\conditional\g3_k3
+conditional,3,4,0,Conditional (x0),0.9999,0.80981,5,"[0.1180451137006731, 0.16416040046098537, 0.5932330685786735, 0.697493716906336, 0.8799498514797455]","[-0.9538026664075613, -0.8386465951707638, 0.2328055459020492, 0.49315840261133065, 0.9487759018525735]",0.1180451137006731,-0.9538026664075613,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\conditional\g3_k4
+conditional,3,4,1,Linear (x1),0.9999,0.64229,0,[],[],,,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\conditional\g3_k4
+conditional,3,5,0,Conditional (x0),0.9999,0.9314,3,"[0.6213032431284288, 0.6754385797600997, 0.8919799262867835]","[0.30290054578531717, 0.4380837598459057, 0.97881661608826]",0.6213032431284288,0.30290054578531717,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\conditional\g3_k5
+conditional,3,5,1,Linear (x1),0.9999,0.64498,0,[],[],,,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\conditional\g3_k5
+conditional,3,6,0,Conditional (x0),0.9992,0.82482,1,[0.5451127693505216],[0.11264268895930374],0.5451127693505216,0.11264268895930374,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\conditional\g3_k6
+conditional,3,6,1,Linear (x1),0.9992,0.69156,1,[0.2684210487886479],[-0.578505263869265],0.2684210487886479,-0.578505263869265,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\conditional\g3_k6
+conditional,3,7,0,Conditional (x0),0.996,0.75952,1,[0.6172932181927495],[0.2928869743734219],0.6172932181927495,0.2928869743734219,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\conditional\g3_k7
+conditional,3,7,1,Linear (x1),0.996,0.63141,1,[0.10802005136147477],[-0.9789407344209806],0.10802005136147477,-0.9789407344209806,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\conditional\g3_k7
+conditional,3,8,0,Conditional (x0),0.9993,0.83786,1,[0.5912280561108338],[0.2277987601961014],0.5912280561108338,0.2277987601961014,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\conditional\g3_k8
+conditional,3,8,1,Linear (x1),0.9993,0.669,1,[0.49899748259020926],[-0.0028792749511742702],0.49899748259020926,-0.0028792749511742702,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\conditional\g3_k8
+conditional,5,2,0,Conditional (x0),1.0,0.73566,1,[0.45488720829773666],[-0.11266266780834384],0.45488720829773666,-0.11266266780834384,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\conditional\g5_k2
+conditional,5,2,1,Linear (x1),1.0,0.64206,0,[],[],,,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\conditional\g5_k2
+conditional,5,3,0,Conditional (x0),1.0,0.85967,4,"[0.6052631433857115, 0.6553884550817031, 0.769674165748564, 0.8699247891405472]","[0.26284626013773554, 0.3880159027864285, 0.6734026880254488, 0.923741973322835]",0.6052631433857115,0.26284626013773554,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\conditional\g5_k3
+conditional,5,3,1,Linear (x1),1.0,0.6448,0,[],[],,,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\conditional\g5_k3
+conditional,5,4,0,Conditional (x0),1.0,1.04791,4,"[0.21829573709265632, 0.5791979813037959, 0.7055137667776947, 0.7676691532807243]","[-0.7034633811101751, 0.19775804596041505, 0.5131855454351217, 0.6683959023195011]",0.21829573709265632,-0.7034633811101751,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\conditional\g5_k4
+conditional,5,4,1,Linear (x1),1.0,0.64373,0,[],[],,,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\conditional\g5_k4
+conditional,5,5,0,Conditional (x0),0.9999,0.7984,7,"[0.18621553760722168, 0.22230576202833563, 0.33057643529167746, 0.35463658490575345, 0.6573934675495428, 0.7235588789882517, 0.8458646395264712]","[-0.7835719524053388, -0.6934498096982797, -0.42308338157710274, -0.36300195310573, 0.39302268849237626, 0.5582466167886512, 0.8636605448514623]",0.18621553760722168,-0.7835719524053388,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\conditional\g5_k5
+conditional,5,5,1,Linear (x1),0.9999,0.64488,0,[],[],,,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\conditional\g5_k5
+conditional,5,6,0,Conditional (x0),0.9997,0.74326,1,[0.5090225449294077],[0.022520546252244922],0.5090225449294077,0.022520546252244922,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\conditional\g5_k6
+conditional,5,6,1,Linear (x1),0.9997,0.68225,0,[],[],,,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\conditional\g5_k6
+conditional,5,7,0,Conditional (x0),0.9997,0.89275,2,"[0.7195488540525723, 0.781704240555602]","[0.5482330453767555, 0.7034434022611352]",0.7195488540525723,0.5482330453767555,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\conditional\g5_k7
+conditional,5,7,1,Linear (x1),0.9997,0.65687,1,[0.12406015110419209],[-0.938897187365809],0.12406015110419209,-0.938897187365809,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\conditional\g5_k7
+conditional,5,8,0,Conditional (x0),0.9987,0.99434,1,[0.6052631433857115],[0.26284626013773554],0.6052631433857115,0.26284626013773554,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\conditional\g5_k8
+conditional,5,8,1,Linear (x1),0.9987,0.67516,0,[],[],,,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\conditional\g5_k8
+conditional,7,2,0,Conditional (x0),1.0,0.73676,1,[0.4869674077831713],[-0.03255409651318017],0.4869674077831713,-0.03255409651318017,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\conditional\g7_k2
+conditional,7,2,1,Linear (x1),1.0,0.64155,0,[],[],,,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\conditional\g7_k2
+conditional,7,3,0,Conditional (x0),1.0,0.80424,3,"[0.5791979813037959, 0.6152882057249098, 0.6894736670349774]","[0.19775804596041505, 0.2878801886674741, 0.47313125978753984]",0.5791979813037959,0.19775804596041505,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\conditional\g7_k3
+conditional,7,3,1,Linear (x1),1.0,0.64344,0,[],[],,,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\conditional\g7_k3
+conditional,7,4,0,Conditional (x0),1.0,1.34637,2,"[0.15012531318610772, 0.5751879563681166]","[-0.8736940951123978, 0.18774447454851978]",0.15012531318610772,-0.8736940951123978,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\conditional\g7_k4
+conditional,7,4,1,Linear (x1),1.0,0.64253,0,[],[],,,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\conditional\g7_k4
+conditional,7,5,0,Conditional (x0),1.0,0.87763,3,"[0.5651628940289182, 0.6172932181927495, 0.6834586296314584]","[0.1627105460187809, 0.2928869743734219, 0.4581109026696968]",0.5651628940289182,0.1627105460187809,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\conditional\g7_k5
+conditional,7,5,1,Linear (x1),1.0,0.64311,0,[],[],,,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\conditional\g7_k5
+conditional,7,6,0,Conditional (x0),0.9997,0.73997,2,"[0.12005012616851277, 0.4248120212801417]","[-0.9487958807016137, -0.18776445339755962]",0.12005012616851277,-0.9487958807016137,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\conditional\g7_k6
+conditional,7,6,1,Linear (x1),0.9997,0.64871,0,[],[],,,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\conditional\g7_k6
+conditional,7,7,0,Conditional (x0),0.995,0.74848,0,[],[],,,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\conditional\g7_k7
+conditional,7,7,1,Linear (x1),0.995,0.62721,0,[],[],,,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\conditional\g7_k7
+conditional,7,8,0,Conditional (x0),0.9983,0.84527,5,"[0.19624059994642, 0.22832079943185463, 0.5270676571399646, 0.5832080062394751, 0.6894736670349774]","[-0.7585380238756001, -0.6784294525804365, 0.06758161760577433, 0.2077716173723103, 0.47313125978753984]",0.19624059994642,-0.7585380238756001,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\conditional\g7_k8
+conditional,7,8,1,Linear (x1),0.9983,0.63946,0,[],[],,,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\conditional\g7_k8
+conditional,10,2,0,Conditional (x0),1.0,0.7399,1,[0.5230576322042852],[0.05756804619387878],0.5230576322042852,0.05756804619387878,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\conditional\g10_k2
+conditional,10,2,1,Linear (x1),1.0,0.64196,0,[],[],,,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\conditional\g10_k2
+conditional,10,3,0,Conditional (x0),1.0,0.7488,4,"[0.33458646022735683, 0.38471177192334843, 0.6152882057249098, 0.8939849387546231]","[-0.4130698101652072, -0.2879001675165141, 0.2878801886674741, 0.9838234017942077]",0.33458646022735683,-0.4130698101652072,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\conditional\g10_k3
+conditional,10,3,1,Linear (x1),1.0,0.64131,0,[],[],,,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\conditional\g10_k3
+conditional,10,4,0,Conditional (x0),1.0,1.10503,2,"[0.13408521344339042, 0.5591478566253992]","[-0.9137483807599796, 0.14769018890093788]",0.13408521344339042,-0.9137483807599796,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\conditional\g10_k4
+conditional,10,4,1,Linear (x1),1.0,0.64011,0,[],[],,,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\conditional\g10_k4
+conditional,10,5,0,Conditional (x0),1.0,0.91567,5,"[0.5852130187073148, 0.6273182805319478, 0.73358394132745, 0.8358395771872729, 0.8939849387546231]","[0.2127784030782581, 0.3179209029031605, 0.5832805453183897, 0.8386266163217236, 0.9838234017942077]",0.5852130187073148,0.2127784030782581,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\conditional\g10_k5
+conditional,10,5,1,Linear (x1),1.0,0.64245,0,[],[],,,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\conditional\g10_k5
+conditional,10,6,0,Conditional (x0),1.0,0.75872,3,"[0.5791979813037959, 0.727568903923931, 0.7616541158772053]","[0.19775804596041505, 0.5682601882005467, 0.653375545201658]",0.5791979813037959,0.19775804596041505,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\conditional\g10_k6
+conditional,10,6,1,Linear (x1),1.0,0.64429,0,[],[],,,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\conditional\g10_k6
+conditional,10,7,0,Conditional (x0),0.9988,0.73444,0,[],[],,,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\conditional\g10_k7
+conditional,10,7,1,Linear (x1),0.9988,0.76737,6,"[0.24837092411025127, 0.5471177818183612, 0.5892230436429942, 0.7295739163917707, 0.7616541158772053, 0.8959899512224628]","[-0.6285596976882295, 0.11725136621434044, 0.22236567723416567, 0.5727467139669168, 0.6528338080772599, 0.9881985146643215]",0.24837092411025127,-0.6285596976882295,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\conditional\g10_k7
+conditional,10,8,0,Conditional (x0),0.9999,0.76192,2,"[0.48295738284749196, 0.7736841906842433]","[-0.042567667925075714, 0.6834162594373443]",0.48295738284749196,-0.042567667925075714,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\conditional\g10_k8
+conditional,10,8,1,Linear (x1),0.9999,0.67732,3,"[0.15814536305746638, 0.24436089917457193, 0.7175438415847327]","[-0.8538046498735694, -0.6385705844520224, 0.5427140536755382]",0.15814536305746638,-0.8538046498735694,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\conditional\g10_k8
+conditional,15,2,0,Conditional (x0),1.0,1.73692,4,"[0.1461152882504284, 0.26040099891728924, 0.46892229557261433, 0.4929824451866903]","[-0.8837076665242932, -0.598320881285273, -0.07761516786670972, -0.01753373939533699]",0.1461152882504284,-0.8837076665242932,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\conditional\g15_k2
+conditional,15,2,1,Linear (x1),1.0,0.64154,0,[],[],,,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\conditional\g15_k2
+conditional,15,3,0,Conditional (x0),1.0,0.74516,3,"[0.16616541292882503, 0.24636591164241162, 0.5551378316897199]","[-0.833639809464816, -0.633368381226907, 0.13767661748904234]",0.16616541292882503,-0.833639809464816,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\conditional\g15_k3
+conditional,15,3,1,Linear (x1),1.0,0.64139,0,[],[],,,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\conditional\g15_k3
+conditional,15,4,0,Conditional (x0),1.0,0.75497,7,"[0.18421052513938202, 0.23634084930321328, 0.24636591164241162, 0.5411027444148422, 0.745614016134488, 0.7536340660058466, 0.8979949636903024]","[-0.7885787381112864, -0.6584023097566456, -0.633368381226907, 0.10262911754740818, 0.6133212595540761, 0.6333484023778669, 0.993836973206103]",0.18421052513938202,-0.7885787381112864,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\conditional\g15_k4
+conditional,15,4,1,Linear (x1),1.0,0.63936,0,[],[],,,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\conditional\g15_k4
+conditional,15,5,0,Conditional (x0),1.0,0.88619,2,"[0.5731829439002769, 0.7135338166490534]","[0.182737688842572, 0.5332126882589125]",0.5731829439002769,0.182737688842572,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\conditional\g15_k5
+conditional,15,5,1,Linear (x1),1.0,0.64147,0,[],[],,,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\conditional\g15_k5
+conditional,15,6,0,Conditional (x0),1.0,0.74587,1,[0.49699247012236963],[-0.007520167983441579],0.49699247012236963,-0.007520167983441579,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\conditional\g15_k6
+conditional,15,6,1,Linear (x1),1.0,0.64967,11,"[0.10802005136147477, 0.202255637349939, 0.21629072462481663, 0.25438596151377024, 0.34260651009871546, 0.38872179685902775, 0.452882195829897, 0.501002495058049, 0.5832080062394751, 0.5892230436429942, 0.8438596270586315]","[-0.9789407344209806, -0.7436848954718477, -0.7086467917985727, -0.6135433675425402, -0.3933038587390968, -0.2781786609554786, -0.11800447273479235, 0.0021261684307222225, 0.2073493470884762, 0.22236567723416567, 0.8580569867350138]",0.10802005136147477,-0.9789407344209806,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\conditional\g15_k6
+conditional,15,7,0,Conditional (x0),0.9994,0.73095,0,[],[],,,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\conditional\g15_k7
+conditional,15,7,1,Linear (x1),0.9994,0.73947,10,"[0.14210526331474907, 0.16215538799314572, 0.20025062488209933, 0.21829573709265632, 0.34260651009871546, 0.4428571334906987, 0.5030075075258886, 0.6674185298887411, 0.7536340660058466, 0.8278195273159142]","[-0.8938481969287411, -0.8437937631097766, -0.7486903388537441, -0.7036413484166761, -0.3933038587390968, -0.14303168964427454, 0.007131611812618715, 0.41757796912812695, 0.6328120345496739, 0.8180134396798425]",0.14210526331474907,-0.8938481969287411,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\conditional\g15_k7
+conditional,15,8,0,Conditional (x0),0.9947,0.92111,0,[],[],,,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\conditional\g15_k8
+conditional,15,8,1,Linear (x1),0.9947,0.64611,0,[],[],,,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\conditional\g15_k8
+conditional,30,2,0,Conditional (x0),1.0,0.74324,1,[0.5471177818183612],[0.11764947466525151],0.5471177818183612,0.11764947466525151,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\conditional\g30_k2
+conditional,30,2,1,Linear (x1),1.0,0.65014,0,[],[],,,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\conditional\g30_k2
+conditional,30,3,0,Conditional (x0),1.0,0.76934,1,[0.501002495058049],[0.0024934034284538283],0.501002495058049,0.0024934034284538283,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\conditional\g30_k3
+conditional,30,3,1,Linear (x1),1.0,0.64636,29,"[0.12807017603987142, 0.14210526331474907, 0.17017543786450437, 0.19824561241425967, 0.22832079943185463, 0.2704260612564876, 0.28646616099920486, 0.33458646022735683, 0.3586466098414328, 0.40075187166606574, 0.41679197140878305, 0.47493733297613333, 0.48295738284749196, 0.5390977319470025, 0.5431077568826819, 0.5611528690932388, 0.5731829439002769, 0.6052631433857115, 0.6333333179354668, 0.6674185298887411, 0.6814536171636187, 0.721553866520412, 0.727568903923931, 0.7796992280877623, 0.8057643901696779, 0.8278195273159142, 0.8338345647194332, 0.8538846893978298, 0.8739348140762265]","[-0.9288863006020162, -0.8938481969287411, -0.8237719895821908, -0.7536957822356407, -0.678614131507194, -0.5734998204873686, -0.5334562734321973, -0.4133256322666825, -0.35326031168392513, -0.24814600066409992, -0.20810245360892837, -0.06294459553393149, -0.0429228220063458, 0.09722959268675448, 0.10724047945054746, 0.15228946988761533, 0.1823221301789943, 0.26240922428933733, 0.3324854316358874, 0.41757796912812695, 0.4526160728014021, 0.5527249404393308, 0.5677412705850203, 0.6978827985143278, 0.7629535624789816, 0.8180134396798425, 0.8330297698255317, 0.883084203644496, 0.9331386374634607]",0.12807017603987142,-0.9288863006020162,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\conditional\g30_k3
+conditional,30,4,0,Conditional (x0),1.0,0.73586,1,[0.5050125199937283],[0.012506974840349376],0.5050125199937283,0.012506974840349376,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\conditional\g30_k4
+conditional,30,4,1,Linear (x1),1.0,0.6513,0,[],[],,,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\conditional\g30_k4
+conditional,30,5,0,Conditional (x0),1.0,0.75563,15,"[0.13809523837906973, 0.14411027578258873, 0.18421052513938202, 0.18822055007506133, 0.23233082436753397, 0.24235588670673228, 0.27243107372432723, 0.28646616099920486, 0.36666665971279144, 0.3867167843911881, 0.44085212102285903, 0.44486214595853835, 0.49899748259020926, 0.5330826945434836, 0.5631578815610785]","[-0.9037348093480841, -0.8887144522302409, -0.7885787381112864, -0.778565166699391, -0.6684158811685411, -0.6433819526388026, -0.5682801670495866, -0.5332326671079527, -0.33296123887004364, -0.28289338181056634, -0.14771016774997786, -0.13769659633808243, -0.0025133822774939447, 0.08260197472361737, 0.15770376031283315]",0.13809523837906973,-0.9037348093480841,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\conditional\g30_k5
+conditional,30,5,1,Linear (x1),1.0,0.76575,13,"[0.24636591164241162, 0.3967418467303864, 0.41679197140878305, 0.44085212102285903, 0.47493733297613333, 0.501002495058049, 0.5110275573972473, 0.6533834426138634, 0.6794486046957791, 0.7796992280877623, 0.7977443402983192, 0.8659147642048678, 0.8919799262867835]","[-0.633565141070126, -0.2581568874278928, -0.20810245360892837, -0.14803713302617102, -0.06294459553393149, 0.0021261684307222225, 0.02715338534020441, 0.3825398654548518, 0.44761062941950563, 0.6978827985143278, 0.7429317889513957, 0.9131168639358748, 0.9781876279005286]",0.24636591164241162,-0.633565141070126,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\conditional\g30_k5
+conditional,30,6,0,Conditional (x0),1.0,0.7395,1,[0.501002495058049],[0.0024934034284538283],0.501002495058049,0.0024934034284538283,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\conditional\g30_k6
+conditional,30,6,1,Linear (x1),1.0,0.6442,0,[],[],,,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\conditional\g30_k6
+conditional,30,7,0,Conditional (x0),0.9963,0.716,1,[0.8959899512224628],[0.9888301875001555],0.8959899512224628,0.9888301875001555,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\conditional\g30_k7
+conditional,30,7,1,Linear (x1),0.9963,0.73074,5,"[0.11604010123283343, 0.14411027578258873, 0.21629072462481663, 0.23433583683537362, 0.24235588670673228]","[-0.9589189608933948, -0.8888427535468446, -0.7086467917985727, -0.6635978013615046, -0.643576027833919]",0.11604010123283343,-0.9589189608933948,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\conditional\g30_k7
+conditional,30,8,0,Conditional (x0),1.0,0.87095,3,"[0.10200501395795579, 0.11002506382931444, 0.18822055007506133]","[-0.9938569520551431, -0.9738298092313523, -0.778565166699391]",0.10200501395795579,-0.9938569520551431,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\conditional\g30_k8
+conditional,30,8,1,Linear (x1),1.0,0.656,0,[],[],,,D:\pykan\github\workflows\Hyein\_workspace\sweep_models\conditional\g30_k8

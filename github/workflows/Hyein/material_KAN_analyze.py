@@ -30,6 +30,7 @@ except AttributeError:
 # Import your wrapper and function ZOO
 from github.workflows.Hyein.toy_KAN_sweep import KANRegressor
 from kan.experiments.analysis import find_indices_sign_revert
+from github.workflows.Hyein.kan_analysis_core import analyze_model
 
 # ==========================================
 # SALib import — legacy Saltelli sampler.
@@ -213,6 +214,42 @@ def main():
     scores_tot = model.feature_score.detach().cpu().numpy()
     model.plot()
     plt.savefig(os.path.join(savepath, f"{data_name}_model.png"))
+
+    # ==========================================
+    # 2.7 Shared post-training analysis (kan_analysis_core)
+    # ------------------------------------------
+    # Material has NO analytic ground-truth function, so true_func=None: the
+    # core's contour falls back to the KAN-forward surface and input-vs-output
+    # is prediction-only. bounds are derived in RAW space from the scaler, as
+    # per-feature [raw@0.1, raw@0.9] (the [0.1, 0.9] MinMax band the splines
+    # live in). This call REPLACES the legacy §3 coefficient-inflection
+    # detection and §4/§5 Saltelli-mask interval scoring as the source of the
+    # shared analysis (ranking transitions, activations, attribution
+    # trajectory, AGSM dual measure, transition-segmented dual measure,
+    # scores_interval, contour). The material-specific extras below (§8 colored
+    # in/out, §9 advanced/triple contour, §10 heatmap, §11 log-ratio, parity)
+    # are KEPT and continue to use their own legacy mask/IP machinery.
+    # ==========================================
+    nx = n_features
+    raw_lo = scaler_X.inverse_transform([[0.1] * nx]).tolist()
+    raw_hi = scaler_X.inverse_transform([[0.9] * nx]).tolist()
+    bounds = list(map(list, zip(*(raw_lo + raw_hi))))  # nx pairs: [raw@0.1, raw@0.9]
+
+    try:
+        analyze_model(
+            model, scaler_X=scaler_X, scaler_y=scaler_y, feat_names=list(feat_names),
+            bounds=bounds, savepath=savepath, X_norm=X_train_norm,
+            y_norm=y_train_norm, X_raw=X_train_denorm, true_func=None,
+            device=device, tag='', data_name=data_name,
+            sections=('ranking_transitions', 'activations',
+                      'attribution_trajectory', 'agsm_dual_measure',
+                      'transition_segmented_dual_measure', 'scores_interval',
+                      'contour'),
+        )
+    except Exception as e:
+        import traceback
+        print(f"⚠️ Shared analyze_model failed: {e}")
+        traceback.print_exc()
 
     # ==========================================
     # 3. Inflection Point Analysis (Layer 0)

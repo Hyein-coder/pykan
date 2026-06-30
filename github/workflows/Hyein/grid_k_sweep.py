@@ -33,11 +33,18 @@ from sklearn.preprocessing import MinMaxScaler
 sys.path.insert(0, r'D:\pykan')
 from github.workflows.Hyein.toy_KAN_sweep import FUNCTION_ZOO, KANRegressor
 from kan.experiments.analysis import find_indices_sign_revert
+from github.workflows.Hyein.kan_analysis_core import (
+    analyze_model, compute_ranking_transitions, denorm, DEFAULT_SECTIONS,
+)
+
+# FOCUSED subset of the shared analysis run per (func, grid, k) model. The full
+# DEFAULT_SECTIONS set is used instead when --full-analysis is passed.
+FOCUSED = ('ranking_transitions', 'activations', 'scores_interval')
 
 # ── configurable defaults ──────────────────────────────────────────────────
-DEFAULT_FUNCS = ['exponential', 'logarithm', 'log2', 'conditional', 'rosenbrock']
+DEFAULT_FUNCS = ['conditional'] # 'exponential', 'logarithm', 'log2', 'rosenbrock'
 DEFAULT_GRIDS = [3, 5, 7, 10, 15, 30]
-DEFAULT_KS    = [0,1,2,3,4,5,6,7,8]
+DEFAULT_KS    = [2, 3, 4, 5, 6, 7, 8]
 N_SAMPLES     = 1000
 STEPS         = 50          # fallback if no *_kan_metrics.json found
 SEED          = 42
@@ -214,7 +221,11 @@ def main():
     parser.add_argument('--steps',    type=int,  default=STEPS)
     parser.add_argument('--n_samples',type=int,  default=N_SAMPLES)
     parser.add_argument('--out',      default=OUT_CSV)
+    parser.add_argument('--full-analysis', action='store_true', default=False,
+                        help="Run the full DEFAULT_SECTIONS shared analysis per "
+                             "model instead of the FOCUSED subset.")
     args = parser.parse_args()
+    analysis_sections = DEFAULT_SECTIONS if args.full_analysis else FOCUSED
 
     os.makedirs(os.path.dirname(args.out), exist_ok=True)
     device = 'cuda' if torch.cuda.is_available() else 'cpu'
@@ -319,9 +330,30 @@ def main():
                     ckpt_path = os.path.join(func_model_dir, f'g{grid}_k{k}')
                     reg.save_model(ckpt_path)
 
-                    # ── transition points (sign reversal + rank change) ──
-                    tps_norm = extract_transition_points(
-                        model, X=X_norm, device=device)
+                    # ── transition points: shared ranking-transition detector ──
+                    # (single source — replaces the legacy coefficient
+                    # extract_transition_points; same CSV schema downstream).
+                    transition_points_per_input, _, _, _ = \
+                        compute_ranking_transitions(model, scaler_X, nx)
+                    tps_norm = {i: list(transition_points_per_input[i])
+                                for i in range(nx)}
+
+                    # ── shared FOCUSED analysis (figures/CSVs) per (grid,k) ──
+                    # tag keeps per-(grid,k) outputs collision-free; wrapped so a
+                    # single model's analysis failure doesn't abort the sweep.
+                    try:
+                        analyze_model(
+                            model, scaler_X=scaler_X, scaler_y=scaler_y,
+                            feat_names=feat_names, bounds=bounds,
+                            savepath=func_model_dir, X_norm=X_norm, y_norm=y_norm,
+                            X_raw=X_raw, true_func=target_fn, device=device,
+                            tag=f"g{grid}_k{k}_", data_name=func_name,
+                            sections=analysis_sections,
+                        )
+                    except Exception as ae:
+                        print(f"⚠️ analyze_model failed for "
+                              f"{func_name} g{grid} k{k}: {ae}")
+                        traceback.print_exc()
 
                     for i in range(nx):
                         tp_n = tps_norm.get(i, [])
