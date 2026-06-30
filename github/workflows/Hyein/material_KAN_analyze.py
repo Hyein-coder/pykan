@@ -43,7 +43,7 @@ from SALib.sample.saltelli import sample as saltelli_sample
 
 def main():
     parser = argparse.ArgumentParser(description="Run KAN attribution analysis (Saltelli-sampled).")
-    parser.add_argument("data_name", type=str, nargs='?', default="CO2HEx10",
+    parser.add_argument("data_name", type=str, nargs='?', default="CO2HPx10",
                         help="The name of the dataset")
     parser.add_argument("rand_seed", type=int, nargs='?', default=None,
                         help="The random seed (default: None=42)")
