@@ -1,13 +1,12 @@
 {
     "dataset": "conditional",
-    "test_r2": 0.9997645061281356,
+    "test_r2": 0.9998569645832308,
     "best_params": {
         "solver": "lbfgs",
-        "learning_rate_init": 0.001,
+        "learning_rate_init": 0.01,
         "hidden_layer_sizes": [
             64,
-            32,
-            16
+            64
         ],
         "alpha": 0.1,
         "activation": "relu"

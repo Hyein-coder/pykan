@@ -1,0 +1,5 @@
+feature,feat_idx,kan_point_raw,mlp_point_raw,status,drift,drift_frac,x_raw
+Conditional (x0),0,-0.0026311948740164676,0.008294269747297505,matched,0.010925464621313972,0.005462732310656986,
+Linear (x1),1,-0.40665903617635163,,dropped,,,
+Linear (x1),1,-0.1764921355400511,,dropped,,,
+Conditional (x0),0,,,true_kink_reference,,,0.0

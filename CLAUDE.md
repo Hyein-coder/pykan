@@ -1,6 +1,6 @@
 # KAN Project — Hyein
 
-KAN 전환점 분석용 하네스 2개. 작업 요청이 트리거에 맞으면 해당 오케스트레이터 스킬을 쓰고, 단순 질문은 직접 응답한다.
+KAN 전환점 분석용 하네스 3개. 작업 요청이 트리거에 맞으면 해당 오케스트레이터 스킬을 쓰고, 단순 질문은 직접 응답한다.
 각 변경 이력 항목 형식: **날짜** · 변경 내용 *(대상 파일)* — 사유.
 
 ---
@@ -45,4 +45,18 @@ KAN 전환점 분석용 하네스 2개. 작업 요청이 트리거에 맞으면 
   - normalized/raw 공간 규약 통일: knots·inflection·ranking-transition 점은 **정규화 공간**으로 내부 보관(소스 오브 트루스), **플롯에서만** raw로 역변환(단일 `denorm(vals, feat_idx)` 헬퍼). per-feature 플롯(§3 activations/activations_values, §3.5 trajectory, §3.9 activation_derivatives)을 raw 축으로 전환; 이미 raw였던 §3.7 contour·AGSM·dual-measure·scores_interval은 유지. **예외**: §3.6 ranking_transition은 여러 feature를 한 축에 겹쳐 비교하므로(피처별 raw bound 상이) 정규화 축 유지 *(toy_KAN_analyze.py: denorm 헬퍼 + §3/§3.5/§3.9 plot sites)* — 플롯마다 normalized/raw가 섞여 전환점 위치가 그림마다 달라 보이는 문제. conditional symbolic로 raw 축·vline 위치 검증.
   - symbolic 모드 정확도 향상: auto_symbolic의 a/b 탐색범위를 ±10→±20→±50→±100→±200로 단계적 확대하며 R²≥0.8 달성 시 조기 종료(미달 시 최고 R² 채택). `_build_symbolic_reading`에 선택적 `ab_ranges`/`r2_target`/`r2_scorer` 인자 추가(기본 None=기존 동작 → robustness 스터디 불변), toy_KAN_analyze symbolic 블록이 R²(정규화 train) scorer와 함께 opt-in *(robustness_symbolify.py `_build_symbolic_reading`, toy_KAN_analyze.py §2.1)* — "refit symbolic 정확도 확보" 요청. introduce-symbolify(순수 spline)에만 적용, 이미 symbolified 모델은 as-saved. damping_sin --refit로 ±50에서 0.76까지 개선·log2 as-saved 0.9999 검증.
   - 모델 reading 모드 CLI 옵션 추가: `--model-mode {as-saved,spline,symbolic}`(+`--refit`). spline=symbolify 엣지를 spline 가지로 역전(symbolic off), symbolic=symbolic 가지 사용(순수 spline 저장 모델은 auto_symbolic, `--refit` 시 짧은 LBFGS). `robustness_symbolify._build_spline_reading`/`_build_symbolic_reading` 재사용(중복 없음). 비-default 모드는 `kan_models/<mode>/` 서브폴더 + 갤러리 파일명 mode 태그로 as-saved 산출물 보존 *(toy_KAN_analyze.py §2.1 + argparse + import)* — 저장모델 그대로/순수 spline/순수 symbolic 중 선택 요청. log2(invert)·damping_sin(introduce) 3모드+refit 검증 완료.
-  - **하네스 확장 — rel-threshold sweep**: 전환점 탐지 임계 `rel_thresh`(τ=`rel_thresh·maxᵢmaxₓsᵢ`)를 스윕해 근거 있게 선택. 신규 스킬 `rel-threshold-sweep` + 신규 standalone `sweep_rel_threshold.py`(기존 스크립트 무수정, `find_ranking_transitions` 재사용, 기본 x_grid=`data_range_knots`). 기존 curvature 에이전트 재사용(gsa-developer→curvature-watcher 게이트6→gsa-analyst), `curvature-inflection-orchestrator` Phase 5 + 게이트6 추가, `curvature-watcher.md` 게이트6 추가 *(skills/rel-threshold-sweep 신규, sweep_rel_threshold.py 신규, curvature-inflection-orchestrator, agents/curvature-watcher)* — "rel_threshold 스윕" 요청. **범위: conditional만**(x0=0 변화를 깨끗한 단일 down-transition으로 탐지, min-loc_err 추천); damping_sin은 불안정으로 보류(`--funcs` 확장).
+  - **하네스 확장 — rel-threshold sweep**: 전환점 탐지 임계 `rel_thresh`(τ=`rel_thresh·maxᵢmaxₓsᵢ`)를 스윕해 근거 있게 선택. 신규 스킬 `rel-threshold-sweep` + 신규 standalone `sweep_rel_threshold.py`(기존 스크립트 무수정, `find_ranking_transitions` 재사용, 기본 x_grid=`data_range_knots`). 기존 curvature 에이전트 재사용(gsa-developer→curvature-watcher 게이트6→gsa-analyst), `curvature-inflection-orchestrator` Phase 5 + 게이트6 추가, `curvature-watcher.md` 게이트6 추가 *(skills/rel-threshold-sweep 신규, sweep_rel_threshold.py 신규, curvature-inflection-orchestrator, agents/curvature-watcher)* — "rel_threshold 스윕" 요청. **범위: conditional만**(x0=0 변화를 깨끗한 단일 down-transition으로 탐지, min-loc_err 추천); damping_sin은 불안정으로 보류(`--funcs` 확장). plot은 loc_err 막대 + n_down 선(전경), 텍스트박스·band·제목 없음(ProjectSummary.md `SA_RC`).
+
+- **2026-06-30**
+  - **하네스 확장 — 공유 분석 코어**: toy_KAN_analyze의 사후 분석을 신규 모듈 `kan_analysis_core.py`(`analyze_model` + 섹션 함수들)로 추출, toy/grid_k_sweep/material_KAN_analyze가 **동일 로직** 호출. `denorm` 5변종·KAN surrogate 2중복 통합, model-only vs `true_func`-gated 분리(§2 데이터·§2.5 ground-truth·§3.7 해석적 contour만 toy 전용; material은 `true_func=None`→KAN-forward contour). 저수준(bspline_curvature·sectional_gsa) 재사용·무수정. toy는 1326→235줄 thin driver, **파리티 검증**(ranking_transition·transition_dual_measure CSV·전환점 as-saved+symbolic 모두 baseline과 동일). grid_k=FOCUSED 섹션/모델(`g{grid}_k{k}_` tag, `--full-analysis`), material=레거시 §3/§4 교체+고유 산출물 유지. 신규 스킬 `kan-analysis-core`, 기존 에이전트 재사용(gsa-developer→watcher 게이트7→gsa-integrator→gsa-analyst), orchestrator Phase 6 + 게이트7 *(kan_analysis_core.py·skills/kan-analysis-core 신규, toy_KAN_analyze.py·grid_k_sweep.py·material_KAN_analyze.py 수정, orchestrator/watcher)* — "predefined 함수로 세 분석 통합" 요청.
+
+---
+
+## 하네스 3 — MLP baseline comparison
+
+**목표** 튜닝된 MLP(sklearn `MLPRegressor`)의 gradient 기반 국소 민감도 `s_i(x)=|∂f/∂x_i|`(유한차분)와 전환점을 KAN과 동일한 τ-교차로 탐지·비교한다. MLP는 입력이 얽혀 gradient가 더 노이즈함을 정량화(KAN 엣지 구조가 더 깨끗).
+
+**트리거 → `mlp-comparison-orchestrator`** MLP/NN baseline 추가·분석 · MLP 하이퍼파라미터 튜닝(toy_NN_tuning) · MLP 국소 민감도 trajectory·전환점 · KAN vs MLP 비교 · compare_kan_vs_mlp 그림 수정/재실행.
+
+**변경 이력**
+- **2026-06-30** · 초기 구성 *(skills/mlp-sensitivity-comparison·mlp-comparison-orchestrator 신규, nn_sensitivity.py·toy_NN_analyze.py·compare_kan_vs_mlp.py 신규; sectional_gsa·kan_analysis_core·find_indices_sign_revert·_match_transitions 재사용; gsa-developer→curvature-watcher→gsa-analyst 재사용)* — MLP 비교 요청. MLP 민감도는 정규화 공간 유한차분(midpoint + MC band 둘 다), 범위 conditional만. sklearn → autograd 없음 → 유한차분. R²=0.9999(conditional).
