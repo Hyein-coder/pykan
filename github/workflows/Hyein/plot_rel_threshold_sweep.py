@@ -145,7 +145,7 @@ def main():
     n = len(funcs)
 
     with plt.rc_context(SA_RC):
-        fig, axes = plt.subplots(n, 1, figsize=(7.2, 4.4 * n), squeeze=False)
+        fig, axes = plt.subplots(n, 1, figsize=(5.5, 3.5 * n), squeeze=False)
         for i, func in enumerate(funcs):
             df_f = sweep[sweep["func"] == func]
             reco_f = reco[reco["func"] == func]

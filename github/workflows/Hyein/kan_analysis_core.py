@@ -893,11 +893,10 @@ def transition_segmented_dual_measure(model, dataset, scaler_X, scaler_y, nx, bo
                             extra_handles.append(h)
                         first_t = False
                     ax.set_xlabel(f"{feat_names[i_feat]}")
-                    ax.set_ylabel(r'$\phi$')
+                    ax.set_ylabel(rf'$\phi$: {feat_names[i_feat]} $\mapsto$ node {j}')
                     ax2.set_ylabel(r"$\phi'$")
                     sym_tag = (f"  [symbolic: {sym_info[(i_feat, j)]}]"
                                if (i_feat, j) in sym_info else "")
-                    ax.set_title(f"edge ({feat_names[i_feat]} -> node {j}){sym_tag}")
                     lns = ln0 + ln1 + extra_handles
                     ax.legend(lns, [ln.get_label() for ln in lns], loc='best', fontsize=7)
             fig_d.suptitle(f"{data_name} — activation & first derivative (L0)",
@@ -1110,7 +1109,7 @@ def scores_interval(model, dataset, scaler_X, scaler_y, nx, feat_names, scores_t
         """Grouped bar chart of per-feature attribution across feat_idx's intervals."""
         width = 0.2
         n_intervals = len(scores_interval_norm)
-        fig, ax = plt.subplots(figsize=(max(8, n_intervals * 2), 5))
+        fig, ax = plt.subplots(figsize=(max(5, n_intervals * 1), 3))
         x_positions = np.arange(n_intervals)
         max_score = max([max(s) for s in scores_interval_norm]) if scores_interval_norm else 1.0
 
@@ -1122,7 +1121,6 @@ def scores_interval(model, dataset, scaler_X, scaler_y, nx, feat_names, scores_t
         ax.set_xticks(x_positions)
         ax.set_xticklabels(labels, rotation=15, ha='center', fontsize=9)
         ax.set_ylabel("Normalized Attribution Score")
-        ax.set_title(f"Feature Importance per Range (sliced by {feat_names[feat_idx]})")
         ax.legend(loc='upper right', bbox_to_anchor=(1, 1))
         ax.set_ylim(0, max_score * 1.2)
         plt.tight_layout()

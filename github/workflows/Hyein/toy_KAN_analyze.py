@@ -94,10 +94,10 @@ def _step_over_edges(ax, edges, vals, **kwargs):
 
 def main():
     parser = argparse.ArgumentParser(description="Tune KAN for Analytical Functions.")
-    parser.add_argument("func_name", type=str, nargs='?', default="rosenbrock",
+    parser.add_argument("func_name", type=str, nargs='?', default="conditional",
                         choices=FUNCTION_ZOO.keys(),
                         help="Choose a function from the ZOO.")
-    parser.add_argument("--model-mode", type=str, default="as-saved",
+    parser.add_argument("--model-mode", type=str, default="symbolic",
                         choices=["as-saved", "spline", "symbolic"],
                         help="Which reading of the saved KAN to analyze: "
                              "'as-saved' (on-disk mix of spline/symbolic edges), "
