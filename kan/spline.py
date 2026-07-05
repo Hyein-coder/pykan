@@ -35,7 +35,9 @@ def B_batch(x, grid, k=0, extend=True, device='cpu'):
     grid = grid.unsqueeze(dim=0)
     
     if k == 0:
-        value = (x >= grid[:, :, :-1]) * (x < grid[:, :, 1:])
+        # indicator of the half-open interval [grid_i, grid_{i+1}); cast to a
+        # float dtype so downstream lstsq / einsum (which reject Bool) work.
+        value = ((x >= grid[:, :, :-1]) * (x < grid[:, :, 1:])).to(x.dtype)
     else:
         B_km1 = B_batch(x[:,:,0], grid=grid[0], k=k - 1)
         
@@ -116,18 +118,20 @@ def curve2coef(x_eval, y_eval, grid, k):
     try:
         coef = torch.linalg.lstsq(mat, y_eval).solution[:,:,:,0]
     except:
-        print('lstsq failed')
-    
-    # manual psuedo-inverse
-    '''lamb=1e-8
-    XtX = torch.einsum('ijmn,ijnp->ijmp', mat.permute(0,1,3,2), mat)
-    Xty = torch.einsum('ijmn,ijnp->ijmp', mat.permute(0,1,3,2), y_eval)
-    n1, n2, n = XtX.shape[0], XtX.shape[1], XtX.shape[2]
-    identity = torch.eye(n,n)[None, None, :, :].expand(n1, n2, n, n).to(device)
-    A = XtX + lamb * identity
-    B = Xty
-    coef = (A.pinverse() @ B)[:,:,:,0]'''
-    
+        # lstsq can fail on rank-deficient designs (e.g. k=0 piecewise-constant
+        # bases, where a sample can miss every interval and yield an all-zero
+        # row). Fall back to a ridge-regularized normal-equation solve so we
+        # always return a valid coef instead of raising UnboundLocalError.
+        print('lstsq failed; falling back to regularized pseudo-inverse')
+        lamb = 1e-8
+        XtX = torch.einsum('ijmn,ijnp->ijmp', mat.permute(0,1,3,2), mat)
+        Xty = torch.einsum('ijmn,ijnp->ijmp', mat.permute(0,1,3,2), y_eval)
+        n1, n2, n = XtX.shape[0], XtX.shape[1], XtX.shape[2]
+        identity = torch.eye(n,n)[None, None, :, :].expand(n1, n2, n, n).to(device)
+        A = XtX + lamb * identity
+        B = Xty
+        coef = (A.pinverse() @ B)[:,:,:,0]
+
     return coef
 
 

@@ -100,7 +100,10 @@ class KANLayer(nn.Module):
         self.grid = torch.nn.Parameter(grid).requires_grad_(False)
         noises = (torch.rand(self.num+1, self.in_dim, self.out_dim) - 1/2) * noise_scale / num
 
-        self.coef = torch.nn.Parameter(curve2coef(self.grid[:,k:-k].permute(1,0), noises, self.grid, k))
+        # For k=0 the grid is not extended (extend_grid is a no-op), so the
+        # original grid nodes are the whole grid; grid[:,k:-k] would be empty.
+        grid_nodes = self.grid[:, k:-k] if k > 0 else self.grid
+        self.coef = torch.nn.Parameter(curve2coef(grid_nodes.permute(1,0), noises, self.grid, k))
         
         if sparse_init:
             self.mask = torch.nn.Parameter(sparse_mask(in_dim, out_dim)).requires_grad_(False)
@@ -263,7 +266,7 @@ class KANLayer(nn.Module):
         #print('p', parent.grid)
         # based on interpolating parent grid
         def get_grid(num_interval):
-            x_pos = parent.grid[:,parent.k:-parent.k]
+            x_pos = parent.grid[:,parent.k:-parent.k] if parent.k > 0 else parent.grid
             #print('x_pos', x_pos)
             sp2 = KANLayer(in_dim=1, out_dim=self.in_dim,k=1,num=x_pos.shape[1]-1,scale_base_mu=0.0, scale_base_sigma=0.0).to(x.device)
 
